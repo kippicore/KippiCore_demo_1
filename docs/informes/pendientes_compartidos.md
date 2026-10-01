@@ -14,3 +14,8 @@ Ramas a fusionar: ver cada informe.
 2. `Table`: si la tabla no cabe a lo ancho, la cabecera fija deja de pegarse bajo la barra superior.
 3. `selectores/proveedores.ts` `desempeno()`: excluir importaciones eliminadas y exponer `entregas` (detalle por pedido) en `FichaProveedor` (B2 usa `selEntregas` local con prueba de igualdad).
 4. Calibración: Huameng puntual, Weiye la más tardía (enviado a la pista de calibración).
+
+## A4 (rama worktree-agent-a2a22d45e84df69c9, dc1bb38)
+1. `Table.tsx`: `desborda` queda en true por medición vieja; observar también la `<table>` (`ro.observe(el.firstElementChild)`), si no la cabecera fija baja 76 px sobre las filas.
+2. (= B4.1) `BotonAccionesFila` sin forwardRef.
+3. CONTRATOS §14.3: advertirlo o corregirlo.
