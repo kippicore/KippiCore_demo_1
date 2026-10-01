@@ -191,7 +191,8 @@ export function cuentaDeMedio(estado: EstadoDominio, medio: MedioPago, localId: 
 export function saldoAFavorCliente(estado: EstadoDominio, clienteId: Id): COP {
   let saldo = 0;
   const ventasCliente = new Set<Id>();
-  for (const id in estado.ventas) {
+  // Solo las ventas del cliente (índice `agregados.ventasCliente`; antes se recorrían todas: ≈ 6 % de la construcción).
+  for (const id of estado.agregados.ventasCliente[clienteId] ?? []) {
     const v = estado.ventas[id];
     if (!v || v.clienteId !== clienteId) continue;
     ventasCliente.add(v.id);

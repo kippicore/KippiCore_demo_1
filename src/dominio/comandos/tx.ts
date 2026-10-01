@@ -258,6 +258,18 @@ export function fijarIndiceMarcaciones(estado: EstadoDominio, clave: string, ids
 
 // ---------- Turnos ----------
 
+/** Mueve una venta al índice de su cliente (`agregados.ventasCliente`): al registrarla o al cambiarle el cliente. */
+export function indexarVentaCliente(estado: EstadoDominio, ventaId: Id, antes: Id | null, despues: Id | null): void {
+  const idx = estado.agregados.ventasCliente;
+  if (antes === despues) return;
+  if (antes) {
+    const l = idx[antes];
+    const i = l ? l.indexOf(ventaId) : -1;
+    if (l && i >= 0) l.splice(i, 1);
+  }
+  if (despues) (idx[despues] ??= []).push(ventaId);
+}
+
 export function claveTurnoDia(empleadoId: Id, fecha: FechaISO): string {
   return `${empleadoId}@${fecha}`;
 }

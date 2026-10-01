@@ -60,6 +60,7 @@ import {
   emitirInventario,
   existencia,
   fijarConsecutivo,
+  indexarVentaCliente,
   leerConsecutivo,
   manejador,
   marcarEditado,
@@ -425,6 +426,7 @@ export const ventaRegistrar = manejador<'venta.registrar', PlanVenta>({
       ctx.emitir({ tipo: 'ClienteCreado', clienteId: plan.cliente.id, origen: plan.cliente.canalAlta });
     }
     estado.ventas[plan.venta.id] = plan.venta;
+    indexarVentaCliente(estado, plan.venta.id, null, plan.venta.clienteId);
     for (const p of plan.pagos) agregarPagoVenta(estado, plan.venta.id, p);
     fijarConsecutivo(estado, 'venta', plan.consecutivo);
     const cambios = aplicarMovimientos(estado, plan.movs, ctx);
@@ -546,6 +548,7 @@ export const ventaEditar = manejador<
   escribir(estado, plan, ctx) {
     const v = estado.ventas[plan.ventaId];
     if (!v) return;
+    if (plan.campos.clienteId !== undefined) indexarVentaCliente(estado, v.id, v.clienteId, plan.campos.clienteId);
     Object.assign(v, plan.campos);
     for (const m of plan.medios) {
       const p = v.pagos.find((x) => x.id === m.pagoId);
@@ -984,6 +987,7 @@ export const devolucionRegistrar = manejador<'devolucion.registrar', PlanDevoluc
     if (!v) return;
     if (plan.cliente) {
       estado.clientes[plan.cliente.id] = plan.cliente;
+      indexarVentaCliente(estado, v.id, v.clienteId, plan.cliente.id);
       v.clienteId = plan.cliente.id;
       ctx.emitir({ tipo: 'ClienteCreado', clienteId: plan.cliente.id, origen: plan.cliente.canalAlta });
     }

@@ -235,6 +235,11 @@ export function auditarCoherencia(estado: EstadoDominio, ahora: FechaHoraISO): R
     if (s.cierre === null) ag1(ag.cajaAbierta[s.localId] === s.id, () => `cajaAbierta ${s.id}`);
   }
   for (const [l, id] of Object.entries(ag.cajaAbierta)) ag1(estado.sesionesCaja[id]?.cierre === null && estado.sesionesCaja[id]?.localId === l, () => `cajaAbierta ${l}`);
+  // ventasCliente (fase 4): cada venta con cliente está una vez en la lista de su cliente, y nada más.
+  const porCliente = new Map<Id, Id[]>();
+  for (const v of Object.values(estado.ventas)) if (v.clienteId) porCliente.set(v.clienteId, [...(porCliente.get(v.clienteId) ?? []), v.id]);
+  for (const k of new Set([...porCliente.keys(), ...Object.keys(ag.ventasCliente)]))
+    ag1([...(ag.ventasCliente[k] ?? [])].sort().join(',') === [...(porCliente.get(k) ?? [])].sort().join(','), () => `ventasCliente ${k}`);
 
   // M1, M4, M6: importaciones.
   const m1 = r.regla('M1-M6', 'hitos reales en orden; Σ costos prorrateados = total; anticipo y saldo al confirmar');

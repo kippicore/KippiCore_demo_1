@@ -110,6 +110,11 @@ export interface Agregados {
   cajaDia: Record<string, Id>;
   /** Por `${localId}@${ventasDe}`: abono del datáfono registrado (uno por local y día de ventas, V11). */
   abonosDatafonoDia: Record<string, Id>;
+  /**
+   * Por cliente: IDs de sus ventas en orden de registro (fase 4: el saldo a favor de un cliente se calcula con sus
+   * ventas y no recorriendo las 17.000; mantenido por `indexarVentaCliente`).
+   */
+  ventasCliente: Record<Id, Id[]>;
 }
 
 export interface EstadoDominio {
