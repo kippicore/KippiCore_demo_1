@@ -119,7 +119,7 @@ export function VistaRotacion({ resaltar }: { resaltar: string | null }) {
         {filas.length === 0 ? (
           <EmptyState tamano="tabla" icono={PackageCheck} titulo="Sin inventario para analizar" texto="Cuando haya existencias y ventas, aquí verás qué categoría rota más lento." />
         ) : (
-          <BarrasHorizontales filas={filas} marca={Number.isFinite(tienda.dias) ? { valor: tienda.dias, etiqueta: `Promedio de la tienda: ${entero(Math.round(tienda.dias))} días` } : null} max={tope} anchoEtiqueta={230} anchoTexto={120} testid="rotacion-barras" />
+          <BarrasHorizontales filas={filas} marca={Number.isFinite(tienda.dias) ? { valor: tienda.dias, etiqueta: `Promedio de la tienda: ${entero(Math.round(tienda.dias))} días` } : null} max={tope} anchoEtiqueta={290} anchoTexto={120} testid="rotacion-barras" />
         )}
         <p className="mt-4 max-w-[72ch] t-small text-muted">Una categoría se marca como dormida cuando necesita más de 1,3 veces los días de inventario de toda la tienda.</p>
       </Card>

@@ -94,7 +94,7 @@ export function BarrasHorizontales({
               <span className="truncate">{f.etiqueta}</span>
               {f.insignia}
             </p>
-            {f.nota && <p className="truncate t-small text-muted">{f.nota}</p>}
+            {f.nota && <p className="t-small text-muted">{f.nota}</p>}
           </div>
           <div className="relative h-3 bg-selected" aria-hidden>
             <div className={cn('h-full', f.tono === 'destacado' ? 'bg-accent' : f.tono === 'alerta' ? 'bg-danger' : 'bg-ink')} style={{ width: pos(f.valor) }} />

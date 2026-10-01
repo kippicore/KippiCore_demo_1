@@ -268,7 +268,7 @@ export function GraficoResultado({ prep, visibles }: { prep: PivotePreparado; vi
     titulo: `${nombreMedida}`,
     lectura: lectura || undefined,
     formatoX: (v: string) => recortar(v),
-    alto: 280,
+    alto: 240,
   } as const;
   return (
     <Card padding="normal" data-testid="pivote-grafico" data-filas={g.datos.length}>

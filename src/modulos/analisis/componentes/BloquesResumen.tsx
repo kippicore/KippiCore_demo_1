@@ -89,7 +89,7 @@ export function BloqueProyeccion() {
               <Dinero valor={p.proyeccion} />
             </p>
             {p.anioAnterior !== null && p.anioAnterior > 0 && (
-              <p className="mt-3 flex flex-wrap items-center gap-x-2 t-body text-ink-2" data-testid="proyeccion-anio">
+              <p className="mt-3 t-body text-ink-2" data-testid="proyeccion-anio">
                 {p.proyeccion >= p.anioAnterior ? 'Es' : 'Serían'}{' '}
                 <strong className="num text-ink">{porcentaje(Math.abs(p.proyeccion / p.anioAnterior - 1), 0)}</strong> {p.proyeccion >= p.anioAnterior ? 'más' : 'menos'} que {mes} del año pasado (
                 <Dinero valor={p.anioAnterior} corta />).

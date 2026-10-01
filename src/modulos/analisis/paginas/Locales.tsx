@@ -103,7 +103,7 @@ export default function Locales() {
           ) : (
             <div className="grid grid-cols-1 gap-4 desk:grid-cols-3">
               {locales.map((l) => (
-                <Card key={l.localId} padding="normal" className={cn(resaltar === l.localId && 'border-ink')} data-testid={`local-${l.localId}`} data-valor={l.resumen.netas}>
+                <Card key={l.localId} padding="normal" className={cn(resaltar === l.localId && 'border-ink')} data-testid={`local-${l.localId}`}>
                   <p className="t-eyebrow text-ink-2">{l.nombre}</p>
                   <p className="mt-2 t-kpi text-ink">
                     <Dinero valor={l.resumen.netas} corta />
@@ -212,7 +212,7 @@ export default function Locales() {
                 <BarrasHorizontales
                   filas={filasVendedores}
                   marca={promedioEquipo > 0 ? { valor: promedioEquipo, etiqueta: 'Promedio del equipo' } : null}
-                  anchoEtiqueta={330}
+                  anchoEtiqueta={300}
                   anchoTexto={110}
                   testid="barras-vendedores"
                 />
