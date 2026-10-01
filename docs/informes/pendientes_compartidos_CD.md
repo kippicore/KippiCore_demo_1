@@ -26,3 +26,11 @@
 2. Mover `obligacionesIlustrativas` (src/modulos/calendario/calculos.ts) a `src/dominio/reglas/` y usarla en el selector compartido (N11: "PILA el día hábil 10" en próximos eventos de Inicio).
 3. Título corto de llegadas: "IMP-2026-07 · Llega a bodega".
 4. Recordatorios (`recordatorioMin`) visibles en Inicio y /app (D1/E1).
+
+## C1 (worktree-agent-ac2170c76f19d8363, 29dabdf)
+1. `Badge` no acepta `data-testid`; `SelectorFecha` no permite borrar fecha opcional.
+2. Datos: Sebastián "este mes" ≈ $4,66 M (guion "cerca de $4,2 M") — aceptable; actualizar el guion/GUIA_DEMO con la cifra real.
+3. Sembrar algún contratista con PILA verificada (hoy todos "Pendiente de soporte PILA").
+4. Unificar barra de pestañas de Personal (C1) y Turnos (C2) al fusionar.
+5. Vista previa de nómina ≈ 1 s (recalcula ventas del mes): optimizar si molesta.
+6. Liquidación final (`selLiquidacionFinal`) sin pantalla (complemento).
