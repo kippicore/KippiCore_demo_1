@@ -131,6 +131,10 @@ export interface Memoria {
   pidioContacto: boolean;
   /** Ya tiene nombre pero falta el apellido o el celular. */
   contactoParcial: { nombres?: string; celular?: string } | null;
+  /** Prendas entre las que le preguntó cuál quería ("¿cuál chino?"): la siguiente respuesta ("el elástico") elige entre ellas. */
+  ambiguosIds: Id[];
+  /** Preguntó el precio y todavía no se le ha dicho (se lo dice al resolver la prenda). */
+  pidioPrecio: boolean;
 }
 
 export const MEMORIA_INICIAL: Memoria = {
@@ -143,6 +147,8 @@ export const MEMORIA_INICIAL: Memoria = {
   traspasado: false,
   pidioContacto: false,
   contactoParcial: null,
+  ambiguosIds: [],
+  pidioPrecio: false,
 };
 
 // ---------------------------------------------------------------------------------------------------------

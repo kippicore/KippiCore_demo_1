@@ -177,6 +177,49 @@ describe('consulta de talla con el inventario real', () => {
     expect(r2.traza.consultas?.[0]?.variante).toContain('talla L');
   });
 
+  it('mantiene el hilo: "pantalón chino talla 32 en Usaquén y cuánto vale" → "el elástico" responde sobre ese chino', () => {
+    const r1 = hablar('Hola, ¿tienen pantalón chino talla 32 en Usaquén y cuánto vale?');
+    expect(textoDe(r1)).toContain('Tengo varias opciones');
+    expect(r1.memoria.talla).toBe('32');
+    expect(r1.memoria.pidioPrecio).toBe(true);
+    const r2 = hablar('el elástico', r1.memoria);
+    const chinoElastico = datos.productos.find((x) => x.nombre === 'Pantalón chino elástico')!;
+    expect(r2.memoria.productoId).toBe(chinoElastico.id);
+    expect(r2.memoria.talla).toBe('32');
+    expect(r2.traza.consultas?.every((c) => c.variante.includes('talla 32'))).toBe(true);
+    const t = textoDe(r2);
+    expect(t).toContain('Pantalón chino elástico');
+    expect(t).toContain(`Cuesta ${dinero(chinoElastico.precio)}`);
+    expect(t).toContain('Usaquén');
+    // No se salta a una camisa o un polo "elásticos".
+    expect(t).not.toMatch(/Camisa de algodón|Polo de jersey/);
+  });
+
+  it('elige entre las opciones ofrecidas por orden ("el segundo") o por la palabra distintiva ("el regular")', () => {
+    const r1 = hablar('busco un pantalón chino talla 34');
+    const dos = hablar('el segundo', r1.memoria);
+    const tres = hablar('el regular', r1.memoria);
+    expect(dos.memoria.productoId).toBeTruthy();
+    expect(tres.memoria.productoId).toBe(datos.productos.find((x) => x.nombre === 'Pantalón chino de algodón regular')!.id);
+    expect(tres.traza.consultas?.[0]?.variante).toContain('talla 34');
+  });
+
+  it('si venía hablando de pantalones, "el elástico" es el pantalón y no la camisa ni el polo', () => {
+    const r1 = hablar('¿cuánto vale el pantalón chino regular?');
+    const r2 = hablar('¿y el elástico?', r1.memoria);
+    expect(r2.memoria.productoId).toBe(datos.productos.find((x) => x.nombre === 'Pantalón chino elástico')!.id);
+  });
+
+  it('entiende tallas numéricas de pantalón: "32", "la 34" y "treinta y dos"', () => {
+    expect(reconocerTalla('talla 32')).toBe('32');
+    expect(reconocerTalla('la 34')).toBe('34');
+    expect(reconocerTalla('28')).toBe('28');
+    expect(reconocerTalla('en 40 tienen?')).toBe('40');
+    expect(reconocerTalla('quiero la treinta y dos')).toBe('32');
+    expect(reconocerTalla('talla treinta y seis')).toBe('36');
+    expect(reconocerTalla('la tengo hace treinta años')).toBeNull();
+  });
+
   it('responde con amabilidad cuando no entiende, en el trato del cliente', () => {
     expect(textoDe(hablar('asdf qwer'))).toContain('¿Me dices la talla y el color que buscas?');
     expect(textoDe(hablar('asdf qwer', MEMORIA_INICIAL, cliente('Ricardo', 'usted')))).toContain(
