@@ -159,7 +159,11 @@ export function notaExistencias(o: { stock: number | null; despacho: string; otr
       texto: otros.length > 0 ? `Agotada para envío. Puedes recogerla en ${listaNatural(otros)}.` : 'Agotada por ahora.',
     };
   }
-  if (stock <= 3) return { tono: 'warning', texto: stock === 1 ? 'Queda 1 en tu talla' : `Quedan ${stock} en tu talla` };
+  if (stock <= 3) {
+    // Lo que queda es lo del local de despacho: si en otra tienda hay más, se dice (no parece que se agote).
+    const queda = stock === 1 ? 'Queda 1 para envío' : `Quedan ${stock} para envío`;
+    return { tono: 'warning', texto: otros.length > 0 ? `${queda} · disponible en otras tiendas` : queda };
+  }
   return { tono: 'muted', texto: `Disponible para envío desde ${despacho}` };
 }
 

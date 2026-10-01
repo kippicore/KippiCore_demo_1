@@ -224,7 +224,7 @@ function CambiarEstadoAbierto({
                         <span className="t-small text-muted">
                           {d.tipo === 'dueno'
                             ? 'Sin mensaje'
-                            : `${ETIQUETAS_CANAL[d.canal as keyof typeof ETIQUETAS_CANAL] ?? 'App'} · ${d.idioma === 'en' ? 'inglés' : 'en usted'}`}
+                            : `${ETIQUETAS_CANAL[d.canal as keyof typeof ETIQUETAS_CANAL] ?? 'App'} · ${d.idioma === 'en' ? 'en inglés' : 'le habla de usted'}`}
                         </span>
                       </li>
                     ))}

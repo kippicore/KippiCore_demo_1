@@ -55,7 +55,7 @@ export const COMPRADOR_EJEMPLO = {
 
 export const TEXTOS = {
   portada: {
-    eyebrow: 'Otoño · Invierno 2026',
+    eyebrow: 'Temporada fin de año 2026',
     titular: 'Sastrería de temporada',
     comprar: 'Comprar ahora',
     coleccion: 'Ver la colección',
