@@ -68,6 +68,7 @@ export class Demanda {
   private readonly ruido = new Map<FechaISO, number>();
   private readonly lambdas = new Map<string, number>();
   private readonly mezclas = new Map<string, { cats: Categoria[]; acumulada: number[] }>();
+  private readonly idsAjuste = new Map<object, string>();
   private readonly productosCat = new Map<string, { productos: ProductoPlan[]; acumulada: number[] }>();
   private readonly coloresCache = new Map<string, { colores: Id[]; acumulada: number[] }>();
   private readonly tallasCache = new Map<string, { tallas: string[]; acumulada: number[] }>();
@@ -167,7 +168,15 @@ export class Demanda {
   /** Mezcla de categorías de un local en un mes (P1, 7.6), como tabla acumulada. */
   mezcla(localId: Id, fecha: FechaISO, ajuste: Partial<Record<Categoria, number>> | null = null) {
     const mes = Number(fecha.slice(5, 7));
-    const clave = `${localId}|${mes}|${ajuste ? JSON.stringify(ajuste) : ''}`;
+    let etiqueta = '';
+    if (ajuste) {
+      etiqueta = this.idsAjuste.get(ajuste) ?? '';
+      if (!etiqueta) {
+        etiqueta = `a${this.idsAjuste.size + 1}`;
+        this.idsAjuste.set(ajuste, etiqueta);
+      }
+    }
+    const clave = `${localId}|${mes}|${etiqueta}`;
     let m = this.mezclas.get(clave);
     if (!m) {
       const base = MEZCLA_CATEGORIAS[localId] ?? MEZCLA_CATEGORIAS.zr;

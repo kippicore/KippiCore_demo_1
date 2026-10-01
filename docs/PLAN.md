@@ -5207,6 +5207,23 @@ Decisiones tomadas al implementar F2-A1 por coherencia; cada una tiene su línea
 | Semilla | 85 referencias, 883 variantes; traje a $ 1.489.900 (todo termina en 900); 21 colores (8.1.4 + mostaza + 4 con patrón); 10 proveedores locales; NIT con dígito válido; clientes identificados ≈ 15 % | 1.5, 4.7, 7.6, 7.7, 8.1.4 |
 | Reglas nuevas | `reglas/fechas.ts` (aritmética de fechas pura que reutiliza `lib/fechas.ts`), `reglas/caja.ts` y `reglas/rutas-dominio.ts` (enlaces de las notificaciones; `rutas.ts` debe coincidir) | 5.4 |
 
+### 11.6 Ajustes de F2-A2 (generador y medición, 01/10/2026)
+
+Decisiones tomadas al implementar el generador; cada una tiene su línea en `DECISIONES.md`. Informe: `docs/informes/F2-A2.md`.
+
+| Tema | Ajuste | Dónde |
+|---|---|---|
+| Agregados | Además de los de F2-A1: `turnosDia`, `bonosRedimidos`, `cajaAbierta`, `cajaDia` y `abonosDatafonoDia`, escritos solo por `tx.ts` y verificados por `coherencia.test.ts` | 6.16, 7.1 |
+| Comandos | `gastoRecurrente.generarMes` acepta `hasta` (nada con fecha futura, G2) y no causa recurrentes de locales eliminados (los de proveedores eliminados van sin proveedor); `importacion.editar` acepta `aforo` y el generador puede usarlo; `importacion.actualizarHitos` mueve el vencimiento del saldo a la fábrica como `cambiarEstado` | 6.21, M6, N3 |
+| Flujo | `reglas/flujo-estado.ts` arma la proyección desde el estado (incluye lo que falta girar de las importaciones en curso y lo que falta vender hoy, con `hora`); `egresosNomina` cuenta la nómina de hoy aún no causada y la 2.ª quincena con comisiones. `selFlujoProyectado` (F2-B) debe usar esta función: es la misma que calibra el generador | 6.20.9, 7.10, P19 |
+| Calibración P19 | La víspera del ancla a las 10:00 p. m. (no ancla − 3 a las 8:00 a. m.), con un retiro o aporte del socio | 7.10, N13 |
+| Importaciones | Política "pedir hasta": objetivo = demanda esperada hasta la siguiente llegada + 30 días × 1,15, menos lo que se espera que quede; carga inicial = una importación por fábrica; los pedidos anteriores a la ventana que llegan dentro se crean la víspera. Resultado con ancla 2026-09-30: 20 recibidas en la ventana + 5 cargas iniciales + 4 en curso (29). El pedido grande de calzado se dimensiona en días de inventario al ancla y Ruifeng no vuelve a pedir hasta ancla + 25 días. Los tributos se giran al iniciar la nacionalización. "Otros tributos aduaneros" = 25 % del FOB (ejemplo) para que el costo aterrizado dé los márgenes de 4.7 | 7.9, P5, P13 |
+| Inventario | Distribución por mayor residuo según las unidades esperadas de cada local (incluida la mezcla de la vendedora estrella en Parque 93); reposición de los miércoles por la curva de lo que el local vende (mínimo por variante solo si el producto vende ≥ 1 unidad en dos semanas allí), empezando por el local que más vende; conteo físico mensual rotando local y categoría | 7.9, P21 |
+| Personas | Turnos y marcaciones solo en la ventana móvil (≈ 1.650 marcaciones, no 6.000); nómina de meses anteriores con insumos explícitos de la plantilla (recargos, dominicales, extras de diciembre y de domingos de Zona Rosa) | 7.8 |
+| Narrativa | Solicitudes de N10 con el usuario que las pide (`u_vendedor`, `u_bodega`, `em_mherrera`) y rol sistema; reporte del portal con `portal-aduanas`; `meta.narrativa` y `meta.demandaInsatisfecha` (últimas 12 semanas) se escriben al terminar la construcción (contabilidad del generador, no hechos de dominio). Con ancla 2026-09-30 la de Lanxin queda IMP-2026-09 (el plan decía -10) | 7.11 |
+| Semilla | Mezcla por local, curva de pedido por talla, peso de asignación de la vendedora estrella (1,5) y compras de los "frecuentes" (4–7) ajustados; azul de las camisas con peso 0,2 salvo la Oxford azul cielo (1,2) | 4.7, 7.6, P1, P2, P3, P11, P12 |
+| Patrones | 61–63 de 74 mediciones dentro de tolerancia en las 4 fechas; lo pendiente queda en `generador/auditoria/calibracion.ts` (it.todo con la desviación) para la pista de calibración. P11 "70 % de ventas con cliente a recurrentes" es inalcanzable con 15 % identificado y 450 clientes (≈ 97 %) | 4.7, 7.12 |
+
 ### 11.4 Lo descartado y su porqué
 
 | Propuesta | Origen | Por qué no |
