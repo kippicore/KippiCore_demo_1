@@ -21,10 +21,14 @@ export const DEMANDA_TALLAS: Record<CurvaTallas, Record<string, number>> = {
   unica: { Única: 1 },
 };
 
-/** Curva casi pareja de los pedidos a la fábrica (7.9): peso por talla del pedido. */
+/**
+ * Curva de los pedidos a la fábrica (7.9): más pareja que la demanda (la M se queda corta), pero no tanto como
+ * para agotar la talla más vendida la mitad del tiempo (F2-A2: con la curva totalmente pareja la M vendida
+ * caía muy por debajo del 38 % de P3).
+ */
 export const CURVA_PEDIDO: Record<CurvaTallas, Record<string, number>> = {
-  superior: { S: 0.18, M: 0.24, L: 0.24, XL: 0.2, XXL: 0.14 },
-  pantalon: { '28': 0.1, '30': 0.14, '32': 0.18, '34': 0.18, '36': 0.16, '38': 0.13, '40': 0.11 },
+  superior: { S: 0.15, M: 0.31, L: 0.27, XL: 0.17, XXL: 0.1 },
+  pantalon: { '28': 0.08, '30': 0.13, '32': 0.23, '34': 0.22, '36': 0.16, '38': 0.11, '40': 0.07 },
   calzado: { '38': 0.11, '39': 0.13, '40': 0.16, '41': 0.17, '42': 0.16, '43': 0.14, '44': 0.13 },
   sastreria: { '46': 0.14, '48': 0.18, '50': 0.2, '52': 0.18, '54': 0.16, '56': 0.14 },
   unica: { Única: 1 },
