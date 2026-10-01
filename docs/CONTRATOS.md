@@ -197,6 +197,7 @@ const { referencia, trasladar, resaltar } = useParamsRuta('producto');      // t
 - Claves legibles: referencia del producto (`HL-CAM-0142`), número de importación (`IMP-2026-07`), slug del empleado (`sebastian-cardenas`); el resto, el `id`. Resuelve con `selProductoPorReferencia`, `selImportacionPorNumero`, `selEmpleadoPorSlug`, `selProductoPorSlug` (tienda).
 - **Nunca escribas un número de importación, un id o un nombre del guion a mano**: resuélvelos con `selNarrativa({ hoy })` (las entidades del guion son dinámicas: la importación que hoy está en puerto depende del año).
 - Parámetros desconocidos se ignoran; un parámetro con una entidad inexistente muestra la pantalla sin el efecto y un toast discreto ("Esa venta ya no está en la lista").
+- `rutas.pos({ cliente })` abre el POS con ese cliente y, si tiene saldo a favor, con el saldo como primer medio de pago (el resto en efectivo) hasta que se toque el pago; A1 consume el parámetro (un id inexistente avisa y abre con Consumidor final). `rutas.ventas({ texto })`: la búsqueda de la lista viaja a la URL como los demás filtros (01/10/2026).
 - `?resaltar=<id>`: la fila/tarjeta destino se resalta 1,5 s y se desplaza a la vista con `<ResaltarFila>` (F2-C). `?resaltar=<control>` (`cambiar-estado`, `rol`, `moneda`): pulso de pista sobre ese control, una vez.
 - Globales: `?hoy=` (QA: reloj fijo, claves de almacenamiento aparte) y `?marco=1` (marcos que adoptan el store del padre). Para abrir un contexto NUEVO (portal en otra pestaña, QR) usa `propagarHoy(url, overrideHoy())`.
 - Guardas: si el rol activo no ve una ruta, `GuardaRol` redirige a su inicio con el aviso "Esta sección es solo para el dueño." No repitas la guarda en tu página; sí oculta controles por permiso.
@@ -218,6 +219,7 @@ import { BotonExportar } from '@/ui/conectados/BotonExportar';
 
 - Usa la **definición única** de `src/reportes/definiciones.ts` (`REPORTES`, 13 ids): `ventas`, `cierre-caja`, `inventario`, `kardex`, `importaciones`, `cuentas`, `gastos`, `resultados`, `nomina`, `asistencia`, `comisiones`, `clientes`, `contador` ("Exportar para tu contador": un .xlsx con hojas Ventas, Compras e importaciones, Gastos, Nómina, IVA). Un módulo **nunca arma filas de un reporte**.
 - Lo que no pases en `filtros` sale del contexto: mes en curso, local activo, rol (el vendedor solo exporta lo suyo y nunca costos), moneda activa (el encabezado lo dice).
+- El reporte `ventas` acepta además los filtros de la lista (`vendedorId` —también para el dueño—, `clienteId` o `'consumidor_final'`, `medio`, `canal`, `estado`, `productoId`, `texto`): pásale el mismo `FiltroVentas` de la pantalla (`<BotonExportar reporte="ventas" filtros={filtro} menu />`); la regla del filtro es una sola (`coincideFiltroVentas`/`hechosFiltrados`), así el archivo cuadra con `selVentas`. El vendedor siempre exporta lo suyo. Los reportes `gastos` y `cuentas` muestran la etiqueta de la categoría (`config/textos/categorias.ts`), nunca el slug.
 - PDF con Figtree embebida (tildes, `−` y espacio duro correctos), encabezado con la marca activa, filtros, fecha y pie "Generado con KippiCore CRM". Excel con encabezados congelados, formatos de moneda y fecha reales y **fila de totales `SUM(…)` con su resultado en caché** (`fullCalcOnLoad`): las vistas previas de WhatsApp, Gmail y Quick Look muestran los totales.
 - Emite `pdf_generado`/`excel_generado` con `{ reporte }`. jsPDF y ExcelJS se cargan solo al hacer clic ("Preparando el archivo…").
 - Fuera de React (D4 con su propio botón, pruebas): `exportarReporte(id, estado, filtros, 'pdf' | 'excel', contexto)` y `hojasParaExportar(...)` de `@/reportes`.
@@ -322,12 +324,12 @@ Todo lo de las columnas **Honra**, **Emite** y **Pistas** es criterio de aceptac
 
 | Paquete | Carpetas propias | Rutas (`RUTAS`) | Honra (query) | Emite (`EventoUI`) | Pistas (ancla) | Reportes / documentos | PORT |
 |---|---|---|---|---|---|---|---|
-| **A1** POS y caja | `src/modulos/pos/**`, `e2e/paquetes/pos.spec.ts` | `pos`, `caja` | caja: `?sesion=`, `?resaltar=<sesionId>`. **Produce** `?resaltar=` hacia ventas, inventario, clientes y caja ("Lo que acaba de pasar") | — (los de dominio salen solos) | `pos.escaneo` (botón "Simular escaneo"), `caja.arqueo` (campo "Efectivo contado") | `cierre-caja`; documento `pos` | 4301 |
+| **A1** POS y caja | `src/modulos/pos/**`, `e2e/paquetes/pos.spec.ts` | `pos`, `caja` | pos: `?cliente=<clienteId>` (precarga cliente y saldo a favor). caja: `?sesion=`, `?resaltar=<sesionId>`. **Produce** `?resaltar=` hacia ventas, inventario, clientes y caja ("Lo que acaba de pasar") | — (los de dominio salen solos) | `pos.escaneo` (botón "Simular escaneo"), `caja.arqueo` (campo "Efectivo contado") | `cierre-caja`; documento `pos` | 4301 |
 | **A2** Inventario | `src/modulos/inventario/**`, `e2e/paquetes/inventario.spec.ts` | `inventario`, `productoNuevo`, `movimientos`, `traslados`, `traslado`, `conteos`, `conteo`, `recepcion`, `etiquetas`, `valorizacion`, `producto`, `productoPestana` | `?trasladar=` (ficha), `?resaltar=` (catálogo, kardex, traslados), `?importacion=` (recepción); filtros del catálogo | `pdf_generado`/`excel_generado` (vía los botones) | `inventario.local` (filtro "Local" del catálogo) | `inventario`, `kardex`; documento `etiquetas` | 4302 |
-| **A3** Ventas | `src/modulos/ventas/**`, `e2e/paquetes/ventas.spec.ts` | `ventas`, `venta`, `devolucion` | `?resaltar=<ventaId>`, `?desde=&hasta=&local=&vendedor=&cliente=&medio=&canal=&estado=&producto=` (reflejados en la URL) | vía `<BotonExportar reporte="ventas">` | `ventas.totales` (barra de totales del filtro) | `ventas` | 4303 |
+| **A3** Ventas | `src/modulos/ventas/**`, `e2e/paquetes/ventas.spec.ts` | `ventas`, `venta`, `devolucion` | `?resaltar=<ventaId>`, `?desde=&hasta=&local=&vendedor=&cliente=&medio=&canal=&estado=&producto=&texto=` (reflejados en la URL). **Produce** `rutas.pos({ cliente })` al terminar un cambio | vía `<BotonExportar reporte="ventas">` | `ventas.totales` (barra de totales del filtro) | `ventas` | 4303 |
 | **A4** Clientes | `src/modulos/clientes/**`, `e2e/paquetes/clientes.spec.ts` | `clientes`, `cumpleanos`, `cliente` | `?mensaje=cumpleanos\|cobro\|seguimiento` (ficha), `?resaltar=`, `?segmento=` (lista) | — | `clientes.segmentos` (filtros de segmento) | `clientes` | 4304 |
 | **B1** Importaciones, portal y sugerir | `src/modulos/importaciones/**`, `src/seguimiento/**`, `e2e/paquetes/importaciones.spec.ts` | `importaciones`, `importacionNueva`, `sugerirPedido`, `contactosCadena`, `importacion`, `importacionPestana`, `seguimiento` | `?resaltar=cambiar-estado\|<numero>`, `?vista=tablero\|lista\|ruta`, sugerir: `?proveedor=&cobertura=&desde=` | `pedido_sugerido_visto` (`{ proveedorId }`), `portal_enviado` (`{ numero }`) | `importaciones.estado` (botón de cambio de estado), `importaciones.sugerir` (tabla de cantidades), `portal.formulario` (formulario del portal) | `importaciones` | 4311 |
-| **B2** Proveedores | `src/modulos/proveedores/**`, `e2e/paquetes/proveedores.spec.ts` | `proveedores`, `comparativoFabricas`, `proveedor` | `?resaltar=`, `?tipo=&local=`. **Produce** `rutas.sugerirPedido({ proveedor, desde: 'proveedor' })` | — | `proveedores.moneda` (selector de moneda de la barra superior) | — | 4312 |
+| **B2** Proveedores | `src/modulos/proveedores/**`, `e2e/paquetes/proveedores.spec.ts` | `proveedores`, `comparativoFabricas`, `proveedor` | `?resaltar=`, `?tipo=&local=`. **Produce** `rutas.sugerirPedido({ proveedor, desde: 'proveedor' })` | — | `proveedores.moneda` (selector "Ver cifras en" de la propia pantalla: mismo estado y eventos que el de la barra) | — | 4312 |
 | **B3** Pagos, datáfono y flujo | `src/modulos/pagos/**`, `e2e/paquetes/pagos.spec.ts` | `pagos`, `porPagar`, `porCobrar`, `cuentas`, `cuenta`, `conciliacion`, `datafono`, `flujo` | `?semana=` (flujo y por pagar), `?filtro=separados-por-vencer` (por cobrar), `?resaltar=` (cuentas por pagar y movimientos), `?mes=&local=` (datáfono) | `flujo_caja_visto` (al montar `/panel/pagos/flujo`) | `pagos.flujo` (pestaña "Flujo de caja"), `pagos.datafono` (pestaña "Datáfono") | `cuentas` | 4313 |
 | **B4** Gastos y resultados | `src/modulos/gastos/**`, `e2e/paquetes/gastos.spec.ts` | `gastos`, `gastosRecurrentes`, `estadoResultados`, `puntoEquilibrio` | `?resaltar=`, `?local=&mes=` | — | `gastos.resultados` (pestaña "Estado de resultados") | `gastos`, `resultados` | 4314 |
 | **C1** Personal, nómina y comisiones | `src/modulos/personal/**`, `e2e/paquetes/personal.spec.ts` | `personal`, `empleadoNuevo`, `nomina`, `liquidacion`, `comparativoModalidades`, `comisiones`, `misComisiones`, `empleado`, `empleadoPestana` | `?riesgo=contrato-realidad`, `?resaltar=`, `?local=` (lista), `?mes=&empleado=` (comisiones) | `costo_empleador_visto` (al montar la pestaña `costo` o `/panel/personal/comparativo`; `{ empleadoId? }`) | `personal.costo` (columna "Costo para el negocio") | `nomina`, `comisiones`; documento `desprendible` | 4321 |
@@ -392,8 +394,8 @@ El sistema de diseño vive en `src/ui/**` (PLAN 8) y se ve completo, con datos r
 | `Button` | `variante` primary · secondary · ghost · destructive · link · inverse; `tamano` sm 32 · md 40 · lg 48; `icono`, `iconoDerecha`, `cargando`, `anchoCompleto`, `tienda`, `motivo` (deshabilitado) | Un solo primario por zona. MAYÚSCULAS por CSS: escribe "Registrar venta". `BotonEnlace` = mismo aspecto con `to`. `clasesBoton()` para otros elementos |
 | `BotonIcono` | `icono`, `etiqueta` (aria-label y tooltip), `variante`, `tamano` | Solo ícono, siempre con etiqueta |
 | `Icono` | `icono` (lucide), `tamano` 12–40 | Trazo 1,5 (1,25 desde 24). Íconos de acciones comunes: PLAN 8.13 |
-| `Input`, `InputNumero`, `Textarea` | `etiqueta`, `opcional`, `ayuda`, `error`, `tamano`, `prefijo`/`sufijo`, `buscar`, `numerico`; `InputNumero`: `valor`, `alCambiar`, `decimales` | `InputNumero` formatea al perder el foco (1.250.000). Error junto al campo, nunca en un toast |
-| `Select` | `valor`, `alCambiar`, `opciones` (`{ valor, etiqueta, grupo? }`), `placeholder`, `variante` campo · ghost, `enModal` | |
+| `Input`, `InputNumero`, `Textarea` | `etiqueta`, `opcional`, `ayuda`, `error`, `tamano`, `prefijo`/`sufijo`, `buscar`, `numerico`; `InputNumero`: `valor`, `alCambiar`, `decimales` (acepta `ref`) | `InputNumero` formatea al perder el foco (1.250.000) y **selecciona todo al enfocar**: lo tecleado reemplaza el valor prellenado (en e2e basta `fill`). Error junto al campo, nunca en un toast |
+| `Select` | `valor`, `alCambiar`, `opciones` (`{ valor, etiqueta, grupo? }`), `placeholder`, `variante` campo · ghost, `enModal` | `alCambiar` nunca recibe `''` (Radix lo emite en algunos cambios; se filtra en el componente). Ninguna opción con `valor: ''` |
 | `Combobox` | `texto`, `alCambiarTexto`, `grupos`, `vacio(q)`, `fijo`, `atajo`, `alEnter` | El filtrado lo haces tú con un selector. `Resaltado` marca la coincidencia en 700 |
 | `Checkbox`, `Switch`, `GrupoRadio` | `marcado`/`activo`/`valor` + `alCambiar`; `GrupoRadio tarjetas columnas` | Tarjetas de radio para medios de pago y modalidad |
 | `SelectorFecha`, `SelectorRango` | `hoy` (de `useHoy()`), `valor`, `alCambiar`; `SelectorRango soloPanel` dentro de un `BotonPildora` | Atajos: Hoy · Ayer · Últimos 7 días · Este mes · Mes anterior · Últimos 90 días · Este año. `textoRango(r, hoy)` |
@@ -403,9 +405,9 @@ El sistema de diseño vive en `src/ui/**` (PLAN 8) y se ve completo, con datos r
 | `Badge`, `BadgeEstado`, `PuntoEstado` | `tono` (de `config/estados.ts`), `tamano`; `BadgeEstado estado={ESTADOS_VENTA.pagada}` | **Nunca** elijas el color: usa el mapa canónico |
 | `Card`, `Kpi`, `EncabezadoSeccion`, `EnlaceVerTodo` | `Card`: `titulo`, `accion`, `a` (clicable), `padding`; `Kpi`: `etiqueta`, `valor`, `formatear`, `completo`, `variacion { valor, comparado, buenoCuando }`, `serie`, `nota`, `destacada`, `a` | Sin sombras. Una sola `destacada` por pantalla |
 | `EncabezadoPagina` | `migas`, `titulo`, `subtitulo`, `insignia`, `eyebrow`, `acciones`, `pestanas` | Encabezado de TODA página del escritorio (8.4.5) |
-| `Table` | `columnas` (`{ id, encabezado, celda, ordenar?, numerica?, alinear?, ancho?, truncar? }`), `filas`, `clave`, `sustantivo`, `alAbrir`, `resaltada`, `totales`, `barra`, `seleccion`/`alSeleccionar`/`accionesLote`, `accionesFila`, `densidad`, `porPagina`, `ordenInicial`, `vacio`, `cargando` | Cabecera fija bajo la barra superior, totales fijos, paginación 25/50/100, barra de lote negra. `useDensidadTabla(id)`, `FranjaResumen`, `BotonAccionesFila` |
+| `Table` | `columnas` (`{ id, encabezado, celda, ordenar?, numerica?, alinear?, ancho?, truncar? }`), `filas`, `clave`, `sustantivo`, `alAbrir`, `resaltada`, `totales`, `barra`, `seleccion`/`alSeleccionar`/`accionesLote`, `accionesFila`, `densidad`, `porPagina`, `ordenInicial`, `vacio`, `cargando` | Cabecera fija bajo la barra superior, totales fijos, paginación 25/50/100, barra de lote negra. Si la tabla no cabe a lo ancho, se desplaza en horizontal y la cabecera queda en su sitio (`top: 0`, sin pegarse al hacer scroll vertical): dimensiona para 1280 si quieres la cabecera fija. La fila resaltada se desplaza a la vista una vez (al cambiar). `useDensidadTabla(id)`, `FranjaResumen`, `BotonAccionesFila` (reenvía `ref` y props: disparador de `<Menu>`) |
 | `Toolbar` | `buscar { valor, alCambiar, placeholder }`, `filtros`, `derecha`, `chips`, `alLimpiar` | El grupo píldora negro con `BotonFiltros`, `BotonPildora etiqueta valor` (abre su panel), `SelectorDensidad` |
-| `Dialog` | `abierto`, `alCambiar`, `titulo`, `eyebrow`, `descripcion`, `pie`, `ancho` sm · md · lg · xl, `confirmarAlCerrar` | Nunca anidados |
+| `Dialog` | `abierto`, `alCambiar`, `titulo`, `eyebrow`, `descripcion`, `pie`, `ancho` sm · md · lg · xl, `confirmarAlCerrar` | Nunca anidados. `confirmarAlCerrar` es un booleano **calculado** ("hay cambios": `JSON.stringify(borrador) !== JSON.stringify(inicial)`); con `true` fijo pregunta también con el formulario intacto |
 | `Drawer`, `ParesDatos` | `eyebrow`, `titulo`, `insignia`, `acciones`, `pestanas`, `pie`, `ancho` md 520 · lg 720, `alAnterior`/`alSiguiente` | Detalle de un registro; la URL cambia (lo hace tu página) |
 | `ConfirmarEliminacion` | `pregunta`, `consecuencias` (con cifras), `accion` ("Anular venta"), `alConfirmar`, `palabraClave` | Sin "Aceptar", sin "Deshacer" |
 | `Popover`, `Menu`, `ItemMenu`, `SeparadorMenu` | `disparador`, `titulo`, `ancho`, `alinear`, `enModal`; `ItemMenu icono atajo peligro onSelect` | |
@@ -425,7 +427,7 @@ El sistema de diseño vive en `src/ui/**` (PLAN 8) y se ve completo, con datos r
 | `CodigoBarras`, `CodigoQR` | `ean`, `copiable`; `valor`, `tamano` 72 · 96 · 120 · 160, `mostrarUrl` | Siempre negro sobre blanco. `CodigoQR` carga `qrcode`: diferido |
 | `MarcoTelefono`, `MarcoNavegador` | `src` (`/app?marco=1`, `/tienda?marco=1`), `escala`, `titulo`; `direccion`, `alto` | El marco adopta el estado de la pestaña |
 | `Termino`, `NotaLegal` | `id` del glosario o `comun`/`tecnico`; `tipo` nomina · tributario · aduanero · contrato_realidad | |
-| `Cifra` | `valor`, `formatear`, `contarDesdeCero`, `claveSesion`, `incremento`, `estatica` | Contador de 900 ms con subrayado camel |
+| `Cifra` | `valor`, `formatear`, `contarDesdeCero`, `claveSesion`, `incremento`, `estatica` | Contador de 900 ms con subrayado camel. `contarDesdeCero` funciona también en desarrollo (StrictMode) |
 
 **Conectados** (leen el contexto; `@/ui`):
 
@@ -461,8 +463,15 @@ El sistema de diseño vive en `src/ui/**` (PLAN 8) y se ve completo, con datos r
   vacio={<EmptyState tamano="tabla" icono={ReceiptText} titulo="Ningún resultado con estos filtros" texto="…" accion={<Button variante="secondary" onClick={limpiar}>Limpiar filtros</Button>} />}
   barra={<Toolbar buscar={{ valor: q, alCambiar: setQ, placeholder: 'Buscar por número, cliente o referencia' }}
     filtros={<><BotonFiltros contador={n}>…</BotonFiltros><BotonPildora etiqueta="Fechas" valor={textoRango(r, hoy)} anchoPanel={720}><SelectorRango soloPanel hoy={hoy} valor={r} alCambiar={setR} /></BotonPildora></>}
-    derecha={<BotonExportar reporte="ventas" filtros={r} menu />} chips={chips} alLimpiar={limpiar} />} />
+    derecha={<BotonExportar reporte="ventas" filtros={filtro} menu />} chips={chips} alLimpiar={limpiar} />}
+  accionesFila={(v) => (
+    <Menu etiqueta={`Acciones de ${v.numero}`} disparador={<BotonAccionesFila aria-label={`Acciones de ${v.numero}`} />}>
+      <ItemMenu icono={Pencil} onSelect={() => editar(v)}>Editar</ItemMenu>
+    </Menu>
+  )} />
 ```
+
+`BotonAccionesFila` es el disparador de los menús de fila (reenvía `ref` y las props que Radix inyecta; corregido el 01/10/2026: ya no hacen falta botones locales).
 
 **Estado vacío** (`EmptyState`, 8.7.19), **carga** (`<Retrasado><FilasEsqueleto /></Retrasado>` o `Table cargando`), **modal** (`Dialog` con `pie` de dos botones: secundario "Cancelar" y el primario con el verbo), **cajón** (`Drawer` + `ParesDatos` + `ListaQueCambio`), **confirmación** (`ConfirmarEliminacion`), **formularios** (rejilla de 2 columnas `grid grid-cols-2 gap-x-6 gap-y-4` con `Input`/`Select`/`SelectorFecha`/`InputNumero`; validación al perder el foco y al enviar; errores con `error` en cada campo), **éxito de una acción** (`avisar({ tipo: 'exito', texto, accion })`).
 
@@ -537,17 +546,17 @@ Generado de `src/selectores/*.ts`. `Id | 'todos'` = un local o todos. Fechas `Fe
 | finanzas | `selLibroCuenta` | `{ cuentaId: Id; desde?: FechaISO; hasta?: FechaISO }` | `{ filas: MovimientoLibro[]; saldoInicial: COP; saldoFinal: COP }` |
 | finanzas | `selPendientesConciliar` | `void` | `PendienteConciliar[]` |
 | finanzas | `selConciliacionDatafono` | `{ mes: string; localId: Id \| 'todos' }` | `ConciliacionDatafono` |
-| finanzas | `selFlujoProyectado` | `{ dias: number; hoy: FechaISO; hora: string }` | `FlujoProyectado` |
+| finanzas | `selFlujoProyectado` | `{ dias: number; hoy: FechaISO; hora: string }` | `FlujoProyectado` (movimientos `tipo` incluye `pedidos`, `otros_gastos` y `retiro_socio`, estimados; 30/60/90 son la misma proyección recortada) |
 | gastos | `selGastos` | `{ desde?: FechaISO; hasta?: FechaISO; localId?: Id \| 'todos' \| 'general'; categoria?: CategoriaGasto }` | `{ filas: Gasto[]; total: COP; iva: COP }` |
 | gastos | `selResumenGastos` | `{ mes: MesISO; localId: Id \| 'todos' }` | `{ categorias: { categoria: CategoriaGasto; actual: COP; anterior: COP; variacion: number \| null }[]; total: COP; totalAnterior: COP }` |
-| gastos | `selEstadoResultados` | `{ desde: FechaISO; hasta: FechaISO; localId: Id \| 'todos'; prorratear: boolean }` | `EstadoResultados` |
+| gastos | `selEstadoResultados` | `{ desde: FechaISO; hasta: FechaISO; localId: Id \| 'todos'; prorratear: boolean }` | `EstadoResultados` (con `prorratear`, los gastos de la bodega se reparten con los generales; la bodega da utilidad 0) |
 | gastos | `selPuntoEquilibrio` | `{ localId: Id \| 'todos'; mes: MesISO }` | `{ gastosFijos: COP; margenBruto: number; ventasEquilibrio: COP \| null; ventasNetasMes: COP }` |
 | hallazgos | `selHallazgos` | `{ hoy: FechaISO; localId?: Id \| 'todos'; maximo?: number }` | `Hallazgo[]` |
 | importaciones | `selImportaciones` | `{ hoy: FechaISO; estado?: EstadoImportacion; proveedorId?: Id; incluirRecibidas?: boolean }` | `FilaImportacion[]` |
 | importaciones | `selImportacionPorNumero` | `{ numero: string }` | `Importacion \| null` |
 | importaciones | `selCostoAterrizado` | `{ importacionId: Id; hoy: FechaISO; tasaSimulada?: number \| null }` | `CostoAterrizadoVista \| null` |
 | importaciones | `selLlegadasProximas` | `{ hoy: FechaISO; dias: number }` | `LlegadaProxima[]` |
-| importaciones | `selSugerenciaPedido` | `{ proveedorId: Id; coberturaDias: number; hoy: FechaISO }` | `SugerenciaPedido \| null` |
+| importaciones | `selSugerenciaPedido` | `{ proveedorId: Id; coberturaDias: number; hoy: FechaISO }` | `SugerenciaPedido \| null` (demanda = rotación × (`semanasEspera` + `semanasCobertura`) × factor estacional − existencias − en camino) |
 | importaciones | `selAvisosEstado` | `{ importacionId: Id; estado: EstadoImportacion; marca: string; hora?: string; fecha: FechaISO }` | `AvisosEstado \| null` |
 | inicio | `selKpisInicio` | `{ localId: Id \| 'todos'; ahora: FechaHoraISO }` | `KpisInicio` |
 | inicio | `selSaludo` | `{ localId: Id \| 'todos'; ahora: FechaHoraISO }` | `DatosSaludo` |
@@ -582,13 +591,16 @@ Generado de `src/selectores/*.ts`. `Id | 'todos'` = un local o todos. Fechas `Fe
 | personal | `selRecargosTurnos` | `{ localId: Id; lunes: FechaISO }` | `{ empleados: RecargoEmpleado[]; total: COP }` |
 | personal | `selLiquidacionFinal` | `{ empleadoId: Id; fecha: FechaISO }` | `LiquidacionFinal \| null` |
 | proveedores | `selProveedores` | `{ hoy: FechaISO; tipo?: Proveedor['tipo']; localId?: Id \| 'todos'; texto?: string }` | `FilaProveedor[]` |
-| proveedores | `selFichaProveedor` | `{ proveedorId: Id; hoy: FechaISO }` | `FichaProveedor \| null` |
+| proveedores | `selFichaProveedor` | `{ proveedorId: Id; hoy: FechaISO }` | `FichaProveedor \| null` (con `entregas: EntregaProveedor[]` por pedido recibido; sin importaciones eliminadas) |
 | proveedores | `selComparativoFabricas` | `{ hoy: FechaISO }` | `FilaComparativoFabrica[]` |
 | ventas | `hechosEnFechas` | `Rango` | `HechoVenta[]` |
 | ventas | `hechosDeVenta` | `void` | `HechoVenta[]` |
 | ventas | `selResumenVentas` | `Rango & { localId: Id \| 'todos' }` | `ResumenVentas` |
 | ventas | `selDevolucionesPorVenta` | `void` | `Record<Id, Devolucion[]>` |
 | ventas | `selVentas` | `FiltroVentas` | `{ filas: FilaVenta[]; totales: ResumenVentas }` |
+| ventas | `coincideFiltroVentas` / `hechosFiltrados` | `(e, f: FiltroVentas)` | predicado de venta / hechos del filtro (la misma regla de la lista y del reporte `ventas`) |
+| ventas | `separadoCanceladoEnSuMes` | `(v: Venta)` | `boolean`: creado y cancelado en el mismo mes ⇒ no es venta de ningún periodo (no genera hechos) |
+| mensajes | `selMensajes` | `{ origenId?: Id; tipos?: OrigenMensaje[]; destinatarioId?: Id }` | `MensajeSaliente[]` (bandeja de salida, la más reciente primero) |
 | ventas | `selVentaDetalle` | `{ ventaId: Id }` | `DetalleVenta \| null` |
 | ventas | `selVentasPorDia` | `Rango & { localId: Id \| 'todos'; porLocal?: boolean }` | `VentasDia[]` |
 | ventas | `selVentasHoyHastaHora` | `{ hoy: FechaISO; ahora: FechaHoraISO; localId: Id \| 'todos' }` | `VentasHastaHora` |
@@ -719,3 +731,4 @@ Comando del catálogo 6.21 → nombre de la acción. Datos: `MapaComandos['<coma
 |---|---|---|
 | 01/10/2026 | Versión inicial (F2-B): API de estado, 106 rutas, 15 `EventoUI`, 23 pistas, 13 reportes y 5 plantillas PDF, puertos por paquete | F2-B |
 | 01/10/2026 | Sección 14 (componentes de interfaz), marcador común `data-testid="pagina"`, `@/ui/ligero`, selectores del layout como menús (`selector-rol` → `rol-<rol>`, `selector-moneda` → `moneda-<código>`, `selector-local` → `local-<id>`) | F2-C |
+| 01/10/2026 | Cambios compartidos de las oleadas A y B (informe `docs/informes/compartidos_AB.md`): `BotonAccionesFila` con `forwardRef`; `Table` con desborde horizontal (cabecera `top: 0`), observa la `<table>` y desplaza la fila resaltada solo al cambiar; `InputNumero` selecciona todo al enfocar; `Select` ignora `''`; `--animate-page-in` con `backwards`; `Cifra` con StrictMode; `Dialog confirmarAlCerrar` documentado. Separado creado y cancelado en el mismo mes fuera de los hechos de venta; `FiltrosReporte` y `BotonExportar` con los filtros de la lista de ventas; etiquetas de categoría en `gastos` y `cuentas`; `FichaProveedor.entregas`; bodega como gasto compartido en `selEstadoResultados`; `selSugerenciaPedido` con la espera; flujo de caja con pedidos futuros, otros gastos y retiros prudentes del socio (`RETIRO_SOCIO`), cobros desestacionalizados; `selMensajes`; rutas `pos?cliente=` y `ventas?texto=` | A1, A2, A3, A4, B1, B2, B3, B4, calibración |
