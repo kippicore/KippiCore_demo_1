@@ -80,9 +80,13 @@ export function* materializarReposicion(g: Gen, it: IntencionGen, estado: Estado
       const porProducto = (unidadesDia * part * p.pesoDemanda) / totalPeso;
       // El local surte la curva completa de lo que vende (≥ 1 unidad en dos semanas); lo demás se pide cuando
       // hace falta.
-      if (porProducto * 14 < 1) continue;
+      // Excepción: los abrigos y chaquetas nunca se quedan en cero en un local (con la lluvia de octubre es lo que
+      // más se pregunta): si el local no tiene ninguna unidad de la referencia, se le surte lo que haya en bodega.
+      const partes = partir(p.variantes);
+      const abrigoAgotado = p.categoria === 'abrigos_chaquetas' && partes.every((x) => existencias(estado, x.v, local.id) === 0);
+      if (porProducto * 14 < 1 && !abrigoAgotado) continue;
       const tallas = DEMANDA_TALLAS[p.curva];
-      for (const { v, talla, color } of partir(p.variantes)) {
+      for (const { v, talla, color } of partes) {
         if (excluirOxford && v === oxfordM) continue;
         if (!varianteVendible(estado, v)) continue;
         const porVariante = porProducto * (tallas[talla] ?? 0) * d.fraccionColor(p, color, fecha);

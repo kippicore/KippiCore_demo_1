@@ -157,6 +157,11 @@ function completarMeta(estado: EstadoDominio, plan: Plan, gen: Gen, ahora: Fecha
   const di: Record<ClaveExistencia, number> = {};
   for (const x of gen.idx.insatisfecha) if (x.fecha > desde) di[x.clave] = (di[x.clave] ?? 0) + 1;
   estado.meta.demandaInsatisfecha = di;
+  // Conciliación: la historia ya está conciliada con el banco y la plataforma de pagos; solo lo de las últimas dos
+  // semanas queda por revisar (con todo pendiente, el contador de Pagos diría 26.000 "por conciliar").
+  const corteConciliacion = masDias(fechaDe(ahora), -14);
+  for (const v of Object.values(estado.ventas)) for (const p of v.pagos) if (!p.conciliado && p.ts.slice(0, 10) < corteConciliacion) p.conciliado = true;
+  for (const m of Object.values(estado.movimientosCuenta)) if (!m.conciliado && m.ts.slice(0, 10) < corteConciliacion) m.conciliado = true;
   const A = plan.ancla;
   const existe = <T>(tabla: Record<string, T>, id: string) => (id && tabla[id] ? id : '');
   const imp = (clave: string) => plan.importaciones.find((i) => i.narrativa === clave)?.id ?? '';

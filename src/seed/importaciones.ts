@@ -133,7 +133,7 @@ export const HISTORIA_IMPORTACIONES = {
    * suéteres y trajes llegaban a ≈ 190 días en temporada. Así el calzado queda como la categoría dormida evidente
    * en las cuatro fechas de calibración.
    */
-  factorCategoria: { abrigos_chaquetas: 0.4, trajes: 0.9, punto: 0.85 } as Partial<Record<Categoria, number>>,
+  factorCategoria: { abrigos_chaquetas: 0.6, trajes: 0.9, punto: 0.85 } as Partial<Record<Categoria, number>>,
   /** Blazers: la tasa sube ≈ 8 % entre el penúltimo y el último pedido (P13). */
   alzaTasaBlazers: 0.08,
   /** Aforo en ≈ 15 % de los pedidos (3–8 días más de nacionalización). */
