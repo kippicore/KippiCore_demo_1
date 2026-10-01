@@ -160,12 +160,21 @@ const panel = de('/panel', ['sistema']);
 const app = de('/app');
 const tienda = de('/tienda');
 
+/**
+ * Mientras se carga el chunk de la página de la PRIMERA navegación no se pinta nada (sin parpadeo; sin el aviso
+ * "No `HydrateFallback` element provided" en la consola). Los layouts muestran su armazón al instante después.
+ */
+function SinContenido() {
+  return null;
+}
+const base = { errorElement: <ErrorRuta />, HydrateFallback: SinContenido } as const;
+
 export const RUTAS_ROUTER: RouteObject[] = [
-  { ...hija('entrada', false), errorElement: <ErrorRuta /> },
+  { ...hija('entrada', false), ...base },
   {
     path: '/panel',
     element: <LayoutEscritorio />,
-    errorElement: <ErrorRuta />,
+    ...base,
     children: [
       { index: true, element: <InicioDelRol /> },
       ...panel.map((n) => hija(n, true)),
@@ -176,21 +185,21 @@ export const RUTAS_ROUTER: RouteObject[] = [
   {
     path: '/app',
     element: <LayoutMovil />,
-    errorElement: <ErrorRuta />,
+    ...base,
     children: [...app.map((n) => hija(n, false, n === 'app')), { path: '*', element: <NoEncontrada /> }],
   },
   {
     path: '/tienda',
     element: <LayoutTienda />,
-    errorElement: <ErrorRuta />,
+    ...base,
     children: tienda.map((n) => hija(n, false, n === 'tienda')),
   },
   {
     element: <LayoutPortal />,
-    errorElement: <ErrorRuta />,
+    ...base,
     children: [hija('seguimiento', false)],
   },
-  { path: '*', element: <NoEncontrada /> },
+  { path: '*', element: <NoEncontrada />, HydrateFallback: SinContenido },
 ];
 
 export function crearRouter() {

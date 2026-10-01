@@ -7,6 +7,7 @@ import { almacenGuia } from './guia';
 import { almacenSesion } from './sesion';
 import { ahoraBogota, hoyBogota, overrideHoy } from './reloj';
 import { codificarQr, urlAppConAcciones } from './qr';
+import { bus, suscribirDominio, type EventoDominioConContexto, type EventoUIEmitido } from './eventos';
 
 /**
  * `window.__kc` (PLAN 5.16, 9.2): puerta de pruebas y depuración. Se instala en desarrollo, con `?hoy=` (QA y
@@ -19,6 +20,8 @@ import { codificarQr, urlAppConAcciones } from './qr';
  *   __kc.hashEstado()                   huella del estado (e2e de determinismo)
  *   __kc.listo()                        promesa que se resuelve con el estado construido
  *   __kc.urlQr()                        URL de /app con las últimas acciones en el hash (la del QR)
+ *   __kc.eventosUI()                    EventoUI emitidos en esta pestaña (los últimos 50): { tipo, datos }
+ *   __kc.eventosDominio()               eventos de dominio de los comandos en vivo desde que se instaló __kc
  */
 export interface Kc {
   estado: () => EstadoDominio | null;
@@ -34,9 +37,16 @@ export interface Kc {
   ahora: () => string;
   hoy: () => string;
   urlQr: () => Promise<string>;
+  eventosUI: () => EventoUIEmitido[];
+  eventosDominio: () => EventoDominioConContexto[];
 }
 
 export function instalarKc(): Kc {
+  const dominio: EventoDominioConContexto[] = [];
+  suscribirDominio('*', (e) => {
+    dominio.push(e);
+    if (dominio.length > 200) dominio.shift();
+  });
   const listo = () =>
     new Promise<EstadoDominio>((resolver) => {
       const e = almacenDatos.getState().estado;
@@ -75,6 +85,8 @@ export function instalarKc(): Kc {
       const { ancla, registro } = almacenDatos.getState();
       return urlAppConAcciones(location.origin, await codificarQr(ancla, registro), overrideHoy());
     },
+    eventosUI: () => bus.historialUI.slice(),
+    eventosDominio: () => dominio.slice(),
   };
   (globalThis as unknown as { __kc: Kc }).__kc = kc;
   return kc;

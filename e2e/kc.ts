@@ -41,6 +41,8 @@ export interface KcPagina {
   hashEstado: () => string;
   listo: () => Promise<unknown>;
   urlQr: () => Promise<string>;
+  eventosUI: () => { tipo: string; datos: Record<string, unknown> }[];
+  eventosDominio: () => { tipo: string; contexto: { origen: string; rol: string } }[];
 }
 
 /** Datos de una venta de contado con Nequi en Usaquén (una unidad de una variante con existencias). */

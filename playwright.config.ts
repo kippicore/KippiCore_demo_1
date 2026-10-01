@@ -31,8 +31,16 @@ export default defineConfig({
       grepInvert: /@rendimiento/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true },
     },
-    // Presupuesto de arranque con CPU ×4 (solo las pruebas @rendimiento; sin paralelismo para medir limpio).
-    { name: 'rendimiento', grep: /@rendimiento/, fullyParallel: false, use: { ...devices['Desktop Chrome'] } },
+    // Presupuesto de arranque con CPU ×4 (solo las pruebas @rendimiento). Corre DESPUÉS de los demás proyectos
+    // (dependencias) para medir sin competir por la CPU, sin trazas ni paralelismo. Solo:
+    // `npm run test:e2e:rendimiento` (= --project=rendimiento --no-deps).
+    {
+      name: 'rendimiento',
+      grep: /@rendimiento/,
+      fullyParallel: false,
+      dependencies: ['escritorio-1440', 'escritorio-1366', 'escritorio-1280', 'celular-390', 'webkit-hash', 'firefox-hash'],
+      use: { ...devices['Desktop Chrome'], trace: 'off', video: 'off', screenshot: 'off' },
+    },
     // Determinismo entre motores (hash del estado): solo las pruebas marcadas @hash.
     { name: 'webkit-hash', grep: /@hash/, use: { ...devices['Desktop Safari'] } },
     { name: 'firefox-hash', grep: /@hash/, use: { ...devices['Desktop Firefox'] } },

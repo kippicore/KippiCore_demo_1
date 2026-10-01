@@ -4,20 +4,24 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-/** Agrupa dependencias pesadas en chunks estables (5.15). */
-function manualChunks(id: string): string | undefined {
-  if (!id.includes('node_modules')) return undefined;
-  if (/[\\/](react|react-dom|react-router|zustand|immer|scheduler)[\\/]/.test(id)) return 'react';
-  if (id.includes('@radix-ui')) return 'radix';
-  if (id.includes('@tanstack')) return 'tabla';
-  if (/[\\/](recharts|d3-[^\\/]+|victory-vendor)[\\/]/.test(id)) return 'graficos';
-  if (/[\\/](jspdf|jspdf-autotable)[\\/]/.test(id)) return 'pdf';
-  if (id.includes('exceljs')) return 'excel';
-  if (/[\\/](jsbarcode|qrcode)[\\/]/.test(id)) return 'codigos';
-  if (id.includes('@dnd-kit')) return 'dnd';
-  if (id.includes('date-fns')) return 'fechas';
-  return undefined;
-}
+/**
+ * Agrupa dependencias pesadas en chunks estables (5.15). `codeSplitting.groups` de rolldown (no `manualChunks`):
+ * con `manualChunks`, el ayudante de precarga de Vite (`vite/preload-helper`, que jsPDF también usa) quedaba
+ * dentro del chunk `pdf` y la carga inicial de TODA ruta descargaba y evaluaba jsPDF (430 KB) solo por ese
+ * ayudante (medido en F2-B). El grupo `precarga`, con más prioridad, lo saca a un chunk mínimo.
+ */
+const GRUPOS_CHUNKS: { name: string; test: RegExp; priority?: number }[] = [
+  { name: 'precarga', test: /vite[\\/]preload-helper|^\0vite\/preload-helper/, priority: 100 },
+  { name: 'react', test: /node_modules[\\/](react|react-dom|react-router|zustand|immer|scheduler)[\\/]/ },
+  { name: 'radix', test: /node_modules[\\/]@radix-ui[\\/]/ },
+  { name: 'tabla', test: /node_modules[\\/]@tanstack[\\/]/ },
+  { name: 'graficos', test: /node_modules[\\/](recharts|d3-[^\\/]+|victory-vendor)[\\/]/ },
+  { name: 'pdf', test: /node_modules[\\/](jspdf|jspdf-autotable)[\\/]/ },
+  { name: 'excel', test: /node_modules[\\/]exceljs[\\/]/ },
+  { name: 'codigos', test: /node_modules[\\/](jsbarcode|qrcode)[\\/]/ },
+  { name: 'dnd', test: /node_modules[\\/]@dnd-kit[\\/]/ },
+  { name: 'fechas', test: /node_modules[\\/]date-fns[\\/]/ },
+];
 
 export default defineConfig({
   resolve: {
@@ -66,7 +70,7 @@ export default defineConfig({
   worker: { format: 'es' },
   build: {
     target: 'es2022',
-    rollupOptions: { output: { manualChunks } },
+    rolldownOptions: { output: { codeSplitting: { groups: GRUPOS_CHUNKS } } },
   },
   server: { port: Number(process.env.PORT ?? 5173) },
   preview: { port: Number(process.env.PORT ?? 4173) },

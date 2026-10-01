@@ -18,6 +18,9 @@
     "test:watch": "vitest",
     "test:tz": "TZ=UTC vitest run --project dominio && TZ=Asia/Tokyo vitest run --project dominio && TZ=America/Los_Angeles vitest run --project dominio",
     "test:e2e": "playwright test",
+    "test:e2e:fundaciones": "playwright test e2e/paquetes/fundaciones.spec.ts e2e/flujos/determinismo.spec.ts --project=escritorio-1440 --project=webkit-hash --project=firefox-hash",
+    "test:e2e:rendimiento": "playwright test --project=rendimiento --no-deps --workers=1",
+    "medir:arranque": "node scripts/medir-arranque.mjs",
     "medir": "tsx scripts/medir-generador.ts",
     "informe": "tsx scripts/informe-coherencia.ts"
   },

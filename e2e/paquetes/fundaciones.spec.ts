@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import ExcelJS from 'exceljs';
+import { strFromU8, unzipSync } from 'fflate';
 import { readFile } from 'node:fs/promises';
 import { conHoy, expect, test } from '../fixtures';
 import { conKc, esperarDatos, registrarVentaDePrueba } from '../kc';
@@ -75,36 +76,53 @@ test('window.__kc expone estado, selectores, acciones y la huella', async ({ pag
   await expect(page.getByTestId('kpis-inicio')).toBeVisible();
 });
 
-test('todas las rutas cargan sin error y las profundas también al recargar', async ({ page, irA }) => {
-  test.setTimeout(600_000);
-  const errores: string[] = [];
-  page.on('pageerror', (e) => errores.push(e.message));
-  page.on('console', (m) => {
-    if (m.type() === 'error') errores.push(m.text());
-  });
-  await irA('/panel/inicio');
-  await esperarDatos(page);
-  const p = await parametros(page);
-  const nombres = (Object.keys(RUTAS) as NombreRuta[]).filter((n) => n !== 'sistema' && n !== 'panel');
-  const recargar = new Set<NombreRuta>(['producto', 'productoPestana', 'importacion', 'importacionPestana', 'venta', 'empleadoPestana', 'cliente', 'flujo', 'appCierre', 'seguimiento', 'tiendaProducto', 'liquidacion']);
-  for (const n of nombres) {
-    const url = urlDe(n, p);
-    await page.goto(conHoy(url));
+/** Cada ruta se prueba con carga directa (enlace profundo) y recarga; en 4 grupos paralelos para no tardar. */
+const NOMBRES_RUTAS = (Object.keys(RUTAS) as NombreRuta[]).filter((n) => n !== 'sistema' && n !== 'panel');
+const GRUPOS = 4;
+for (let g = 0; g < GRUPOS; g++) {
+  const grupo = NOMBRES_RUTAS.filter((_, i) => i % GRUPOS === g);
+  test(`todas las rutas cargan y recargan sin errores de consola (grupo ${g + 1}/${GRUPOS}: ${grupo.length} rutas)`, async ({ page, irA }) => {
+    test.setTimeout(600_000);
+    const errores: string[] = [];
+    page.on('pageerror', (e) => errores.push(`${page.url()}: ${e.message}`));
+    page.on('console', (m) => {
+      if (m.type() === 'error') errores.push(`${page.url()}: ${m.text()}`);
+    });
+    await irA('/panel/inicio');
     await esperarDatos(page);
-    await expect(page.getByTestId('error-ruta'), url).toHaveCount(0);
-    await expect(page.getByTestId('no-encontrada'), url).toHaveCount(0);
-    const esperado = n === 'entrada' ? 'entrada' : n === 'app' ? 'app-hoy' : 'pagina-esqueleto';
-    await expect(page.getByTestId(esperado).first(), url).toBeVisible();
-    if (recargar.has(n)) {
-      await page.reload();
-      await esperarDatos(page);
-      await expect(page.getByTestId(esperado).first(), `${url} (recarga)`).toBeVisible();
+    const p = await parametros(page);
+    for (const n of grupo) {
+      const url = urlDe(n, p);
+      const esperado = n === 'entrada' ? 'entrada' : n === 'app' ? 'app-hoy' : 'pagina-esqueleto';
+      for (const fase of ['carga', 'recarga'] as const) {
+        if (fase === 'carga') await page.goto(conHoy(url));
+        else await page.reload();
+        await esperarDatos(page);
+        await expect(page.getByTestId(esperado).first(), `${url} (${fase})`).toBeVisible();
+        await expect(page.getByTestId('error-ruta'), `${url} (${fase})`).toHaveCount(0);
+        await expect(page.getByTestId('no-encontrada'), `${url} (${fase})`).toHaveCount(0);
+      }
     }
+    if (g === 0) {
+      // Una ruta inexistente muestra la página de no encontrada (sin error).
+      await page.goto(conHoy('/no-existe/en-ningun-lado'));
+      await expect(page.getByTestId('no-encontrada')).toBeVisible();
+    }
+    expect(errores).toEqual([]);
+  });
+}
+
+test('la carga inicial no trae jsPDF ni ExcelJS (solo al exportar, 5.15)', async ({ page, irA }) => {
+  const js: string[] = [];
+  page.on('request', (r) => {
+    if (r.url().endsWith('.js')) js.push(new URL(r.url()).pathname);
+  });
+  for (const ruta of ['/', '/panel/inicio', '/app']) {
+    await irA(ruta);
+    await esperarDatos(page);
   }
-  // Una ruta inexistente muestra la página de no encontrada.
-  await page.goto(conHoy('/no-existe/en-ningun-lado'));
-  await expect(page.getByTestId('no-encontrada')).toBeVisible();
-  expect(errores).toEqual([]);
+  const pesados = js.filter((u) => /\/assets\/(pdf|excel|index\.es|html2canvas|purify\.es)-/.test(u));
+  expect(pesados).toEqual([]);
 });
 
 test('la guarda de rol lleva al vendedor a su inicio', async ({ page, irA }) => {
@@ -117,24 +135,79 @@ test('la guarda de rol lleva al vendedor a su inicio', async ({ page, irA }) => 
   await expect(page.getByTestId('avisos')).toContainText('solo para el dueño');
 });
 
-test('exportar un PDF y un Excel de prueba (con totales en caché)', async ({ page, irA }) => {
+async function leerPdf(ruta: string | null): Promise<Buffer> {
+  const b = await readFile(ruta ?? '');
+  expect(b.subarray(0, 5).toString()).toBe('%PDF-');
+  expect(b.subarray(-8).toString()).toContain('%%EOF');
+  return b;
+}
+
+async function leerExcel(ruta: string | null): Promise<ExcelJS.Workbook> {
+  const libro = new ExcelJS.Workbook();
+  const b = await readFile(ruta ?? '');
+  await libro.xlsx.load(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer);
+  return libro;
+}
+
+/** Celdas con fórmula SUM de la última fila (la de totales): todas traen su resultado en caché. */
+function totalesEnCache(ws: ExcelJS.Worksheet | undefined): { formula: string; result: unknown }[] {
+  const fila = ws?.lastRow;
+  const r: { formula: string; result: unknown }[] = [];
+  fila?.eachCell((c) => {
+    const v = c.value as { formula?: string; result?: unknown } | null;
+    if (v && typeof v === 'object' && typeof v.formula === 'string') r.push({ formula: v.formula, result: v.result });
+  });
+  return r;
+}
+
+test('exportar un PDF y un Excel de prueba: se descargan y se pueden releer (totales en caché)', async ({ page, irA }) => {
   await irA('/panel/reportes');
   await esperarDatos(page);
   const fila = page.locator('[data-reporte="ventas"]');
   const [pdf] = await Promise.all([page.waitForEvent('download'), fila.locator('[data-formato="pdf"]').click()]);
   expect(pdf.suggestedFilename()).toMatch(/\.pdf$/);
-  const bytesPdf = await readFile((await pdf.path()) ?? '');
-  expect(bytesPdf.subarray(0, 5).toString()).toBe('%PDF-');
+  const bytesPdf = await leerPdf(await pdf.path());
+  expect(bytesPdf.length).toBeGreaterThan(5_000);
+  // La fuente Figtree va embebida (tildes, − y espacio duro).
+  expect(bytesPdf.toString('latin1')).toContain('Figtree');
+
   const [xls] = await Promise.all([page.waitForEvent('download'), fila.locator('[data-formato="excel"]').click()]);
   expect(xls.suggestedFilename()).toMatch(/\.xlsx$/);
-  const libro = new ExcelJS.Workbook();
-  const b = await readFile((await xls.path()) ?? '');
-  await libro.xlsx.load(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer);
+  const libro = await leerExcel(await xls.path());
   const ws = libro.worksheets[0];
-  const ultima = ws?.lastRow;
-  const total = ultima?.getCell(10).value as { formula?: string; result?: number };
-  expect(total.formula).toMatch(/^SUM\(/);
-  expect(total.result).toBeGreaterThan(0);
+  expect(ws?.getCell('A1').value).toEqual(expect.stringContaining('HALDEN'));
+  const totales = totalesEnCache(ws);
+  expect(totales.length).toBeGreaterThan(0);
+  for (const t of totales) {
+    expect(t.formula).toMatch(/^SUM\(/);
+    expect(typeof t.result).toBe('number');
+  }
+  expect(totales.some((t) => (t.result as number) > 0)).toBe(true);
+  // fullCalcOnLoad queda en el XML del libro (ExcelJS no lo relee): Excel recalcula al abrir.
+  const zip = unzipSync(new Uint8Array(await readFile((await xls.path()) ?? '')));
+  expect(strFromU8(zip['xl/workbook.xml'] ?? new Uint8Array())).toMatch(/fullCalcOnLoad="1"/);
+
+  // "Exportar para tu contador": un libro con varias hojas, todas legibles.
+  const contador = page.locator('[data-reporte="contador"]');
+  const [xc] = await Promise.all([page.waitForEvent('download'), contador.locator('[data-formato="excel"]').click()]);
+  const libroContador = await leerExcel(await xc.path());
+  expect(libroContador.worksheets.length).toBeGreaterThanOrEqual(5);
+
+  // <BotonExportar> emite pdf_generado / excel_generado con el id del reporte (6.18).
+  const eventos = await conKc(page, (kc) => kc.eventosUI().map((e) => `${e.tipo}:${String(e.datos.reporte)}`));
+  expect(eventos).toEqual(['pdf_generado:ventas', 'excel_generado:ventas', 'excel_generado:contador']);
+});
+
+test('plantillas PDF únicas (desprendible, factura, POS, nota crédito, etiquetas) se descargan', async ({ page, irA }) => {
+  await irA('/panel/reportes');
+  await esperarDatos(page);
+  const tipos = await page.locator('[data-plantilla]').evaluateAll((els) => els.map((e) => e.getAttribute('data-plantilla')));
+  expect(tipos).toEqual(['desprendible', 'factura', 'pos', 'nota-credito', 'etiquetas']);
+  for (const t of tipos) {
+    const [d] = await Promise.all([page.waitForEvent('download'), page.locator(`[data-plantilla="${t}"] button`).click()]);
+    expect(d.suggestedFilename(), t ?? '').toMatch(/\.pdf$/);
+    await leerPdf(await d.path());
+  }
 });
 
 test('registrar una venta, recargar y sigue ahí', async ({ page, irA }) => {
@@ -142,6 +215,9 @@ test('registrar una venta, recargar y sigue ahí', async ({ page, irA }) => {
   await esperarDatos(page);
   const { ventaId, numero } = await registrarVentaDePrueba(page);
   expect(numero).toMatch(/^V-\d+/);
+  // El bus entrega los eventos de dominio con su contexto (origen usuario, rol dueño).
+  const ev = await conKc(page, (kc) => kc.eventosDominio().find((e) => e.tipo === 'VentaRegistrada'));
+  expect(ev?.contexto).toMatchObject({ origen: 'usuario', rol: 'dueno' });
   await page.reload();
   await esperarDatos(page);
   const despues = await conKc(page, (kc) => ({ ventas: kc.estado().ventas, registro: kc.datos.getState().registro.length }));

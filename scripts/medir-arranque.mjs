@@ -8,12 +8,40 @@
  * `?lentitudWorker=<tasa>` (espera activa de (tasa − 1) × lo que tarda cada paso) y el hilo principal se
  * estrangula con CDP.
  *
- * Uso: npx vite build && npx vite preview --port 4180 &  node scripts/medir-arranque.mjs [base] [repeticiones]
+ * Uso: `npx vite build && npm run medir:arranque -- [repeticiones] [base]`. Sin `base`, el script levanta
+ * `vite preview` en el puerto 4180 sobre `dist/` y lo cierra al terminar (también si falla).
+ * Variables: CPU (tasa, por defecto 4), ESTRATEGIAS (por defecto worker,json,hilo).
  */
 import { chromium } from '@playwright/test';
+import { spawn } from 'node:child_process';
 
-const BASE = process.argv[2] ?? 'http://localhost:4180';
-const N = Number(process.argv[3] ?? 3);
+const N = Number(process.argv[2] ?? 3);
+const PUERTO = 4180;
+let BASE = process.argv[3];
+let servidor = null;
+if (!BASE) {
+  BASE = `http://localhost:${PUERTO}`;
+  servidor = spawn('npx', ['vite', 'preview', '--port', String(PUERTO), '--strictPort'], { stdio: 'ignore', detached: true });
+  const cerrar = () => {
+    try {
+      process.kill(-servidor.pid, 'SIGTERM');
+    } catch {
+      /* ya cerrado */
+    }
+  };
+  process.on('exit', cerrar);
+  process.on('SIGINT', () => process.exit(130));
+  process.on('SIGTERM', () => process.exit(143));
+  for (let i = 0; ; i++) {
+    try {
+      if ((await fetch(BASE)).ok) break;
+    } catch {
+      /* aún no escucha */
+    }
+    if (i > 100) throw new Error('vite preview no arrancó');
+    await new Promise((r) => setTimeout(r, 200));
+  }
+}
 const TASA = Number(process.env.CPU ?? 4);
 const HOY = '2026-09-30T15:30';
 
@@ -53,7 +81,9 @@ async function medir(browser, ruta, listo, estrategia) {
     ms: Math.round(r.t),
     tareaMasLarga: Math.round(largas.length ? Math.max(...largas) : 0),
     tareasLargas: largas.length,
+    inicio: Math.round(r.medicion?.msInicio ?? 0),
     construccion: Math.round(r.medicion?.msConstruccion ?? 0),
+    render: Math.round(r.t - (r.medicion?.msInicio ?? 0) - (r.medicion?.msTotal ?? 0)),
     serializacion: Math.round(r.medicion?.msSerializacion ?? 0),
     transferencia: Math.round(r.medicion?.msTransferencia ?? 0),
   };
@@ -70,9 +100,11 @@ for (const { ruta, listo } of RUTAS) {
       ruta,
       estrategia,
       'primer render útil (ms)': mediana('ms'),
+      'inicio de la construcción (ms)': mediana('inicio'),
       'construcción (ms)': mediana('construccion'),
       'serialización (ms)': mediana('serializacion'),
       'transferencia (ms)': mediana('transferencia'),
+      'render tras el estado (ms)': mediana('render'),
       'tarea más larga (ms)': mediana('tareaMasLarga'),
       'tareas largas': mediana('tareasLargas'),
     });
@@ -81,3 +113,4 @@ for (const { ruta, listo } of RUTAS) {
 await browser.close();
 console.log(`CPU ×${TASA}, ${N} repeticiones (mediana)`);
 console.table(filas);
+process.exit(0);

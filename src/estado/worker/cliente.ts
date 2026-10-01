@@ -23,6 +23,13 @@ export interface Medicion {
   msTransferencia: number;
   /** De la solicitud al estado disponible. */
   msTotal: number;
+  /** Momento de la solicitud, en ms desde el inicio de la navegación (`performance.now()`). */
+  msInicio: number;
+}
+
+/** ms desde el inicio de la navegación (solo para la medición del arranque). */
+function desdeNavegacion(): number {
+  return typeof performance !== 'undefined' ? performance.now() : 0;
 }
 
 export interface ResultadoMotor {
@@ -60,6 +67,7 @@ function enWorker(
   alProgreso: (p: number) => void,
 ): Promise<ResultadoMotor> {
   const t0 = ahoraMs();
+  const msInicio = desdeNavegacion();
   return new Promise((resolver, rechazar) => {
     let worker: Worker;
     try {
@@ -93,6 +101,7 @@ function enWorker(
             msSerializacion: m.msSerializacion,
             msTransferencia: fin - llegada,
             msTotal: fin - t0,
+            msInicio,
           },
         });
         return;
@@ -108,6 +117,7 @@ function enWorker(
           msSerializacion: 0,
           msTransferencia: Math.max(0, fin - t0 - m.msConstruccion),
           msTotal: fin - t0,
+          msInicio,
         },
       });
     };
@@ -135,11 +145,15 @@ function ceder(): Promise<void> {
   });
 }
 
+const TRAMO_MS = 30;
+const PROGRESO_MS = 150;
+
 async function enHilo(
   entrada: Omit<EntradaWorker, 'transferencia'>,
   alProgreso: (p: number) => void,
 ): Promise<ResultadoMotor> {
   const t0 = ahoraMs();
+  const msInicio = desdeNavegacion();
   // Carga diferida: el generador solo entra al hilo principal si hace falta el respaldo.
   const { construirEstado } = await import('@/generador');
   const g = construirEstado({
@@ -149,11 +163,18 @@ async function enHilo(
     escala: entrada.escala,
     registro: entrada.registro,
   });
+  // Tramos de ≈ TRAMO_MS (bajo el umbral de 50 ms de una tarea larga) y progreso a la interfaz cada
+  // ≈ PROGRESO_MS: cada aviso re-renderiza la pantalla de carga y, con la CPU lenta, eso se nota.
   let tramo = ahoraMs();
+  let avisado = tramo;
   let paso = g.next();
   while (!paso.done) {
-    if (ahoraMs() - tramo > 12) {
-      alProgreso(paso.value.porcentaje);
+    const t = ahoraMs();
+    if (t - tramo > TRAMO_MS) {
+      if (t - avisado > PROGRESO_MS) {
+        alProgreso(paso.value.porcentaje);
+        avisado = t;
+      }
       await ceder();
       tramo = ahoraMs();
     }
@@ -162,7 +183,7 @@ async function enHilo(
   const ms = ahoraMs() - t0;
   return {
     estado: paso.value,
-    medicion: { estrategia: 'hilo', msConstruccion: ms, msSerializacion: 0, msTransferencia: 0, msTotal: ms },
+    medicion: { estrategia: 'hilo', msConstruccion: ms, msSerializacion: 0, msTransferencia: 0, msTotal: ms, msInicio },
   };
 }
 
