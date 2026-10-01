@@ -90,7 +90,8 @@ async function desplegarPanel(page: Page) {
 async function abrirInicioConGuia(page: Page, irA: (ruta: string) => Promise<void>) {
   await irA('/panel/inicio');
   await esperarDatos(page);
-  await expect(page.getByTestId('guia-panel')).toBeVisible();
+  // Desplegado solo la primera vez y con ventana de 800 px o más; en pantallas bajas (1366 × 657) arranca como píldora.
+  await desplegarPanel(page);
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -343,6 +344,27 @@ test.describe('Prueba esto', () => {
     await expect(page.getByTestId('guia-pildora')).toHaveText('Prueba esto · 0/8');
     await page.getByTestId('guia-pildora').click();
     await expect(page.getByTestId('guia-panel')).toBeVisible();
+    expect(errores).toEqual([]);
+  });
+
+  test('solo se despliega solo en Inicio y con ventana alta; al salir de Inicio pasa a píldora y nunca tapa el contenido', async ({ page, irA }, info) => {
+    soloEscritorio(info);
+    omitirEn1280(info);
+    const errores = vigilar(page);
+    await irA('/panel/inicio');
+    await esperarDatos(page);
+    const alto = page.viewportSize()!.height;
+    if (alto >= 800) {
+      await expect(page.getByTestId('guia-panel')).toBeVisible();
+      // Alto limitado (≈ 60 % de la ventana): la lista se desplaza dentro.
+      const caja = await page.getByTestId('guia-panel').boundingBox();
+      expect(caja!.height).toBeLessThanOrEqual(alto * 0.6 + 1);
+      await page.getByRole('link', { name: 'Ventas', exact: true }).first().click();
+      await expect(page).toHaveURL(/\/panel\/ventas/);
+      await expect(page.getByTestId('guia-panel')).toHaveCount(0);
+    }
+    await expect(page.getByTestId('guia-pildora')).toBeVisible();
+    await expect(page.getByTestId('guia-panel')).toHaveCount(0);
     expect(errores).toEqual([]);
   });
 

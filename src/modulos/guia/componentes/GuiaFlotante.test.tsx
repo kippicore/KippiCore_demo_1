@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, useNavigate } from 'react-router';
 import type { EstadoDominio } from '@/dominio/tipos';
 import { almacenDatos } from '@/estado/datos';
 import { bus, emitirUI } from '@/estado/eventos';
@@ -24,6 +24,7 @@ beforeEach(() => {
   almacenGuia.setState({ bienvenidaVista: false, completados: [], pistasVistas: [], pistasOcultas: false, panelMinimizado: false, visitas: 0 });
   almacenPanelLocal.setState({ abiertoEnRol: false });
   almacenSesion.setState({ rol: 'dueno' });
+  fijarAlto(900);
 });
 
 afterEach(() => {
@@ -31,11 +32,19 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+const fijarAlto = (alto: number) => Object.defineProperty(window, 'innerHeight', { value: alto, configurable: true, writable: true });
+let irA: (ruta: string) => void = () => undefined;
+function Navegador() {
+  const navegar = useNavigate();
+  irA = (ruta) => navegar(ruta);
+  return null;
+}
 const montar = (ruta: string) =>
   render(
     <MemoryRouter initialEntries={[ruta]}>
       <ProveedorTooltips>
         <GuiaFlotante />
+        <Navegador />
       </ProveedorTooltips>
     </MemoryRouter>,
   );
@@ -58,6 +67,33 @@ describe('panel "Prueba esto"', () => {
     pasar(1300);
     expect(screen.queryByTestId('guia-panel')).toBeNull();
     expect(screen.getByTestId('guia-pildora').textContent).toBe('Prueba esto · 0/8');
+  });
+
+  it('en una ventana baja (1366 × 657) la primera vez sale como píldora, aunque esté en Inicio', () => {
+    fijarAlto(657);
+    montar('/panel/inicio');
+    pasar(1300);
+    expect(screen.queryByTestId('guia-panel')).toBeNull();
+    expect(screen.getByTestId('guia-pildora')).toBeTruthy();
+  });
+
+  it('al navegar fuera de Inicio pasa solo a píldora; en Inicio ya no se vuelve a desplegar solo', () => {
+    montar('/panel/inicio');
+    pasar(1300);
+    expect(screen.getByTestId('guia-panel')).toBeTruthy();
+    act(() => irA('/panel/ventas'));
+    expect(screen.queryByTestId('guia-panel')).toBeNull();
+    expect(screen.getByTestId('guia-pildora')).toBeTruthy();
+    act(() => irA('/panel/inicio'));
+    expect(screen.queryByTestId('guia-panel')).toBeNull();
+    expect(screen.getByTestId('guia-pildora')).toBeTruthy();
+  });
+
+  it('el panel limita su alto y la lista se desplaza dentro', () => {
+    montar('/panel/inicio');
+    pasar(1300);
+    expect(screen.getByTestId('guia-panel').className).toContain('max-h-[min(60dvh');
+    expect(screen.getByTestId('guia-panel').className).not.toContain('animate-pop-in');
   });
 
   it('se oculta del todo en el POS (taparía "Confirmar venta") y en la caja', () => {

@@ -21,11 +21,15 @@ const APARECE_EN_MS = 1200;
 /** A partir de cuántos ítems principales aparece "Hablar con KippiCore" y se despliega "Para ir más lejos". */
 const ITEMS_PARA_HABLAR = 3;
 const ITEMS_PARA_IR_MAS_LEJOS = 5;
+/** Alto mínimo de la ventana para que la primera vez salga desplegado: en pantallas más bajas arranca como píldora. */
+const ALTO_MINIMO_DESPLEGADO = 800;
 
 /**
  * Panel flotante "Prueba esto" (PLAN 2.4): abajo a la derecha, 320 px, minimizable a una píldora "Prueba esto · 3/8".
- * Aparece desplegado 1,2 s después de la primera llegada a Inicio (en otra pantalla, como píldora). No oscurece ni
- * bloquea nada; en el POS se oculta del todo (taparía "Confirmar venta") y en la vista de un rol que no es el dueño
+ * Aparece desplegado 1,2 s después de la primera llegada a Inicio, solo si la ventana mide al menos 800 px de alto
+ * (en otra pantalla o en una ventana baja, como píldora). Al navegar fuera de Inicio pasa solo a píldora, para no
+ * tapar KPI, botones ni columnas de tablas. Su alto está limitado (≈ 60 % de la ventana) y la lista se desplaza dentro.
+ * No oscurece ni bloquea nada; en el POS se oculta del todo (taparía "Confirmar venta") y en la vista de un rol que no es el dueño
  * arranca como píldora. Cada ítem lleva al lugar exacto; los ítems se marcan solos (`useDeteccion`).
  * `data-testid`: `guia-panel`, `guia-pildora`, `guia-contador`, `guia-item-<id>`, `guia-cierre`, `guia-hablar`.
  */
@@ -52,12 +56,19 @@ export function GuiaFlotante() {
     const t = setTimeout(() => {
       const g = almacenGuia.getState();
       const enInicio = ahoraEn.current === 'inicio' && almacenSesion.getState().rol === 'dueno';
-      g.minimizarPanel(!enInicio);
+      const cabe = window.innerHeight >= ALTO_MINIMO_DESPLEGADO;
+      g.minimizarPanel(!(enInicio && cabe));
       g.marcarBienvenida();
       setPasado(true);
     }, APARECE_EN_MS);
     return () => clearTimeout(t);
   }, []);
+  // Al navegar fuera de Inicio el panel pasa a píldora (se puede volver a abrir a mano con la píldora o desde el menú "?").
+  useEffect(() => {
+    if (nombreRuta === 'inicio' || !almacenGuia.getState().bienvenidaVista) return;
+    almacenGuia.getState().minimizarPanel(true);
+    almacenPanelLocal.setState({ abiertoEnRol: false });
+  }, [nombreRuta]);
   // En otro rol el panel vuelve a ser píldora.
   useEffect(() => {
     almacenPanelLocal.setState({ abiertoEnRol: false });
@@ -113,7 +124,7 @@ function PanelPruebaEsto({ hechos, completados, alMinimizar }: { hechos: number;
     <aside
       aria-label={PRUEBA_ESTO.titulo}
       data-testid="guia-panel"
-      className="fixed bottom-6 right-6 z-(--z-tryit) flex max-h-[calc(100dvh-7rem)] w-[320px] flex-col border border-line bg-surface text-ink shadow-float animate-pop-in"
+      className="fixed bottom-6 right-6 z-(--z-tryit) flex max-h-[min(60dvh,calc(100dvh-7rem))] w-[320px] flex-col overflow-hidden border border-line bg-surface text-ink shadow-float"
     >
       {completo && !verLista ? (
         <TarjetaCierre alSeguir={alMinimizar} alVerLista={() => setVerLista(true)} alComoArrancariamos={() => navegar(rutas.comoArrancariamos())} />
