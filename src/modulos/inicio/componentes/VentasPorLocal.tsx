@@ -1,6 +1,6 @@
 import { useMemo, type ReactNode } from 'react';
 import { rutas } from '@/app/rutas';
-import { useAhora, useFiltroLocal, useMoneda, useSel } from '@/estado';
+import { useAhora, useFiltroLocal, useSel } from '@/estado';
 import { fechaCorta, porcentaje } from '@/lib/formato';
 import { Card, colorDeLocal, Dinero, EnlaceVerTodo, GraficoDinero, type SerieGrafico } from '@/ui';
 import { lectura30Dias } from '../calculos';
@@ -15,7 +15,6 @@ import { TXT } from '../textos';
 export function VentasPorLocal({ alto = 212 }: { alto?: number }) {
   const hoy = useAhora().slice(0, 10);
   const localId = useFiltroLocal();
-  const { moneda } = useMoneda();
   const v = useSel(selVentas30Dias, { hoy });
   const lectura = useMemo(() => lectura30Dias(v.dias, v.locales), [v]);
   const datos = useMemo(() => v.dias.map((d) => ({ fecha: d.fecha, ...d.porLocal })), [v]);
@@ -45,7 +44,7 @@ export function VentasPorLocal({ alto = 212 }: { alto?: number }) {
           nota={localId === 'todos' ? aporte?.nombre : undefined}
         />
       </dl>
-      <GraficoDinero key={`${localId}-${moneda}`} tipo="barras" apiladas datos={datos} x="fecha" series={series} formatoX={fechaCorta} alto={alto} />
+      <GraficoDinero tipo="barras" apiladas datos={datos} x="fecha" series={series} formatoX={fechaCorta} alto={alto} />
     </Card>
   );
 }

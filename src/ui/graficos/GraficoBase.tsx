@@ -93,6 +93,15 @@ export function colorDeLocal(orden: number): ColorSerie {
 
 const TICK = { fill: 'var(--c-ink-2)', fontSize: 12, fontFamily: 'var(--font-sans)' } as const;
 
+/**
+ * Ancho del eje Y según la etiqueta más larga (compartidos C-D): con 56 px fijos "US$ 8 mil" o "CN¥ 60 mil" se
+ * cortaban por la izquierda. ≈ 7,2 px por carácter a 12 px de Figtree, más el margen del tick.
+ */
+export function anchoEjeY(marcas: readonly number[], formato: (n: number) => string): number {
+  const largo = marcas.reduce((m, n) => Math.max(m, formato(n).length), 0);
+  return Math.max(44, Math.ceil(largo * 7.2) + 10);
+}
+
 function TooltipNegro({ active, payload, label, formatoX, formatoValor, series }: { active?: boolean; payload?: readonly { dataKey?: unknown; value?: unknown; color?: string }[]; label?: unknown; formatoX: (v: string) => string; formatoValor: (n: number) => string; series: readonly SerieGrafico[] }) {
   if (!active || !payload?.length) return null;
   return (
@@ -166,6 +175,11 @@ export function GraficoBase({
   }, [datos, series, apiladas, tipo]);
   const etiquetas = useMemo(() => (directas ? posicionesEtiquetas(datos, series, apiladas ?? false, tipo, escala, altura) : []), [directas, datos, series, apiladas, tipo, escala, altura]);
   const margenDerecho = etiquetas.length ? 104 : 8;
+  const anchoY = movil ? 0 : anchoEjeY(escala.marcas, formatoY);
+  // Si la escala cambia (otro local, otra moneda) las series se montan de nuevo: con dos cambios casi simultáneos
+  // la animación de Recharts quedaba a medias y las barras sin pintar (compartidos C-D). Una venta nueva casi nunca
+  // cambia la escala y sigue con su transición.
+  const firma = `${escala.min}|${escala.max}|${datos.length}`;
 
   return (
     <figure className={cn('min-w-0', className)} data-testid={resto['data-testid']}>
@@ -233,7 +247,7 @@ export function GraficoBase({
               tickFormatter={(v: string) => formatoX(v)}
               minTickGap={12}
             />
-            <YAxis hide={movil} axisLine={false} tickLine={false} tick={TICK} width={movil ? 0 : 56} domain={[escala.min, escala.max]} ticks={escala.marcas} allowDataOverflow tickFormatter={(n: number) => formatoY(n)} />
+            <YAxis hide={movil} axisLine={false} tickLine={false} tick={TICK} width={anchoY} domain={[escala.min, escala.max]} ticks={escala.marcas} allowDataOverflow tickFormatter={(n: number) => formatoY(n)} />
             {!movil && (
               <RTooltip
                 isAnimationActive={false}
@@ -264,7 +278,7 @@ export function GraficoBase({
               if (t === 'barras')
                 return (
                   <Bar
-                    key={s.clave}
+                    key={`${s.clave}:${firma}`}
                     dataKey={s.clave}
                     name={s.nombre}
                     stackId={apiladas ? 'pila' : undefined}
@@ -286,7 +300,7 @@ export function GraficoBase({
               if (t === 'area')
                 return (
                   <Area
-                    key={s.clave}
+                    key={`${s.clave}:${firma}`}
                     dataKey={s.clave}
                     name={s.nombre}
                     type="monotone"
@@ -303,7 +317,7 @@ export function GraficoBase({
                 );
               return (
                 <Line
-                  key={s.clave}
+                  key={`${s.clave}:${firma}`}
                   dataKey={s.clave}
                   name={s.nombre}
                   type="monotone"
