@@ -1,3 +1,4 @@
+import { RETIRO_SOCIO } from '@/config/negocio';
 import type { DatosCuenta, Id } from '@/dominio/tipos';
 
 /**
@@ -81,9 +82,12 @@ export const CUENTAS: (Omit<DatosCuenta, 'fechaSaldoInicial'> & { id: Id })[] = 
 export const ID_CUENTA_CORRIENTE: Id = 'cta_corriente';
 export const ID_CUENTA_PUENTE: Id = 'cta_puente';
 
-/** Bandas de saldo que mantiene el generador (7.10): retiro del socio el día 1 si se pasa del techo. */
+/**
+ * Bandas de saldo que mantiene el generador (7.10): retiro del socio el día 1 si se pasa del techo. El techo y el
+ * colchón son los de `RETIRO_SOCIO` (config), los mismos con que el flujo proyecta los retiros futuros.
+ */
 export const BANDAS_SALDO = {
-  techoCorriente: 160_000_000,
-  objetivoTrasRetiro: 90_000_000,
+  techoCorriente: RETIRO_SOCIO.techo,
+  objetivoTrasRetiro: RETIRO_SOCIO.colchon,
   objetivoPuntoBajo: 18_000_000,
 } as const;

@@ -8,7 +8,9 @@ import {
   ingresosSeparados,
   ingresosVentas,
   proyectarFlujo,
+  retirosSocio,
   vencimientosTributarios,
+  type MovimientoFlujo,
 } from './flujo';
 
 const festivos = conjuntoFestivos([2026, 2027]);
@@ -146,5 +148,25 @@ describe('flujo de caja (6.20.9)', () => {
       periodo: ['2026-09', '2026-10'],
     });
     expect(v.find((x) => x.tipo === 'ica')?.fecha).toBe('2026-11-20');
+  });
+
+  it('retiros del socio: el día 1 y el 16 lo que pasa del techo, sin que lo que viene baje del piso', () => {
+    const M = 1_000_000;
+    const mov = (fecha: string, valor: number): MovimientoFlujo => ({ fecha, valor, tipo: 'ventas', concepto: 'x', refId: null });
+    // Sobra plata y nada grande viene: retira hasta el colchón el 1.º de octubre.
+    const r1 = retirosSocio({ hoy: HOY, dias: 40, saldoInicial: 200 * M, movimientos: [], techo: 160 * M, colchon: 90 * M, piso: 40 * M, diasDelMes: [1, 16] });
+    expect(r1).toEqual([{ fecha: '2026-10-01', valor: -110 * M, tipo: 'retiro_socio', concepto: 'Retiro del socio (estimado)', refId: null }]);
+    // Si a fin de mes viene un pago de 150 M, solo retira lo que no hará falta: el saldo nunca baja del piso.
+    const pago = [mov('2026-10-25', -150 * M)];
+    const r2 = retirosSocio({ hoy: HOY, dias: 40, saldoInicial: 200 * M, movimientos: pago, techo: 160 * M, colchon: 90 * M, piso: 40 * M, diasDelMes: [1, 16] });
+    expect(r2.map((x) => x.valor)).toEqual([-10 * M]);
+    const serie = proyectarFlujo({ hoy: HOY, dias: 40, saldoInicial: 200 * M, movimientos: [...pago, ...r2] });
+    expect(serie.puntoBajo.saldo).toBe(40 * M);
+    // Por debajo del techo no retira; y si lo que viene ya baja del piso, tampoco.
+    expect(retirosSocio({ hoy: HOY, dias: 40, saldoInicial: 150 * M, movimientos: [], techo: 160 * M, colchon: 90 * M, piso: 40 * M })).toEqual([]);
+    expect(retirosSocio({ hoy: HOY, dias: 40, saldoInicial: 200 * M, movimientos: [mov('2026-10-20', -190 * M)], techo: 160 * M, colchon: 90 * M, piso: 40 * M })).toEqual([]);
+    // El 16 también, con lo que entró en la primera quincena.
+    const r3 = retirosSocio({ hoy: HOY, dias: 40, saldoInicial: 100 * M, movimientos: [mov('2026-10-10', 100 * M)], techo: 160 * M, colchon: 90 * M, piso: 40 * M, diasDelMes: [1, 16] });
+    expect(r3).toEqual([{ fecha: '2026-10-16', valor: -110 * M, tipo: 'retiro_socio', concepto: 'Retiro del socio (estimado)', refId: null }]);
   });
 });

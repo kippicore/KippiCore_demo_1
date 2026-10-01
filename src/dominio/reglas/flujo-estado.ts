@@ -1,9 +1,11 @@
-import type { COP, EstadoDominio, FechaISO, Id } from '../tipos';
+import type { CategoriaGasto, COP, EstadoDominio, FechaISO, Id, Importacion } from '../tipos';
 import { NOMBRES_OBLIGACIONES } from '@/config/obligaciones';
+import { PAGO_FABRICA } from '@/config/aduanas';
+import { RETIRO_SOCIO } from '@/config/negocio';
 import { saldoCxP } from './cuentas';
-import { calcularCostoAterrizado } from './costeo';
+import { calcularCostoAterrizado, fobImportacion } from './costeo';
 import { copDeCentavos } from './dinero';
-import { diaSemana, mesDe, sumarDias } from './fechas';
+import { diaSemana, diferenciaDias, lunesDe, mesDe, rangoFechas, sumarDias, sumarMesesAMes } from './fechas';
 import {
   egresosCuentasPorPagar,
   egresosNomina,
@@ -13,8 +15,10 @@ import {
   type MovimientoFlujo,
   proyectarFlujo,
   type ResultadoFlujo,
+  retirosSocio,
   vencimientosTributarios,
 } from './flujo';
+import { hitosIniciales } from './importaciones';
 import { totalPagado } from './ventas';
 
 /**
@@ -38,6 +42,11 @@ export interface OpcionesFlujoEstado {
    * que queda), así el punto bajo no salta a lo largo del día. Sin hora, el día de hoy se da por cerrado.
    */
   hora?: string;
+  /**
+   * Proyectar los retiros del socio (por defecto, sí). La calibración del generador (P19) los apaga: ajusta el
+   * saldo de hoy contra la serie sin retiros, y los retiros prudentes nunca bajan el punto bajo del piso.
+   */
+  retirosSocio?: boolean;
 }
 
 export interface FlujoEstado extends ResultadoFlujo {
@@ -103,6 +112,109 @@ export function egresosImportacionesEnCurso(estado: EstadoDominio, hoy: FechaISO
   return r;
 }
 
+const CARGA_INICIAL = 'Carga inicial de existencias';
+
+/** Días que miran los retiros del socio proyectados (y los del generador): un mes más que la vista más larga. */
+export const HORIZONTE_RETIROS = 120;
+
+/**
+ * Reposición de mercancía: los pedidos a fábricas que TODAVÍA no se han hecho y que caen en el horizonte, al ritmo de
+ * cada fábrica (intervalo promedio entre sus últimos pedidos) y con el tamaño de sus últimos pedidos (FOB promedio,
+ * que ya refleja lo que rota). Si la fábrica tiene un pedido en "Cotizado" (p. ej. el que arma "Sugerir pedido"),
+ * ese es el próximo, con su valor real. De cada pedido se proyecta lo que se gira dentro del horizonte: anticipo
+ * (al confirmarlo), saldo (listo para despacho), flete, tributos, agente y transporte en sus fechas estimadas
+ * (proporcionales a los del último pedido a esa fábrica). Un pedido atrasado más de medio intervalo se da por
+ * saltado (la fábrica tiene un ritmo distinto, p. ej. anual).
+ */
+export function egresosPedidosFuturos(estado: EstadoDominio, hoy: FechaISO, dias: number): MovimientoFlujo[] {
+  const r: MovimientoFlujo[] = [];
+  const hasta = sumarDias(hoy, dias);
+  const manana = sumarDias(hoy, 1);
+  const diasEstados = estado.parametros.aduanas.diasEstimadosEntreEstados;
+  const porFabrica = new Map<Id, Importacion[]>();
+  for (const i of Object.values(estado.importaciones)) {
+    if (i.eliminadoEn || i.nota === CARGA_INICIAL) continue;
+    const l = porFabrica.get(i.proveedorId) ?? [];
+    l.push(i);
+    porFabrica.set(i.proveedorId, l);
+  }
+  for (const [proveedorId, todos] of porFabrica) {
+    const prov = estado.proveedores[proveedorId];
+    if (!prov || prov.eliminadoEn || prov.tipo !== 'fabrica') continue;
+    const hechos = todos.filter((i) => i.estado !== 'cotizado').sort((a, b) => (a.fechaPedido < b.fechaPedido ? -1 : 1));
+    const ultimo = hechos.at(-1);
+    if (!ultimo || hechos.length < 2) continue;
+    const recientes = hechos.slice(-4);
+    let suma = 0;
+    for (let k = 1; k < recientes.length; k++) suma += diferenciaDias((recientes[k - 1] as Importacion).fechaPedido, (recientes[k] as Importacion).fechaPedido);
+    const intervalo = Math.max(30, Math.round(suma / (recientes.length - 1)));
+    const fobPromedio = Math.round(hechos.slice(-3).reduce((a, i) => a + fobImportacion(i.lineas), 0) / Math.min(3, hechos.length));
+    const tasa = tasaVigente(estado, ultimo.moneda, hoy) || ultimo.tasaPedido;
+    // Costos de la cadena del último pedido, por peso de FOB.
+    const base = calcularCostoAterrizado({
+      lineas: ultimo.lineas,
+      costos: ultimo.costos,
+      moneda: ultimo.moneda,
+      metodoProrrateo: ultimo.metodoProrrateo,
+      tasaCosteo: tasa,
+    });
+    const fobUltimo = fobImportacion(ultimo.lineas) || 1;
+    const cotizado = todos.filter((i) => i.estado === 'cotizado').sort((a, b) => (a.fechaPedido < b.fechaPedido ? -1 : 1))[0];
+    let fecha = cotizado ? (cotizado.fechaPedido > hoy ? cotizado.fechaPedido : manana) : sumarDias(ultimo.fechaPedido, intervalo);
+    if (!cotizado && fecha < manana) {
+      // Ya le toca: si el atraso es corto, se hace en la próxima semana; si no, ese ciclo se dio por saltado.
+      if (diferenciaDias(fecha, hoy) <= intervalo / 2) fecha = sumarDias(hoy, 7);
+      else while (fecha < manana) fecha = sumarDias(fecha, intervalo);
+    }
+    let primero = true;
+    for (; fecha <= hasta; fecha = sumarDias(fecha, intervalo), primero = false) {
+      const fob = primero && cotizado ? fobImportacion(cotizado.lineas) : fobPromedio;
+      if (fob <= 0) continue;
+      const fobCop = copDeCentavos(fob, tasa);
+      const k = fob / fobUltimo;
+      const h = hitosIniciales(fecha, diasEstados);
+      const nombre = prov.nombreCorto;
+      const que = primero && cotizado ? cotizado.numero : `del próximo pedido a ${nombre}`;
+      const agregar = (f: FechaISO, valor: COP, concepto: string) => {
+        if (valor <= 0 || f > hasta) return;
+        r.push({ fecha: f < manana ? manana : f, valor: -valor, tipo: 'pedidos', concepto: `${concepto} ${que} (estimado)`, refId: cotizado && primero ? cotizado.id : proveedorId });
+      };
+      const anticipo = Math.round(fobCop * PAGO_FABRICA.anticipo);
+      agregar(h.pedido_confirmado.estimada, anticipo, `Anticipo ${Math.round(PAGO_FABRICA.anticipo * 100)} %`);
+      agregar(h.listo_despacho.estimada, fobCop - anticipo, `Saldo ${Math.round(PAGO_FABRICA.saldo * 100)} %`);
+      agregar(sumarDias(h.embarcado.estimada, 15), Math.round(base.flete * k), 'Flete internacional');
+      agregar(h.en_nacionalizacion.estimada, Math.round(base.tributos * k), 'Tributos aduaneros');
+      agregar(sumarDias(h.nacionalizado.estimada, 10), Math.round((ultimo.costos.honorariosAgente + ultimo.costos.bodegajePuerto) * k), 'Agente de aduanas y bodegaje');
+      agregar(sumarDias(h.en_transporte_bogota.estimada, 15), Math.round(ultimo.costos.transporteInterno * k), 'Transporte a Bogotá');
+    }
+  }
+  return r;
+}
+
+/** Categorías de gasto que ya proyectan otras partes del flujo (nómina, PILA, datáfono neto, impuestos). */
+const YA_PROYECTADAS: ReadonlySet<CategoriaGasto> = new Set(['nomina', 'seguridad_social', 'comisiones_datafono', 'impuestos']);
+
+/**
+ * Gastos que no son de cada mes (empaques, mantenimiento, pauta puntual, otros): el promedio de los tres meses
+ * cerrados anteriores, repartido cada lunes. Los recurrentes, la nómina y los impuestos van por su lado.
+ */
+export function egresosOtrosGastos(estado: EstadoDominio, hoy: FechaISO, dias: number): MovimientoFlujo[] {
+  const mes = mesDe(hoy);
+  const desde = `${sumarMesesAMes(mes, -3)}-01`;
+  const hasta = `${mes}-01`;
+  let total = 0;
+  for (const g of Object.values(estado.gastos)) {
+    if (g.eliminadoEn || g.recurrenteId || g.fecha < desde || g.fecha >= hasta || YA_PROYECTADAS.has(g.categoria)) continue;
+    total += g.valor;
+  }
+  const semanal = Math.round((total / 3) * (12 / 52));
+  if (semanal <= 0) return [];
+  const r: MovimientoFlujo[] = [];
+  for (const f of rangoFechas(sumarDias(hoy, 1), sumarDias(hoy, dias)))
+    if (f === lunesDe(f)) r.push({ fecha: f, valor: -semanal, tipo: 'otros_gastos', concepto: 'Otros gastos de la semana (promedio)', refId: null });
+  return r;
+}
+
 /** Prima semestral, cesantías e intereses anuales estimados de los contratos laborales vigentes. */
 export function prestacionesEstimadas(
   estado: EstadoDominio,
@@ -133,7 +245,11 @@ export function proyeccionFlujoEstado(estado: EstadoDominio, o: OpcionesFlujoEst
     saldoInicial += estado.agregados.saldosCuentas[c.id] ?? 0;
   }
 
-  // Cobros promedio por día de la semana (últimas semanas): contado y datáfono neto.
+  // Cobros promedio por día de la semana (últimas semanas): contado y datáfono neto. Cada cobro se desestacionaliza con
+  // el índice de SU mes y el promedio se lleva al índice del mes actual (así `ingresosVentas` lo escala bien): sin esto,
+  // en enero las ocho semanas de diciembre (índice 1,85) se proyectaban como si fueran de enero (0,70).
+  const indiceDe = (f: FechaISO) => o.indiceMes[Number(f.slice(5, 7))] ?? 1;
+  const indiceActual = indiceDe(hoy);
   const semanas = o.semanasHistoria ?? 8;
   const desde = sumarDias(hoy, -7 * semanas);
   const contado: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
@@ -148,11 +264,12 @@ export function proyeccionFlujoEstado(estado: EstadoDominio, o: OpcionesFlujoEst
     const f = v.ts.slice(0, 10);
     if (f < desde || f >= hoy) continue;
     const ds = diaSemana(f);
+    const ajuste = indiceActual / indiceDe(f);
     for (const p of v.pagos) {
       if (p.tipo !== 'pago') continue;
       if (p.medio === 'datafono_debito' || p.medio === 'datafono_credito')
-        datafono[ds] = (datafono[ds] ?? 0) + p.valor;
-      else if (MEDIOS_CONTADO.has(p.medio)) contado[ds] = (contado[ds] ?? 0) + p.valor;
+        datafono[ds] = (datafono[ds] ?? 0) + p.valor * ajuste;
+      else if (MEDIOS_CONTADO.has(p.medio)) contado[ds] = (contado[ds] ?? 0) + p.valor * ajuste;
     }
   }
   const d = estado.parametros.datafono;
@@ -266,11 +383,14 @@ export function proyeccionFlujoEstado(estado: EstadoDominio, o: OpcionesFlujoEst
     }
   }
 
-  const movimientos: MovimientoFlujo[] = [
+  // Los movimientos se arman hasta un horizonte fijo de al menos 120 días: los retiros del socio miran lo que viene
+  // más allá de la vista (no pueden depender de si el dueño mira 30 o 90 días) y luego se recorta a la vista.
+  const horizonte = Math.max(dias, HORIZONTE_RETIROS);
+  const todos: MovimientoFlujo[] = [
     ...restanteHoy,
     ...ingresosVentas({
       hoy,
-      dias,
+      dias: horizonte,
       promedioContado,
       promedioDatafonoNeto,
       indiceMes: o.indiceMes,
@@ -279,10 +399,10 @@ export function proyeccionFlujoEstado(estado: EstadoDominio, o: OpcionesFlujoEst
     }),
     ...ingresosSeparados(hoy, separados),
     ...egresosCuentasPorPagar(cxps),
-    ...egresosRecurrentes({ hoy, dias, recurrentes, generados }),
+    ...egresosRecurrentes({ hoy, dias: horizonte, recurrentes, generados }),
     ...egresosNomina({
       hoy,
-      dias,
+      dias: horizonte,
       netoQuincena,
       netoSegundaQuincena: netoSegundaQuincena || netoQuincena,
       netoMensual,
@@ -295,13 +415,20 @@ export function proyeccionFlujoEstado(estado: EstadoDominio, o: OpcionesFlujoEst
       yaCausadas,
     }),
   ];
-  movimientos.push(...egresosImportacionesEnCurso(estado, hoy, dias));
-  for (const v of vencimientosTributarios(sumarDias(hoy, 1), sumarDias(hoy, dias), estado.parametros.obligaciones)) {
+  todos.push(...egresosImportacionesEnCurso(estado, hoy, horizonte));
+  for (const v of vencimientosTributarios(sumarDias(hoy, 1), sumarDias(hoy, horizonte), estado.parametros.obligaciones)) {
     if (yaCausadas.has(`${v.tipo}|${v.fecha}`)) continue;
     const valor = ultimos[v.tipo]?.valor ?? 0;
     if (valor > 0)
-      movimientos.push({ fecha: v.fecha, valor: -valor, tipo: v.tipo, concepto: NOMBRES_OBLIGACIONES[v.tipo], refId: null });
+      todos.push({ fecha: v.fecha, valor: -valor, tipo: v.tipo, concepto: NOMBRES_OBLIGACIONES[v.tipo], refId: null });
   }
+  // Lo que un comerciante también gira y no es una cuenta todavía: reponer la mercancía, los gastos sueltos y lo que
+  // el socio retira cuando sobra (al final, porque depende del saldo que dejan los demás).
+  todos.push(...egresosPedidosFuturos(estado, hoy, horizonte));
+  todos.push(...egresosOtrosGastos(estado, hoy, horizonte));
+  if (o.retirosSocio !== false) todos.push(...retirosSocio({ hoy, dias: horizonte, saldoInicial, movimientos: todos, ...RETIRO_SOCIO }));
+  const hasta = sumarDias(hoy, dias);
+  const movimientos = todos.filter((m) => m.fecha <= hasta);
   const r = proyectarFlujo({ hoy, dias, saldoInicial, movimientos });
   return { ...r, saldoInicial, movimientos };
 }

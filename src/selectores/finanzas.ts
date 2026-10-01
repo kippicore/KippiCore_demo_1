@@ -267,7 +267,7 @@ export interface FlujoProyectado extends FlujoEstado {
  */
 export const selFlujoProyectado = crearSelector<{ dias: number; hoy: FechaISO; hora: string }, FlujoProyectado>(
   'selFlujoProyectado',
-  ['cuentas', 'agregados', 'ventas', 'cuentasPorPagar', 'gastosRecurrentes', 'gastos', 'liquidaciones', 'empleados', 'contratos', 'importaciones', 'tasas', 'parametros', 'locales', 'devoluciones'],
+  ['cuentas', 'agregados', 'ventas', 'cuentasPorPagar', 'gastosRecurrentes', 'gastos', 'liquidaciones', 'empleados', 'contratos', 'importaciones', 'tasas', 'parametros', 'locales', 'devoluciones', 'proveedores'],
   (e, { dias, hoy, hora }) => {
     const anio = Number(hoy.slice(0, 4));
     const flujo = proyeccionFlujoEstado(e, {

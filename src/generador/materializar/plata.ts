@@ -1,12 +1,13 @@
 import type { EstadoDominio, FechaISO, Id, MonedaExtranjera, SobreComando } from '@/dominio/tipos';
-import { BASE_CAJA } from '@/config/negocio';
+import { BASE_CAJA, RETIRO_SOCIO } from '@/config/negocio';
+import { DIAS_CERRADOS } from '@/config/locales';
 import { NOMBRES_OBLIGACIONES } from '@/config/obligaciones';
 import { BANDAS_SALDO } from '@/seed/cuentas';
 import { GASTOS_OCASIONALES } from '@/seed/gastos';
 import { INDICE_MES } from '@/seed/estacionalidad';
 import { saldoCxP } from '@/dominio/reglas/cuentas';
 import { diaSemana, diasDelMes, fechaDe, sumarMesesAMes } from '@/dominio/reglas/fechas';
-import { prestacionesEstimadas } from '@/dominio/reglas/flujo-estado';
+import { HORIZONTE_RETIROS, prestacionesEstimadas, proyeccionFlujoEstado } from '@/dominio/reglas/flujo-estado';
 import { idGenerado, idHijo } from '@/dominio/motor/ids';
 import { masDias } from '../calendario';
 import { CUENTA_CORRIENTE, type Gen, localVivo } from '../contexto';
@@ -111,20 +112,36 @@ export function* materializarApertura(g: Gen, it: IntencionGen, estado: EstadoDo
       });
     }
   }
-  // Día 1: metas del mes y retiro del socio si la cuenta corriente pasa del techo (fuera de los días del ancla).
-  if (dm === 1) {
-    yield* fijarMetas(g, emitir, estado, mes);
+  // Día 1: metas del mes.
+  if (dm === 1) yield* fijarMetas(g, emitir, estado, mes);
+  // Días 1 y 16: retiro del socio si la cuenta corriente pasa del techo (fuera de los días del ancla), con la misma
+  // regla prudente que proyecta el flujo de caja (RETIRO_SOCIO): sin dejar que lo de los próximos meses baje del piso.
+  if (RETIRO_SOCIO.diasDelMes.some((d) => Math.min(d, diasDelMes(mes)) === dm)) {
     const A = g.plan.ancla;
     const saldo = estado.agregados.saldosCuentas[CUENTA_CORRIENTE] ?? 0;
     if (saldo > BANDAS_SALDO.techoCorriente && (fecha < masDias(A, -5) || fecha > masDias(A, 5))) {
-      yield emitir('cuenta.movimiento', {
-        movimientoId: idGenerado('mc', 'retiro', fecha),
-        cuentaId: CUENTA_CORRIENTE,
-        valor: Math.floor((saldo - BANDAS_SALDO.objetivoTrasRetiro) / 1_000_000) * 1_000_000,
-        tipo: 'retiro_socio',
-        fecha,
-        descripcion: 'Retiro del socio',
+      const f = proyeccionFlujoEstado(estado, {
+        hoy: fecha,
+        hora: '06:00',
+        // Un mes más que el horizonte del flujo: lo que retire hoy no puede hacer falta en el punto bajo que el
+        // dueño verá dentro de 90 días.
+        dias: HORIZONTE_RETIROS,
+        indiceMes: INDICE_MES,
+        diasCerrados: DIAS_CERRADOS,
+        festivos: g.plan.calendario.festivos,
+        retirosSocio: false,
       });
+      const minimo = Math.min(f.saldoInicial, ...f.serie.map((p) => p.saldo));
+      const valor = Math.floor(Math.min(saldo - BANDAS_SALDO.objetivoTrasRetiro, minimo - RETIRO_SOCIO.piso) / 1_000_000) * 1_000_000;
+      if (valor > 0)
+        yield emitir('cuenta.movimiento', {
+          movimientoId: idGenerado('mc', 'retiro', fecha),
+          cuentaId: CUENTA_CORRIENTE,
+          valor,
+          tipo: 'retiro_socio',
+          fecha,
+          descripcion: 'Retiro del socio',
+        });
     }
   }
   // Gastos recurrentes que vencen hoy (sin causar gastos futuros).

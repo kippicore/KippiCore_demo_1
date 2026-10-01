@@ -312,3 +312,12 @@ export function pendientesPorCuenta<P extends PendienteBasico>(pendientes: reado
 export function saludoDeLaHora(hora: number): 'manana' | 'tarde' | 'noche' {
   return hora < 12 ? 'manana' : hora < 19 ? 'tarde' : 'noche';
 }
+
+/**
+ * Vista por defecto del flujo (W5): la más corta (30, 60 o 90 días) que incluye el punto más bajo de los próximos
+ * 90 días, para que se vea en una escala donde se distingue.
+ */
+export function vistaPorDefecto(hoy: FechaISO, puntoBajo: FechaISO): '30' | '60' | '90' {
+  const n = diferenciaDias(hoy, puntoBajo);
+  return n <= 30 ? '30' : n <= 60 ? '60' : '90';
+}

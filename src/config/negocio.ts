@@ -37,6 +37,15 @@ export const PARAMETROS_VENTAS: ParametrosVentas = {
   },
 };
 
+/**
+ * Cómo retira el socio la plata que sobra (ilustrativo, 7.10): al empezar cada quincena (días 1 y 16), si el saldo
+ * pasa del techo, retira hasta dejar el colchón, sin que lo que viene baje del piso (un comerciante no saca en
+ * diciembre la plata que necesita en marzo). Lo usan el generador (la historia) y el flujo de caja proyectado (lo que
+ * viene), así la línea proyectada se comporta como la real. El piso queda por encima del punto bajo que calibra el
+ * generador (P19, ≈ $ 18 M): los retiros nunca crean otro punto bajo.
+ */
+export const RETIRO_SOCIO = { diasDelMes: [1, 16], techo: 160_000_000, colchon: 90_000_000, piso: 40_000_000 } as const;
+
 /** Datáfono (6.20.12): comisión y retenciones ilustrativas, "descontables · valida con tu contador". */
 export const PARAMETROS_DATAFONO: ParametrosDatafono = {
   comisionDebito: 0.022,

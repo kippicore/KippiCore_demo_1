@@ -9,7 +9,7 @@ import { emitirUI, useAcciones, useAhora, useDinero, useHoy, useSel } from '@/es
 import { selFlujoProyectado } from '@/selectores';
 import { relativaDias } from '@/lib/formato';
 import { avisar, Badge, Button, Card, cn, Dinero, EmptyState, Fecha, GraficoDinero, Icono, Kpi, ListaQueCambio, NotaLegal, Segmentado } from '@/ui';
-import { diaMesCorto, diaYMes, textoSemana, type SemanaFlujo } from '../calculos';
+import { diaMesCorto, diaYMes, textoSemana, vistaPorDefecto, type SemanaFlujo } from '../calculos';
 import { EncabezadoPagos } from '../componentes/EncabezadoPagos';
 import { PagosDeLaSemana } from '../componentes/PagosDeLaSemana';
 import { selFlujoDetalle, type MovimientoVista } from '../selectores';
@@ -32,7 +32,10 @@ export default function Flujo() {
   const hora = useAhora().slice(11, 16);
   const d = useDinero();
   const acciones = useAcciones();
-  const dias: Dias = params.dias ?? '90';
+  // Sin `?dias=`, la vista más corta que contiene el punto más bajo de los 90 días: así el punto bajo se ve en una
+  // escala donde se distingue (con 90 días, diciembre sube la línea y el punto bajo de octubre parece una muesca).
+  const bajo90 = useSel(selFlujoProyectado, { dias: 90, hoy, hora }).puntoBajo.fecha;
+  const dias: Dias = params.dias ?? vistaPorDefecto(hoy, bajo90);
   const diasN = Number(dias);
   const detalle = useSel(selFlujoDetalle, { dias: diasN, hoy, hora });
   const [cambio, setCambio] = useState<CambioHecho | null>(null);

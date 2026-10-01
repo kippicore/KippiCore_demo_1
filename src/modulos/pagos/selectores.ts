@@ -101,6 +101,7 @@ const TABLAS_FLUJO = [
   'locales',
   'devoluciones',
   'movimientosCuenta',
+  'proveedores',
 ] as const;
 
 export const selFlujoDetalle = crearSelector<{ dias: number; hoy: FechaISO; hora: string }, FlujoDetalle>(

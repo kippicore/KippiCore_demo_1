@@ -32,7 +32,13 @@ export type TipoMovimientoFlujo =
   | 'intereses'
   | 'iva'
   | 'retencion'
-  | 'ica';
+  | 'ica'
+  /** Pedidos a fábricas que todavía no se han hecho (reposición), al ritmo y tamaño de los anteriores. */
+  | 'pedidos'
+  /** Gastos que no se repiten cada mes (empaques, mantenimiento, pauta puntual), al promedio reciente. */
+  | 'otros_gastos'
+  /** Retiro del socio: lo que pasa del techo el día del retiro (como lo ha venido haciendo). */
+  | 'retiro_socio';
 
 export interface MovimientoFlujo {
   fecha: FechaISO;
@@ -289,6 +295,56 @@ export function vencimientosTributarios(
     }
   }
   return r.sort((a, b) => (a.fecha < b.fecha ? -1 : 1));
+}
+
+/**
+ * Retiros del socio proyectados (7.10): los días `diasDelMes` de cada mes, si el saldo proyectado al cierre del día
+ * anterior pasa del `techo`, el socio retira lo que sobra hasta dejar el `colchon`, PERO sin comprometer lo que viene:
+ * nunca retira tanto que el saldo proyectado de ahí al final del horizonte baje del `piso` (un comerciante no saca
+ * en diciembre la plata que necesita en marzo). En millones cerrados; se calcula sobre los demás movimientos.
+ */
+export function retirosSocio(e: {
+  hoy: FechaISO;
+  dias: number;
+  saldoInicial: COP;
+  movimientos: readonly MovimientoFlujo[];
+  techo: COP;
+  colchon: COP;
+  piso: COP;
+  /** Días del mes en que retira (por defecto, el 1). */
+  diasDelMes?: readonly number[];
+}): MovimientoFlujo[] {
+  const desde = sumarDias(e.hoy, 1);
+  const hasta = sumarDias(e.hoy, e.dias);
+  const fechas = rangoFechas(desde, hasta);
+  const neto = new Map<FechaISO, number>();
+  for (const m of e.movimientos) {
+    if (m.fecha > hasta) continue;
+    const f = m.fecha < desde ? desde : m.fecha;
+    neto.set(f, (neto.get(f) ?? 0) + m.valor);
+  }
+  // Saldo al cierre de cada día sin retiros; cada retiro resta desde su día en adelante.
+  const cierre: number[] = [];
+  let s = e.saldoInicial;
+  for (const f of fechas) {
+    s += neto.get(f) ?? 0;
+    cierre.push(s);
+  }
+  const dias = e.diasDelMes ?? [1];
+  const r: MovimientoFlujo[] = [];
+  fechas.forEach((f, i) => {
+    const d = Number(f.slice(8, 10));
+    if (!dias.some((x) => Math.min(x, diasDelMes(mesDe(f))) === d)) return;
+    const antes = i === 0 ? e.saldoInicial : (cierre[i - 1] as number);
+    if (antes <= e.techo) return;
+    let minimo = Infinity;
+    for (let k = i; k < cierre.length; k++) minimo = Math.min(minimo, cierre[k] as number);
+    const valor = Math.floor(Math.min(antes - e.colchon, minimo - e.piso) / 1_000_000) * 1_000_000;
+    if (valor <= 0) return;
+    r.push({ fecha: f, valor: -valor, tipo: 'retiro_socio', concepto: 'Retiro del socio (estimado)', refId: null });
+    for (let k = i; k < cierre.length; k++) cierre[k] = (cierre[k] as number) - valor;
+  });
+  return r;
 }
 
 /** Días desde hoy hasta una fecha (para "en 2 semanas"). */

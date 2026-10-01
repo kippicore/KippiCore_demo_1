@@ -315,6 +315,42 @@ describe('plata vs. recálculo ingenuo', () => {
     expect(f.principales.length).toBeGreaterThan(0);
   });
 
+  it('flujo de caja creíble: repone mercancía, gastos sueltos y retiros prudentes; la vista corta coincide con la larga', () => {
+    const f90 = selFlujoProyectado(e, { dias: 90, hoy: HOY, hora: '15:30' });
+    const f30 = selFlujoProyectado(e, { dias: 30, hoy: HOY, hora: '15:30' });
+    const tipos = new Set(f90.movimientos.map((m) => m.tipo));
+    for (const t of ['pedidos', 'otros_gastos'] as const) expect(tipos.has(t)).toBe(true);
+    // Los pedidos futuros nombran a la fábrica y son estimados; ninguno es de una fábrica con pedido en curso sin pagar.
+    const pedidos = f90.movimientos.filter((m) => m.tipo === 'pedidos');
+    expect(pedidos.every((m) => m.concepto.endsWith('(estimado)') && m.valor < 0)).toBe(true);
+    expect(pedidos.some((m) => m.concepto.startsWith('Anticipo 30 %'))).toBe(true);
+    // El saldo se queda en un rango verosímil: ni negativo ni más de un mes de ventas del mejor mes.
+    const ventasMes = selVentas(e, { desde: '2026-09-01', hasta: HOY }).totales.netas;
+    const max = Math.max(...f90.serie.map((p) => p.saldo));
+    expect(f90.puntoBajo.saldo).toBeGreaterThan(0);
+    expect(max).toBeLessThan(ventasMes);
+    // Los retiros nunca bajan lo que viene del piso del socio (el punto bajo sigue siendo el de P19).
+    for (const r of f90.movimientos.filter((m) => m.tipo === 'retiro_socio')) {
+      const despues = f90.serie.filter((p) => p.fecha >= r.fecha);
+      expect(Math.min(...despues.map((p) => p.saldo))).toBeGreaterThanOrEqual(40_000_000 - 1);
+    }
+    // 30 y 90 días son la misma proyección recortada.
+    expect(f30.serie).toEqual(f90.serie.slice(0, 30));
+    expect(f30.movimientos.every((m) => m.fecha <= sumarDias(HOY, 30))).toBe(true);
+  });
+
+  it('flujo en enero: las ventas de diciembre no se proyectan como si fueran de enero (desestacionalizado)', () => {
+    const ene = estadoDe('2027-01-20');
+    const f = proyeccionFlujoEstado(ene, { hoy: '2027-01-20', hora: '15:30', dias: 90, indiceMes: INDICE_MES, diasCerrados: DIAS_CERRADOS, festivos: planDe('2027-01-20').calendario.festivos });
+    const entra = f.movimientos.filter((m) => m.tipo === 'ventas' || m.tipo === 'datafono').reduce((a, m) => a + m.valor, 0);
+    // Lo cobrado de verdad en el mismo trimestre del año anterior (ene. 21 – abr. 20), con un margen por crecimiento.
+    let cobrado = 0;
+    for (const v of Object.values(ene.ventas))
+      for (const p of v.pagos) if (!v.anulacion && p.tipo === 'pago' && p.ts.slice(0, 10) >= '2026-01-21' && p.ts.slice(0, 10) <= '2026-04-20') cobrado += p.valor;
+    expect(entra).toBeLessThan(cobrado * 1.35);
+    expect(entra).toBeGreaterThan(cobrado * 0.75);
+  });
+
   it('por pagar y por cobrar: totales = Σ saldos; separados por vencer = P17', () => {
     const p = selCuentasPorPagar(e, { hoy: HOY, estado: 'pendientes' });
     expect(p.totalCop).toBe(p.filas.reduce((a, x) => a + x.saldoCop, 0));

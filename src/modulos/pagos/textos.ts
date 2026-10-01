@@ -71,6 +71,9 @@ export const TIPOS_FLUJO: Record<TipoMovimientoFlujo, string> = {
   iva: 'IVA',
   retencion: 'Retención en la fuente',
   ica: 'ICA',
+  pedidos: 'Pedidos a fábricas (estimados)',
+  otros_gastos: 'Otros gastos (promedio)',
+  retiro_socio: 'Retiro del socio (estimado)',
 };
 
 /** Motivo por el que un pago previsto no se puede reprogramar desde el flujo. */
@@ -84,6 +87,9 @@ export const MOTIVO_NO_REPROGRAMABLE: Partial<Record<TipoMovimientoFlujo, string
   retencion: 'Los impuestos vencen en su fecha legal.',
   ica: 'Los impuestos vencen en su fecha legal.',
   recurrente: 'Es un gasto que se genera cada mes; cámbiale el día en Costos y gastos.',
+  pedidos: 'Es un pedido que todavía no has hecho: se estima con el ritmo y el tamaño de tus pedidos a esa fábrica. Cuando lo crees en Importaciones, sus pagos se podrán mover.',
+  otros_gastos: 'Es el promedio de tus gastos sueltos de los últimos meses, no un pago puntual.',
+  retiro_socio: 'Es lo que sueles retirar cuando sobra plata; regístralo en Caja y bancos cuando lo hagas.',
 };
 
 export const TXT = {

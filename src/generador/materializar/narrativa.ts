@@ -96,6 +96,8 @@ function* calibrarFlujo(g: Gen, emitir: Emitir, estado: EstadoDominio, fecha: Fe
     indiceMes: INDICE_MES,
     diasCerrados: DIAS_CERRADOS,
     festivos: g.plan.calendario.festivos,
+    // Sin los retiros estimados: si no, el retiro proyectado de mañana absorbería el ajuste (ver flujo-estado).
+    retirosSocio: false,
   });
   let minimo = Infinity;
   for (const p of f.serie) if (p.fecha >= A && p.saldo < minimo) minimo = p.saldo;

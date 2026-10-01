@@ -15,6 +15,7 @@ import {
   saldoRealDiario,
   semanasDeFlujo,
   textoSemana,
+  vistaPorDefecto,
 } from './calculos';
 
 const punto = (fecha: string, ingresos: number, egresos: number, saldo: number): PuntoFlujo => ({ fecha, ingresos, egresos, saldo });
@@ -180,5 +181,15 @@ describe('pagos parciales y conciliación', () => {
     const r = pendientesPorCuenta(pendientes);
     expect(r.get('a')).toEqual({ n: 2, entra: 100, sale: 30 });
     expect(r.get('b')).toEqual({ n: 1, entra: 50, sale: 0 });
+  });
+});
+
+describe('vistaPorDefecto', () => {
+  it('elige la vista más corta que contiene el punto bajo de los 90 días', () => {
+    expect(vistaPorDefecto('2026-09-30', '2026-10-15')).toBe('30');
+    expect(vistaPorDefecto('2026-09-30', '2026-10-30')).toBe('30');
+    expect(vistaPorDefecto('2026-09-30', '2026-10-31')).toBe('60');
+    expect(vistaPorDefecto('2027-06-14', '2027-08-15')).toBe('90');
+    expect(vistaPorDefecto('2027-01-20', '2027-01-20')).toBe('30');
   });
 });
