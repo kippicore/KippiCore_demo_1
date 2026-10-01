@@ -23,12 +23,8 @@ export default function Nomina() {
   const e = (ruta: string) => errores[`nomina.${ruta}`];
 
   const alGuardar = () => {
-    let c = cambios as Record<string, unknown> | null;
-    // El dominio no admite volver de un divisor manual al cálculo automático: se guarda el valor equivalente de hoy.
-    if (c && 'divisorHorasMes' in c && c.divisorHorasMes === null && guardados.divisorHorasMes !== null) {
-      c = { ...c, divisorHorasMes: Math.round(horasMes({ ...borrador, divisorHorasMes: null }, hoy)) };
-    }
-    if (guardar(c, 'Parámetros de nómina guardados')) descartar();
+    // `divisorHorasMes: null` vuelve al cálculo automático (jornada ÷ 6 × 30); el dominio lo admite.
+    if (guardar(cambios as Record<string, unknown> | null, 'Parámetros de nómina guardados')) descartar();
   };
 
   const automatico = borrador.divisorHorasMes === null;

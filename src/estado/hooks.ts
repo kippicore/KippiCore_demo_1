@@ -141,6 +141,14 @@ export function useMoneda(): MonedaActiva {
   return { moneda, tasa, cambiar };
 }
 
+/** Tasas vigentes hoy de US$ y CN¥ (las del estado: cambian al editarlas en Configuración). */
+export function useTasasVigentes(): { USD: number; CNY: number } {
+  const hoy = useHoy();
+  const USD = useSel(selTasaVigente, { moneda: 'USD', fecha: hoy });
+  const CNY = useSel(selTasaVigente, { moneda: 'CNY', fecha: hoy });
+  return useMemo(() => ({ USD, CNY }), [USD, CNY]);
+}
+
 export interface FormateadorDinero {
   /** Cifra completa en la moneda activa desde COP: `$ 1.250.000` · `US$ 316,46`. */
   (cop: COP): string;

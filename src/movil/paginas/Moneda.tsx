@@ -1,5 +1,5 @@
 import { rutas } from '@/app/rutas';
-import { useAhora, useFiltroLocal, useMoneda, useSel } from '@/estado';
+import { useAhora, useFiltroLocal, useMoneda, useSel, useTasasVigentes } from '@/estado';
 import { dinero } from '@/lib/formato';
 import { textoTasas } from '@/lib/moneda';
 import { selVentas } from '@/selectores';
@@ -18,6 +18,7 @@ export default function Moneda() {
   const hoy = useAhora().slice(0, 10);
   const local = useFiltroLocal();
   const { moneda, tasa } = useMoneda();
+  const tasas = useTasasVigentes();
   const { totales } = useSel(selVentas, { desde: hoy, hasta: hoy, localId: local });
   return (
     <Pantalla testid="app-moneda-pagina" titulo={TXT.moneda.titulo} volver={{ a: rutas.appMas(), texto: 'Más' }} fecha={TXT.moneda.texto}>
@@ -31,7 +32,7 @@ export default function Moneda() {
         </p>
         <p className="mt-2 t-small text-muted">{moneda === 'COP' ? 'En pesos colombianos, la moneda de tus datos.' : `Convertido con la tasa vigente: 1 ${moneda} = ${dinero(tasa)}.`}</p>
       </Tarjeta>
-      <p className="px-1 t-small text-muted">{textoTasas()}. La tasa se cambia en Configuración, desde el computador.</p>
+      <p className="px-1 t-small text-muted">{textoTasas(tasas)}. La tasa se cambia en Configuración, desde el computador.</p>
     </Pantalla>
   );
 }

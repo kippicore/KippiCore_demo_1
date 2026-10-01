@@ -4,7 +4,7 @@ import { sumarDias } from '@/dominio/reglas/fechas';
 import { useAhora, useEstadoDominio, useFiltroLocal, useSel } from '@/estado';
 import type { TipoEvento } from '@/dominio/tipos';
 import { selEventosCalendario } from '@/selectores';
-import { Badge, EmptyState } from '@/ui/ligero';
+import { Badge, Dinero, EmptyState } from '@/ui/ligero';
 import { agruparPorDia, horaEvento } from '../calculos';
 import { Pantalla } from '../componentes/Pantalla';
 import { FilaLista, Lista, Tarjeta } from '../componentes/Tarjeta';
@@ -46,17 +46,34 @@ export default function Agenda() {
                 {d.eventos.map((ev) => {
                   const imp = ev.fuente.tipo === 'importacion' ? e.importaciones[ev.fuente.id] : undefined;
                   const et = ETIQUETA[ev.tipo];
+                  const secundaria = [
+                    horaEvento(ev),
+                    ev.detalle,
+                    ev.localId ? (e.locales[ev.localId]?.nombre ?? null) : null,
+                    ev.recordatorioMin !== null ? TXT.agenda.recordatorio(ev.recordatorioMin) : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ');
                   return (
                     <FilaLista
                       key={ev.id}
                       data-testid="app-evento"
                       a={imp ? rutas.appImportacion(imp.numero) : undefined}
                       principal={<span className="line-clamp-2 whitespace-normal">{ev.titulo}</span>}
-                      secundaria={`${horaEvento(ev)}${ev.localId ? ` · ${e.locales[ev.localId]?.nombre ?? ''}` : ''}`}
+                      secundaria={secundaria}
                       derecha={
-                        <Badge tono={et.tono} tamano="sm">
-                          {et.texto}
-                        </Badge>
+                        <span className="flex flex-col items-end gap-1">
+                          {ev.monto !== null ? (
+                            <Dinero valor={ev.monto} corta className="t-small font-semibold text-ink" data-testid="app-evento-monto" />
+                          ) : ev.montoOrigen ? (
+                            <span className="num whitespace-nowrap t-small font-semibold text-ink" data-testid="app-evento-monto">
+                              {ev.montoOrigen}
+                            </span>
+                          ) : null}
+                          <Badge tono={ev.ilustrativo ? 'outline' : et.tono} tamano="sm">
+                            {ev.ilustrativo ? TXT.agenda.ilustrativa : et.texto}
+                          </Badge>
+                        </span>
                       }
                     />
                   );

@@ -1,5 +1,5 @@
 import { rutas } from '@/app/rutas';
-import { useMoneda } from '@/estado';
+import { useMoneda, useTasasVigentes } from '@/estado';
 import { textoTasas } from '@/lib/moneda';
 import { Pista, PestanasEnlace, Segmentado, Tooltip, useCambiarMoneda } from '@/ui';
 
@@ -27,11 +27,12 @@ export function NavegacionProveedores({ conMoneda = true }: { conMoneda?: boolea
 export function ControlMoneda() {
   const { moneda } = useMoneda();
   const cambiar = useCambiarMoneda();
+  const tasas = useTasasVigentes();
   return (
     <Pista id="proveedores.moneda" lado="abajo" alinear="fin" className="pb-2">
       <div className="flex items-center gap-3">
         <span className="t-small text-muted">Ver cifras en</span>
-        <Tooltip texto={`${textoTasas()} · cambiar en Configuración`}>
+        <Tooltip texto={`${textoTasas(tasas)} · cambiar en Configuración`}>
           <span>
             <Segmentado
               tamano="sm"

@@ -22,6 +22,7 @@ export {
   usePuede,
   useMoneda,
   useDinero,
+  useTasasVigentes,
   useMarca,
   useEvento,
   useEventoUI,

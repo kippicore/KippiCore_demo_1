@@ -236,6 +236,10 @@ describe('configuración', () => {
     });
     expect(e.parametros.nomina.recargos).toMatchObject({ dominicalFestivo: 0.8, nocturno: 0.35 });
     expect(e.parametros.nomina.divisorHorasMes).toBe(220);
+    // Volver al cálculo automático (E3.1): solo los parámetros anulables admiten número → null.
+    hacer(e, 'parametros.editar', { seccion: 'nomina', cambios: { divisorHorasMes: null } });
+    expect(e.parametros.nomina.divisorHorasMes).toBeNull();
+    expect(intentar(e, 'parametros.editar', { seccion: 'nomina', cambios: { smmlv: null } })).toMatchObject({ ok: false });
   });
 
   it('local: no se elimina con existencias (G4)', () => {

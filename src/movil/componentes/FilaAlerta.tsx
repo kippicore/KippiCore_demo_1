@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { rutas } from '@/app/rutas';
 import type { Alerta } from '@/dominio/tipos';
 import { useEstadoDominio } from '@/estado';
-import { Badge, cn, Icono, PuntoEstado } from '@/ui/ligero';
+import { Badge, cn, FraseConDinero, Icono, PuntoEstado } from '@/ui/ligero';
 
 /**
  * Una alerta de "Requiere tu atención" en el celular. `selAlertas` arma la acción con las rutas del escritorio
@@ -56,9 +56,9 @@ export function FilaAlerta({ a, compacta, alDescartar }: { a: Alerta; compacta?:
               Nuevo
             </Badge>
           )}
-          {a.titulo}
+          {a.tituloPartes ? <FraseConDinero partes={a.tituloPartes} /> : a.titulo}
         </span>
-        {!compacta && <span className="mt-1 block t-small text-muted">{a.contexto}</span>}
+        {!compacta && <span className="mt-1 block t-small text-muted">{a.contextoPartes ? <FraseConDinero partes={a.contextoPartes} /> : a.contexto}</span>}
         {!compacta && !destino && <span className="mt-1.5 block t-small text-ink-2">Se resuelve en el computador</span>}
       </span>
       {destino && <Icono icono={ChevronRight} tamano={16} className="mt-1 shrink-0 text-subtle" />}

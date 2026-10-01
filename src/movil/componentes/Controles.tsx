@@ -1,8 +1,9 @@
 import { Check } from 'lucide-react';
 import { useState } from 'react';
-import { emitirUI, useEstadoDominio, useFiltroLocal, useMoneda, useSel, useSesion } from '@/estado';
+import { emitirUI, useEstadoDominio, useFiltroLocal, useMoneda, useSel, useSesion, useTasasVigentes } from '@/estado';
 import { selLocalesQueVenden } from '@/selectores';
-import { MONEDAS, TASA_EJEMPLO } from '@/config/monedas';
+import { MONEDAS } from '@/config/monedas';
+import { textoTasas } from '@/lib/moneda';
 import type { Moneda } from '@/dominio/tipos';
 import { dinero } from '@/lib/formato';
 import { cn, Icono } from '@/ui/ligero';
@@ -100,8 +101,10 @@ export function OpcionesMoneda({ alElegir }: { alElegir?: () => void }) {
     }
     alElegir?.();
   };
+  const tasas = useTasasVigentes();
+  const etiquetaTasa = textoTasas(tasas).split(':')[0];
   const detalle = (m: Moneda) =>
-    m === 'COP' ? 'La moneda de los datos' : `${TASA_EJEMPLO.etiqueta}: ${MONEDAS[m].simbolo} 1 = ${dinero(TASA_EJEMPLO.valores[m])}`;
+    m === 'COP' ? 'La moneda de los datos' : `${etiquetaTasa}: ${MONEDAS[m].simbolo} 1 = ${dinero(tasas[m])}`;
   return (
     <div role="radiogroup" aria-label="Moneda">
       {(['COP', 'USD', 'CNY'] as const).map((m) => (

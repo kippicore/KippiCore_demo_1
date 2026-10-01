@@ -221,8 +221,12 @@ export const tasaEliminar = manejador<'tasa.eliminar', { id: Id }>({
  * Valida cambios contra la forma actual de la sección: solo claves existentes, mismo tipo, números ≥ 0;
  * los valores que hoy son fracciones (entre 0 y 1, sin ser enteros) deben seguir entre 0 y 1.
  */
+/** Parámetros `number | null` cuyo `null` significa "calcular automáticamente": un valor manual puede volver a `null`. */
+const RUTAS_ANULABLES = new Set(['nomina.divisorHorasMes']);
+
 function validarForma(actual: unknown, nuevo: unknown, ruta: string): void {
   if (typeof actual === 'number') {
+    if (nuevo === null && RUTAS_ANULABLES.has(ruta)) return;
     exigir(
       typeof nuevo === 'number' && Number.isFinite(nuevo) && nuevo >= 0,
       'VALOR_INVALIDO',

@@ -6,10 +6,9 @@ import { rolPuedeVer, rutaDeUrl } from '@/app/rutas';
 import { INICIO_POR_ROL } from '@/config/navegacion';
 import type { Id, Moneda, Rol } from '@/dominio/tipos';
 import { PERSONAS_ROL } from '@/config/permisos';
-import { TASA_EJEMPLO } from '@/config/monedas';
-import { emitirUI, useEstadoDominio, useFiltroLocal, useMoneda, useRolActivo, useSel, useSesion } from '@/estado';
+import { emitirUI, useEstadoDominio, useFiltroLocal, useMoneda, useRolActivo, useSel, useSesion, useTasasVigentes } from '@/estado';
+import { textoTasas } from '@/lib/moneda';
 import { selLocales } from '@/selectores';
-import { dinero } from '@/lib/formato';
 import { cn } from '../cn';
 import { Icono } from '../primitivos/Icono';
 import { Avatar } from '../primitivos/Piezas';
@@ -102,7 +101,7 @@ export function useCambiarMoneda(): (m: Moneda) => void {
 export function SelectorMoneda({ resaltar }: { resaltar?: boolean }) {
   const { moneda } = useMoneda();
   const cambiar = useCambiarMoneda();
-  const tasas = `${TASA_EJEMPLO.etiqueta}: US$ 1 = ${dinero(TASA_EJEMPLO.valores.USD)} · CN¥ 1 = ${dinero(TASA_EJEMPLO.valores.CNY)} · cambiar en Configuración`;
+  const tasas = `${textoTasas(useTasasVigentes())} · cambiar en Configuración`;
   return (
     <Tooltip texto={tasas}>
       <span className={cn('relative inline-flex', resaltar && 'rounded-none outline outline-2 outline-offset-4 outline-accent')}>

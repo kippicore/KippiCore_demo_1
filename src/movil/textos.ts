@@ -82,6 +82,9 @@ export const TXT = {
     proximos: 'Próximos 14 días',
     vacio: 'No hay nada agendado',
     vacioTexto: 'Citas, llegadas de importaciones y pagos de los próximos días aparecen aquí.',
+    ilustrativa: 'Ilustrativa',
+    recordatorio: (min: number) =>
+      min % 1440 === 0 ? `Aviso ${min / 1440 === 1 ? '1 día' : `${min / 1440} días`} antes` : min % 60 === 0 ? `Aviso ${min / 60 === 1 ? '1 hora' : `${min / 60} horas`} antes` : `Aviso ${min} min antes`,
   },
   cierres: {
     titulo: 'Cierres de caja',

@@ -5,7 +5,7 @@ import { rutas } from '@/app/rutas';
 import { useParamsRuta } from '@/app/useParamsRuta';
 import type { Id } from '@/dominio/tipos';
 import { copDeCentavos } from '@/dominio/reglas/dinero';
-import { emitirUI, nuevoId, useAcciones, useAhora, useHoy, useMarca, useSel } from '@/estado';
+import { emitirUI, nuevoId, useAcciones, useAhora, useHoy, useMarca, useSel, useTasasVigentes } from '@/estado';
 import { entero, plural, porcentaje } from '@/lib/formato';
 import { textoTasas, dineroOrigen } from '@/lib/moneda';
 import { selNarrativa, selProveedores } from '@/selectores';
@@ -59,6 +59,7 @@ export default function SugerirPedido() {
   const hoy = useHoy();
   const ahora = useAhora();
   const marca = useMarca().nombre;
+  const tasasVigentes = useTasasVigentes();
   const acciones = useAcciones();
   const { proveedor: proveedorUrl, cobertura: coberturaUrl, desde } = useParamsRuta('sugerirPedido');
   const narrativa = useSel(selNarrativa, { hoy });
@@ -292,7 +293,7 @@ export default function SugerirPedido() {
       </div>
     );
 
-  const tasaTexto = textoTasas();
+  const tasaTexto = textoTasas(tasasVigentes);
   const anticipo = Math.round(totales.totalOrigen * 0.3);
 
   return (

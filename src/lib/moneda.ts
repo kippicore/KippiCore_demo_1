@@ -28,7 +28,11 @@ export function dineroOrigen(centavos: number, moneda: Exclude<Moneda, 'COP'>): 
   return dinero(centavos / 100, moneda);
 }
 
-/** "Tasa de ejemplo: US$ 1 = $ 3.950 · CN¥ 1 = $ 548" (8.11.5). */
+/**
+ * "Tasa de ejemplo: US$ 1 = $ 3.950 · CN¥ 1 = $ 548" (8.11.5). Con las tasas vigentes del estado (`useTasasVigentes`)
+ * dice "Tasa vigente" si alguna ya no es la de ejemplo (el visitante la editó en Configuración).
+ */
 export function textoTasas(tasas: { USD: number; CNY: number } = TASA_EJEMPLO.valores): string {
-  return `${TASA_EJEMPLO.etiqueta}: ${MONEDAS.USD.simbolo}${ESPACIO_DURO}1 = ${dinero(tasas.USD)} · ${MONEDAS.CNY.simbolo}${ESPACIO_DURO}1 = ${dinero(tasas.CNY)}`;
+  const deEjemplo = tasas.USD === TASA_EJEMPLO.valores.USD && tasas.CNY === TASA_EJEMPLO.valores.CNY;
+  return `${deEjemplo ? TASA_EJEMPLO.etiqueta : 'Tasa vigente'}: ${MONEDAS.USD.simbolo}${ESPACIO_DURO}1 = ${dinero(tasas.USD)} · ${MONEDAS.CNY.simbolo}${ESPACIO_DURO}1 = ${dinero(tasas.CNY)}`;
 }
