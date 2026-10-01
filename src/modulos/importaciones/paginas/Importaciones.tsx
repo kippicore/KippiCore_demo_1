@@ -483,15 +483,6 @@ export default function Importaciones() {
             />
           ) : (
             <div className="p-4" data-testid="tablero-importaciones">
-              {/*
-                Mientras el contenedor de página conserve su animación de entrada (`animate-page-in`, relleno "both"),
-                Chrome lo trata como bloque contenedor de los elementos `fixed` y la tarjeta que se arrastra (DragOverlay)
-                aparece corrida el ancho de la barra lateral. Aquí se quita esa animación solo para esta vista.
-                Arreglo de fondo pedido en el informe: `animation-fill-mode: backwards` en `--animate-page-in`.
-              */}
-              <style>
-                {'[data-testid="pagina"]:has([data-testid="tablero-importaciones"]) { animation: none; }'}
-              </style>
               <p className="mb-3 t-small text-muted">
                 Arrastra un pedido a otra columna para cambiar su estado: KippiCore prepara los avisos para
                 quien le toca actuar.

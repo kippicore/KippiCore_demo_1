@@ -10,6 +10,7 @@ import { useAcciones, useFiltroLocal, useHoy, usePuede, useRolActivo, useSel, us
 import { celular, entero, plural } from '@/lib/formato';
 import { selEmpleadosActivos, selLocalesQueVenden } from '@/selectores';
 import {
+  BotonAccionesFila,
   avisar,
   Avatar,
   BotonEnlace,
@@ -34,7 +35,6 @@ import {
   type ChipActivo,
   type ColumnaTabla,
 } from '@/ui';
-import { BotonFila } from '../componentes/BotonFila';
 import { FormularioCliente } from '../componentes/FormularioCliente';
 import { LimiteError } from '../componentes/LimiteError';
 import { ModalMensaje } from '../componentes/ModalMensaje';
@@ -308,7 +308,7 @@ function ListaDeClientes() {
           />
         }
         accionesFila={(f) => (
-          <Menu etiqueta={`Acciones de ${f.cliente.nombres}`} disparador={<BotonFila aria-label={`Acciones de ${f.cliente.nombres} ${f.cliente.apellidos}`} />}>
+          <Menu etiqueta={`Acciones de ${f.cliente.nombres}`} disparador={<BotonAccionesFila aria-label={`Acciones de ${f.cliente.nombres} ${f.cliente.apellidos}`} />}>
             <ItemMenu icono={UserRound} onSelect={() => navegar(rutas.cliente(f.cliente.id, {}))}>
               Ver ficha
             </ItemMenu>

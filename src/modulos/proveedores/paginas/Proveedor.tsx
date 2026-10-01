@@ -8,6 +8,7 @@ import { selCuentasPorPagar, selFichaProveedor, selImportaciones, selSugerenciaP
 import { cifraCorta, entero, nit as formatoNit, numero, plural, porcentaje } from '@/lib/formato';
 import { dineroOrigen } from '@/lib/moneda';
 import {
+  BotonAccionesFila,
   Badge,
   BotonEnlace,
   Button,
@@ -31,7 +32,7 @@ import { Contactos } from '../componentes/Contactos';
 import { CuentasPorPagarProveedor, PagosRecientes } from '../componentes/CuentasProveedor';
 import { useGestionProveedor } from '../componentes/GestionProveedor';
 import { HistorialPedidos } from '../componentes/HistorialPedidos';
-import { BotonMasAcciones, Estrellas, InsigniaTipo } from '../componentes/Piezas';
+import { Estrellas, InsigniaTipo } from '../componentes/Piezas';
 import { selComparativo, selContactosProveedor, selEntregas, selPagosProveedor } from '../selectores';
 import { CATEGORIAS_LOCAL, CATEGORIAS_PRODUCTO, NOMBRES_MONEDA, TEXTOS } from '../textos';
 
@@ -108,7 +109,7 @@ export default function Proveedor() {
         subtitulo={`${proveedor.nombre} · ${proveedor.ciudad}, ${proveedor.pais}`}
         acciones={
           <>
-            <Menu disparador={<BotonMasAcciones aria-label={`Más acciones de ${proveedor.nombreCorto}`} />} alinear="end">
+            <Menu disparador={<BotonAccionesFila aria-label={`Más acciones de ${proveedor.nombreCorto}`} />} alinear="end">
               <ItemMenu icono={Pencil} onSelect={() => gestion.abrirEditar(proveedor)}>
                 Editar datos
               </ItemMenu>

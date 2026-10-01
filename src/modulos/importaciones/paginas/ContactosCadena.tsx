@@ -1,4 +1,4 @@
-import { MoreHorizontal, Pencil, Plus, Trash2, Users } from 'lucide-react';
+import { Pencil, Plus, Trash2, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { rutas } from '@/app/rutas';
@@ -7,6 +7,7 @@ import { PREFIJOS } from '@/dominio/motor/ids';
 import { nuevoId, useAcciones, useHoy, useSel } from '@/estado';
 import { selProveedores } from '@/selectores';
 import {
+  BotonAccionesFila,
   avisar,
   Avatar,
   Badge,
@@ -257,13 +258,7 @@ export default function ContactosCadena() {
         accionesFila={(f) => (
           <Menu
             disparador={
-              <Button
-                variante="ghost"
-                tamano="sm"
-                soloIcono
-                icono={MoreHorizontal}
-                aria-label={`Acciones de ${f.contacto.nombre}`}
-              />
+              <BotonAccionesFila aria-label={`Acciones de ${f.contacto.nombre}`} />
             }
             etiqueta="Acciones del contacto"
           >

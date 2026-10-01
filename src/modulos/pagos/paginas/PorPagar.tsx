@@ -11,6 +11,7 @@ import { selCuentasPorPagar, selSaldosCuentas, type FilaCxP } from '@/selectores
 import { relativaDias } from '@/lib/formato';
 import { dineroOrigen } from '@/lib/moneda';
 import {
+  BotonAccionesFila,
   avisar,
   Badge,
   BadgeEstado,
@@ -40,7 +41,6 @@ import {
 } from '@/ui';
 import { estaEnSemana, textoSemana } from '../calculos';
 import { DialogoCuentaPorPagar, DialogoPagar, DialogoProgramar } from '../componentes/DialogosCxP';
-import { BotonMas } from '../componentes/BotonMas';
 import { EncabezadoPagos } from '../componentes/EncabezadoPagos';
 import { useLocalEfectivo, useNombresLocales } from '../hooks';
 import { selFlujoDetalle } from '../selectores';
@@ -262,7 +262,7 @@ function Vista({ paramLocal, paramSemana, paramEstado, resaltarId }: { paramLoca
         totales={{ saldo: <Dinero valor={filas.reduce((a, f) => a + (f.estado === 'pagado' ? 0 : f.saldoCop), 0)} /> }}
         data-testid="tabla-cxp"
         accionesFila={(f) => (
-          <Menu disparador={<BotonMas aria-label={`Acciones de ${f.cxp.numero}`} />} etiqueta={`Acciones de ${f.cxp.numero}`}>
+          <Menu disparador={<BotonAccionesFila aria-label={`Acciones de ${f.cxp.numero}`} />} etiqueta={`Acciones de ${f.cxp.numero}`}>
             {f.estado !== 'pagado' && (
               <ItemMenu icono={CalendarClock} onSelect={() => setProgramando(f)}>
                 {f.cxp.programadaPara ? 'Cambiar fecha programada' : 'Programar pago'}

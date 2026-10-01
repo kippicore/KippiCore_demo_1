@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { CalendarClock, MoreHorizontal, Pause, Pencil, Play, Plus, Repeat, Trash2 } from 'lucide-react';
+import { CalendarClock, Pause, Pencil, Play, Plus, Repeat, Trash2 } from 'lucide-react';
 import {
+  BotonAccionesFila,
   Badge,
-  BotonIcono,
   Button,
   ConfirmarEliminacion,
   Dialog,
@@ -224,7 +224,7 @@ function CuerpoRecurrentes({
             />
           }
           accionesFila={(f) => (
-            <Menu etiqueta={`Acciones de ${f.recurrente.nombre}`} disparador={<BotonIcono icono={MoreHorizontal} etiqueta={`Acciones de ${f.recurrente.nombre}`} tamano="sm" sinTooltip />}>
+            <Menu etiqueta={`Acciones de ${f.recurrente.nombre}`} disparador={<BotonAccionesFila aria-label={`Acciones de ${f.recurrente.nombre}`} />}>
               <ItemMenu icono={Pencil} onSelect={() => alEditar(f)}>
                 Editar
               </ItemMenu>

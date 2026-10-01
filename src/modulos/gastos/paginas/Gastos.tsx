@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { MoreHorizontal, Pencil, Plus, Receipt, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Receipt, Trash2 } from 'lucide-react';
 import {
+  BotonAccionesFila,
   Badge,
   BadgeEstado,
-  BotonIcono,
   BotonExportar,
   BotonPildora,
   Button,
@@ -293,7 +293,7 @@ function CuerpoGastos({ f, alEditar, alRegistrar }: { f: ReturnType<typeof useFi
             const o = origenDe(g);
             if (o.tipo !== 'manual' && o.tipo !== 'recurrente') return null;
             return (
-              <Menu etiqueta={`Acciones de ${g.concepto}`} disparador={<BotonIcono icono={MoreHorizontal} etiqueta={`Acciones de ${g.concepto}`} tamano="sm" sinTooltip />}>
+              <Menu etiqueta={`Acciones de ${g.concepto}`} disparador={<BotonAccionesFila aria-label={`Acciones de ${g.concepto}`} />}>
                 <ItemMenu icono={Pencil} onSelect={() => alEditar(g)}>
                   Editar
                 </ItemMenu>

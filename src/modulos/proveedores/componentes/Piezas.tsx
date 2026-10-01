@@ -1,5 +1,4 @@
-import { MoreHorizontal, Star } from 'lucide-react';
-import { forwardRef, type ButtonHTMLAttributes } from 'react';
+import { Star } from 'lucide-react';
 import type { Proveedor } from '@/dominio/tipos';
 import type { Tono } from '@/config/estados';
 import { porcentaje } from '@/lib/formato';
@@ -73,19 +72,3 @@ export function InsigniaDefectos({ fraccion, tamano = 'sm' }: { fraccion: number
   );
 }
 
-/**
- * Disparador del menú "Más acciones". Reemplaza a `BotonAccionesFila` de `ui` mientras esa pieza no reenvíe las
- * propiedades y la referencia que Radix le inyecta (con ella el menú no abre; ver informe B2, pedidos compartidos).
- */
-export const BotonMasAcciones = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement>>(function BotonMasAcciones({ className, ...resto }, ref) {
-  return (
-    <button
-      ref={ref}
-      type="button"
-      className={cn('inline-flex size-7 items-center justify-center text-ink hover:bg-surface-2 data-[state=open]:bg-selected focus-visible:outline-2 focus-visible:outline-focus', className)}
-      {...resto}
-    >
-      <Icono icono={MoreHorizontal} tamano={16} />
-    </button>
-  );
-});

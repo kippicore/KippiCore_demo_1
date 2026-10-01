@@ -6,10 +6,9 @@ import type { CuentaDinero } from '@/dominio/tipos';
 import { useSel } from '@/estado';
 import { selPendientesConciliar, selSaldosCuentas, type SaldoCuenta } from '@/selectores';
 import { entero } from '@/lib/formato';
-import { Badge, Button, Dinero, EmptyState, FranjaResumen, ItemMenu, Menu, Table, Termino, useResaltar, type ColumnaTabla } from '@/ui';
+import { BotonAccionesFila, Badge, Button, Dinero, EmptyState, FranjaResumen, ItemMenu, Menu, Table, Termino, useResaltar, type ColumnaTabla } from '@/ui';
 import { pendientesPorCuenta } from '../calculos';
 import { DialogoCuenta, DialogoMovimiento, DialogoTransferir } from '../componentes/DialogosCuentas';
-import { BotonMas } from '../componentes/BotonMas';
 import { EncabezadoPagos } from '../componentes/EncabezadoPagos';
 import { useNombresLocales } from '../hooks';
 import { TIPOS_CUENTA, TXT } from '../textos';
@@ -105,7 +104,7 @@ export default function Cuentas() {
         totales={{ saldo: <Dinero valor={saldos.total} /> }}
         data-testid="tabla-cuentas"
         accionesFila={(s) => (
-          <Menu disparador={<BotonMas aria-label={`Acciones de ${s.cuenta.nombre}`} />} etiqueta={`Acciones de ${s.cuenta.nombre}`}>
+          <Menu disparador={<BotonAccionesFila aria-label={`Acciones de ${s.cuenta.nombre}`} />} etiqueta={`Acciones de ${s.cuenta.nombre}`}>
             <ItemMenu icono={BookOpen} onSelect={() => navegar(rutas.cuenta(s.cuenta.id))}>
               Ver el libro
             </ItemMenu>

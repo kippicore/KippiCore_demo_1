@@ -6,9 +6,8 @@ import { useParamsRuta } from '@/app/useParamsRuta';
 import { ESTADOS_POR_COBRAR } from '@/config/estados';
 import { useFiltroLocal, useHoy, useSel } from '@/estado';
 import { relativaDias } from '@/lib/formato';
-import { BadgeEstado, BotonExportar, Button, Dinero, EmptyState, Fecha, FranjaResumen, ItemMenu, Menu, Segmentado, Table, Termino, Toolbar, useResaltar, type ColumnaTabla } from '@/ui';
+import { BotonAccionesFila, BadgeEstado, BotonExportar, Button, Dinero, EmptyState, Fecha, FranjaResumen, ItemMenu, Menu, Segmentado, Table, Termino, Toolbar, useResaltar, type ColumnaTabla } from '@/ui';
 import { DialogoAbono, DialogoCobro } from '../componentes/DialogosCobro';
-import { BotonMas } from '../componentes/BotonMas';
 import { EncabezadoPagos } from '../componentes/EncabezadoPagos';
 import { selCobros, type FilaCobro } from '../selectores';
 import { TXT } from '../textos';
@@ -142,7 +141,7 @@ export default function PorCobrar() {
         sustantivo={['saldo', 'saldos']}
         resaltada={(f) => f.ventaId === resaltar}
         accionesFila={(f) => (
-          <Menu disparador={<BotonMas aria-label={`Acciones de ${f.numeroVenta}`} />} etiqueta={`Acciones de ${f.numeroVenta}`}>
+          <Menu disparador={<BotonAccionesFila aria-label={`Acciones de ${f.numeroVenta}`} />} etiqueta={`Acciones de ${f.numeroVenta}`}>
             <ItemMenu icono={HandCoins} onSelect={() => setAbonando(f)} data-testid="cobro-abonar">
               Registrar un abono
             </ItemMenu>

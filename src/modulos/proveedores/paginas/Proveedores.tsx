@@ -7,6 +7,7 @@ import { useFiltroLocal, useHoy, useSel, useSesion } from '@/estado';
 import { selLocalesQueVenden } from '@/selectores';
 import { entero, plural, porcentaje } from '@/lib/formato';
 import {
+  BotonAccionesFila,
   BadgeEstado,
   BotonEnlace,
   BotonPildora,
@@ -29,7 +30,7 @@ import {
   type ChipActivo,
 } from '@/ui';
 import { filtrarDirectorio, valoresUnicos, type FiltrosDirectorio } from '../calculos';
-import { BotonMasAcciones, InsigniaDefectos, InsigniaRetraso, InsigniaTipo } from '../componentes/Piezas';
+import { InsigniaDefectos, InsigniaRetraso, InsigniaTipo } from '../componentes/Piezas';
 import { useGestionProveedor } from '../componentes/GestionProveedor';
 import { NavegacionProveedores } from '../componentes/Navegacion';
 import { VistaPorLocal } from '../componentes/VistaPorLocal';
@@ -248,7 +249,7 @@ export default function Proveedores() {
           resaltada={(f) => f.proveedor.id === resaltar}
           totales={{ comprado: <Dinero valor={resumen.comprado} />, saldo: <Dinero valor={resumen.saldo} /> }}
           accionesFila={(f) => (
-            <Menu disparador={<BotonMasAcciones aria-label={`Más acciones de ${f.proveedor.nombreCorto}`} />} alinear="end">
+            <Menu disparador={<BotonAccionesFila aria-label={`Más acciones de ${f.proveedor.nombreCorto}`} />} alinear="end">
               <ItemMenu icono={Eye} onSelect={() => navegar(rutas.proveedor(f.proveedor.id))}>
                 Ver ficha
               </ItemMenu>
