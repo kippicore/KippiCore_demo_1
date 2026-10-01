@@ -347,6 +347,15 @@ test.describe('Instagram', () => {
     );
     expect(n).toBe(1);
   });
+
+  test('?escenario= abre ese escenario de Instagram y elegir otro lo refleja en la URL', async ({ page, irA }) => {
+    await irA('/panel/canales/instagram?escenario=catalogo-dm');
+    await esperarDatos(page);
+    await expect(page.getByTestId('escenario-catalogo-dm')).toHaveAttribute('aria-checked', 'true');
+    await page.getByTestId('escenario-precio-comentario').click();
+    await expect(page).toHaveURL(/\/panel\/canales\/instagram\?escenario=precio-comentario/);
+    await expect(page.getByTestId('escenario-precio-comentario')).toHaveAttribute('aria-checked', 'true');
+  });
 });
 
 test.describe('Página web', () => {

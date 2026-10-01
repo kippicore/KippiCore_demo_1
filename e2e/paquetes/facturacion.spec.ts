@@ -112,7 +112,8 @@ test.describe('Facturación · lista', () => {
     await expect(page.getByTestId('facturacion-resumen-documentos')).toHaveAttribute('data-valor', String(esperado.pos));
     await expect(page.locator('tbody tr[data-fila]').first()).toContainText('Documento POS electrónico');
     await page.getByTestId('facturacion-tipo-notas').click();
-    await expect(page).not.toHaveURL(/tipo=/);
+    // Compartidos C-D: las notas crédito también viajan en la URL (rutas.facturacion({ tipo: 'notas' })).
+    await expect(page).toHaveURL(/tipo=notas/);
     await expect(page.getByTestId('facturacion-resumen-documentos')).toHaveAttribute('data-valor', String(esperado.notas));
     if (esperado.notas > 0) await expect(page.locator('tbody tr[data-fila]').first()).toContainText('Afecta HAL-');
     await page.getByTestId('facturacion-tipo-todos').click();

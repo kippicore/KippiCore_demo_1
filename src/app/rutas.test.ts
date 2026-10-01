@@ -16,6 +16,10 @@ describe('rutas.ts', () => {
     expect(rutas.caja({ sesion: 'sc_1', resaltar: null })).toBe('/panel/pos/caja?sesion=sc_1');
     expect(rutas.inicio()).toBe('/panel/inicio');
     expect(rutas.empleadoPestana('sebastian-cardenas', 'costo')).toBe('/panel/personal/sebastian-cardenas/costo');
+    // Compartidos C-D: Instagram con escenario y Facturación filtrada por notas crédito.
+    expect(rutas.canalInstagram({ escenario: 'catalogo-dm' })).toBe('/panel/canales/instagram?escenario=catalogo-dm');
+    expect(rutas.facturacion({ tipo: 'notas' })).toBe('/panel/facturacion?tipo=notas');
+    expect(leerParamsRuta('facturacion', {}, '?tipo=notas').tipo).toBe('notas');
   });
 
   it('parser: valores válidos tipados; inválidos y desconocidos se ignoran', () => {

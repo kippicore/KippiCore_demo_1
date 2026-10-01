@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { rutas } from '@/app/rutas';
+import { useParamsRuta } from '@/app/useParamsRuta';
 import { PREFIJOS } from '@/dominio/motor/ids';
 import { estadoActual, useAcciones, useAhora, useHoy } from '@/estado';
 import { ESCENARIOS_INSTAGRAM } from '@/seed/escenarios-canales';
@@ -23,6 +25,7 @@ import { useConversacion } from '../useConversacion';
 import { useDatosBot, useEscalaTelefono } from '../useDatosBot';
 
 const OPCIONES = ESCENARIOS_INSTAGRAM.map(opcionDe);
+const IDS = new Set<string>(ESCENARIOS_INSTAGRAM.map((e) => e.id));
 
 export default function Instagram() {
   return (
@@ -40,7 +43,11 @@ function Vista() {
   const acciones = useAcciones();
   const { datos, entrada } = useDatosBot();
   const { escala, fijo } = useEscalaTelefono();
-  const [id, setId] = useState<IdEscenario>('precio-comentario');
+  // `?escenario=` se honra y se refleja en la URL al elegir (compartidos C-D), como en WhatsApp.
+  const navegar = useNavigate();
+  const { escenario } = useParamsRuta('canalInstagram');
+  const id: IdEscenario = escenario && IDS.has(escenario) ? (escenario as IdEscenario) : 'precio-comentario';
+  const setId = (v: IdEscenario) => navegar(rutas.canalInstagram({ escenario: v }), { replace: true });
   const [velocidad, setVelocidad] = useState<1 | 4>(1);
   const [repeticion, setRepeticion] = useState(0);
   const entradaRef = useRef(entrada);

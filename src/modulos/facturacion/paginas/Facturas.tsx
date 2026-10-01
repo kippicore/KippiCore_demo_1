@@ -63,7 +63,7 @@ export default function Facturas() {
   const nombreLocal = localId === 'todos' ? null : nombreLocalActivo;
   const [densidad, setDensidad] = useDensidadTabla('facturacion');
 
-  // El tipo llega por la URL (`?tipo=`) o lo elige la persona; "Notas crédito" no viaja en la URL.
+  // El tipo llega por la URL (`?tipo=`, también `notas` desde compartidos C-D) o lo elige la persona.
   const [elegida, setElegida] = useState<{ valor: FiltroClase; tipoUrl: string | null } | null>(null);
   const clase: FiltroClase =
     elegida && elegida.tipoUrl === (params.tipo ?? null) ? elegida.valor : (params.tipo ?? 'todos');
@@ -105,11 +105,10 @@ export default function Facturas() {
   }, [params.resaltar, todas]);
 
   const cambiarClase = (c: FiltroClase) => {
-    const enUrl = c === 'factura_electronica' || c === 'documento_equivalente_pos';
-    setElegida({ valor: c, tipoUrl: enUrl ? c : null });
+    setElegida({ valor: c, tipoUrl: c === 'todos' ? null : c });
     navegar(
       rutas.facturacion({
-        ...(c === 'factura_electronica' || c === 'documento_equivalente_pos' ? { tipo: c } : {}),
+        ...(c === 'todos' ? {} : { tipo: c }),
         ...(params.resaltar ? { resaltar: params.resaltar } : {}),
       }),
       { replace: true },

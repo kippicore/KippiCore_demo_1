@@ -260,7 +260,8 @@ export const RUTAS = {
   analisisLocales: ruta('/panel/analisis/locales', 'D2', [D], 'Locales y vendedores', [], { vista: texto, ...resaltar }),
   // --- D3 Facturación ---
   facturacion: ruta('/panel/facturacion', 'D3', [D], 'Facturación', [], {
-    tipo: enumeracion('factura_electronica', 'documento_equivalente_pos'),
+    // Compartidos C-D: también 'notas' (la lista filtrada por notas crédito).
+    tipo: enumeracion('factura_electronica', 'documento_equivalente_pos', 'notas'),
     ...resaltar,
   }),
   notaCredito: ruta('/panel/facturacion/notas-credito/:notaId', 'D3', [D], 'Nota crédito', ['notaId']),
@@ -268,7 +269,7 @@ export const RUTAS = {
   // --- D5 Canales ---
   canales: ruta('/panel/canales', 'D5', [D], 'Canales digitales', []),
   canalWhatsapp: ruta('/panel/canales/whatsapp', 'D5', [D], 'WhatsApp', [], { escenario: texto }),
-  canalInstagram: ruta('/panel/canales/instagram', 'D5', [D], 'Instagram', []),
+  canalInstagram: ruta('/panel/canales/instagram', 'D5', [D], 'Instagram', [], { escenario: texto }),
   canalWeb: ruta('/panel/canales/web', 'D5', [D], 'Vista web', []),
   // --- D4 Reportes ---
   reportes: ruta('/panel/reportes', 'D4', [D, B], 'Reportes', [], { reporte: texto }),
