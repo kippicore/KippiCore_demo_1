@@ -99,7 +99,7 @@ async function crearVenta(
       const precio = e.productos[v.productoId]?.precioVenta ?? 0;
       const total = precio * (unidades as number);
       const cliente = tipo === 'separado' ? Object.values(e.clientes)[3]?.id : null;
-      const r = kc.acciones.registrarVenta({
+      const r = kc.acciones['registrarVenta']!({
         ts: null,
         localId: 'usq',
         vendedorId,
@@ -239,7 +239,7 @@ test.describe('Ventas · lista', () => {
     ).toBe(true);
     await esperarTotales(page, nequi.totales);
     await expect(page.getByText('Pago: Nequi')).toBeVisible();
-    await expect(page.getByText('Estado: Pagada')).toBeVisible();
+    await expect(page.getByText('Estado: Pagada').last()).toBeVisible();
     await expect(page.getByTestId('filtro-mas')).toContainText('1');
 
     // Quitar un chip actualiza la URL; "Limpiar filtros" la deja limpia.
@@ -334,6 +334,76 @@ test.describe('Ventas · lista', () => {
     await esperarDatos(page);
     await expect(page.getByText('Esa venta ya no está en la lista.')).toBeVisible();
     await expect(page.getByTestId('ventas-tabla')).toBeVisible();
+    expect(errores, errores.join('\n')).toEqual([]);
+  });
+
+  test('cliente (también consumidor final), prenda y vendedor filtran y viajan a la URL', async ({
+    page,
+    irA,
+  }) => {
+    test.setTimeout(90_000);
+    const errores = vigilarConsola(page);
+    await irA(`/panel/ventas?cliente=consumidor_final&desde=2026-08-01&hasta=${HOY}`);
+    await esperarDatos(page);
+    const sinCliente = await sel<{ totales: Totales; filas: { clienteId: string | null }[] }>(
+      page,
+      'selVentas',
+      { desde: '2026-08-01', hasta: HOY, localId: 'todos', clienteId: 'consumidor_final' },
+    );
+    expect(sinCliente.filas.length).toBeGreaterThan(100);
+    expect(sinCliente.filas.every((f) => f.clienteId === null)).toBe(true);
+    await esperarTotales(page, sinCliente.totales);
+    await expect(page.getByText('Cliente: Consumidor final')).toBeVisible();
+    await page.getByTestId('filtro-mas').click();
+    await expect(page.getByTestId('filtro-cliente-valor')).toHaveText('Consumidor final');
+    await page.keyboard.press('Escape');
+
+    // Un cliente con nombre (se busca y se elige) y la prenda por su referencia (la URL acepta id o referencia).
+    const { ref, id, nombre } = await page.evaluate(() => {
+      const kc = (
+        globalThis as unknown as {
+          __kc: {
+            estado: () => { productos: Record<string, { id: string; referencia: string; nombre: string }> };
+          };
+        }
+      ).__kc;
+      const p =
+        Object.values(kc.estado().productos).find((x) => x.referencia === 'HL-CAM-0142') ??
+        Object.values(kc.estado().productos)[0]!;
+      return { ref: p.referencia, id: p.id, nombre: p.nombre };
+    });
+    await page.goto(`/panel/ventas?producto=${ref}&desde=2025-01-01&hasta=${HOY}&hoy=${HOY}T15:30`);
+    await esperarDatos(page);
+    const conPrenda = await sel<{ totales: Totales; filas: unknown[] }>(page, 'selVentas', {
+      desde: '2025-01-01',
+      hasta: HOY,
+      localId: 'todos',
+      productoId: id,
+    });
+    expect(conPrenda.filas.length).toBeGreaterThan(20);
+    await esperarTotales(page, conPrenda.totales);
+    await expect(page.getByText(`Prenda: ${nombre}`)).toBeVisible();
+
+    const vendedor = await page.evaluate(
+      () =>
+        (
+          globalThis as unknown as {
+            __kc: {
+              estado: () => { empleados: Record<string, { id: string; cargo: string; slug: string }> };
+            };
+          }
+        ).__kc.estado().empleados['em_scardenas']!,
+    );
+    await page.goto(`/panel/ventas?vendedor=${vendedor.slug}&desde=2026-09-01&hasta=${HOY}&hoy=${HOY}T15:30`);
+    await esperarDatos(page);
+    const deEl = await sel<{ totales: Totales }>(page, 'selVentas', {
+      desde: '2026-09-01',
+      hasta: HOY,
+      localId: 'todos',
+      vendedorId: vendedor.id,
+    });
+    await esperarTotales(page, deEl.totales);
+    await expect(page.getByText('Vendedor: Sebastián Cárdenas')).toBeVisible();
     expect(errores, errores.join('\n')).toEqual([]);
   });
 

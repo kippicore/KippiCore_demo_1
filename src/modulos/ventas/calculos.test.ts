@@ -12,7 +12,13 @@ import {
   previsualizarDevolucion,
   resumenAnulacion,
 } from './calculos';
-import { selFechaVenta, selOpcionesFiltro, selRangoHistorial, selReciboVenta } from './selectores';
+import {
+  selFechaVenta,
+  selOpcionesFiltro,
+  selRangoHistorial,
+  selReciboVenta,
+  selResolverReferencias,
+} from './selectores';
 
 /** Venta de dos líneas (2 y 1 unidades) con descuento, sin devoluciones. */
 function ventaPrueba(extra: Partial<Venta> = {}): Venta {
@@ -241,6 +247,23 @@ describe('selectores locales con el estado generado', () => {
     const h = selRangoHistorial(e)!;
     expect(h.desde < h.hasta).toBe(true);
     expect(h.hasta <= HOY).toBe(true);
+  });
+
+  it('resuelve el producto por referencia y el vendedor por slug, y deja pasar lo desconocido', () => {
+    const p = Object.values(e.productos)[0]!;
+    const v = Object.values(e.empleados).find((x) => x.cargo === 'vendedor')!;
+    expect(selResolverReferencias(e, { producto: p.referencia, vendedor: v.slug })).toEqual({
+      producto: p.id,
+      vendedor: v.id,
+    });
+    expect(selResolverReferencias(e, { producto: p.id, vendedor: v.id })).toEqual({
+      producto: p.id,
+      vendedor: v.id,
+    });
+    expect(selResolverReferencias(e, { producto: 'no-existe', vendedor: null })).toEqual({
+      producto: 'no-existe',
+      vendedor: null,
+    });
   });
 
   it('ofrece los locales que venden y las personas con cargo de vendedor', () => {

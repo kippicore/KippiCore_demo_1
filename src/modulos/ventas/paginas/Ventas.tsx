@@ -22,6 +22,7 @@ import {
   BotonAccionesFila,
   BotonEnlace,
   BotonExportar,
+  cn,
   Button,
   Dinero,
   EmptyState,
@@ -38,7 +39,13 @@ import {
 import { BarraFiltros } from '../componentes/BarraFiltros';
 import { BarraTotales } from '../componentes/BarraTotales';
 import { filtroDeSelector, paramsConCambios, resolverFiltros, type ParamsVentas } from '../filtros';
-import { selEtiquetasFiltro, selFechaVenta, selOpcionesFiltro, selRangoHistorial } from '../selectores';
+import {
+  selEtiquetasFiltro,
+  selFechaVenta,
+  selOpcionesFiltro,
+  selRangoHistorial,
+  selResolverReferencias,
+} from '../selectores';
 import { CANALES_CORTOS, etiquetaMedioCorta, TEXTOS } from '../textos';
 
 const primerNombre = (n: string, a: string) => `${n.split(' ')[0] ?? ''} ${a.split(' ')[0] ?? ''}`.trim();
@@ -59,15 +66,23 @@ export default function Ventas() {
   const textoDiferido = useDeferredValue(texto);
 
   const fechaResaltada = useSel(selFechaVenta, { ventaId: params.resaltar ?? '' });
+  const referencias = useSel(selResolverReferencias, {
+    producto: params.producto,
+    vendedor: params.vendedor,
+  });
+  const efectivos = useMemo(
+    () => ({ ...params, producto: referencias.producto, vendedor: referencias.vendedor }),
+    [params, referencias],
+  );
   const resueltos = useMemo(
     () =>
-      resolverFiltros(params, {
+      resolverFiltros(efectivos, {
         hoy,
         localSesion,
         vendedorFijoId: esVendedor ? (empleado?.id ?? '__sin_vendedor__') : null,
         fechaResaltada: params.resaltar ? fechaResaltada : null,
       }),
-    [params, hoy, localSesion, esVendedor, empleado?.id, fechaResaltada],
+    [efectivos, params.resaltar, hoy, localSesion, esVendedor, empleado?.id, fechaResaltada],
   );
   const filtro = filtroDeSelector(resueltos, textoDiferido);
   const { filas, totales } = useSel(selVentas, filtro);
@@ -75,7 +90,7 @@ export default function Ventas() {
   const historial = useSel(selRangoHistorial);
   const etiquetas = useSel(selEtiquetasFiltro, {
     clienteId: params.cliente && params.cliente !== 'consumidor_final' ? params.cliente : null,
-    productoId: params.producto,
+    productoId: efectivos.producto,
   });
 
   const cambiar = (c: Partial<ParamsVentas>) =>
@@ -115,15 +130,18 @@ export default function Ventas() {
       ordenar: (v) => v.numero,
       ancho: 112,
       celda: (v) => (
-        <span className="inline-flex items-center gap-1.5 whitespace-nowrap font-bold">
-          {v.numero}
-          {v.facturaId && (
-            <FileText
-              aria-label="Con factura electrónica"
-              className="size-3.5 text-muted"
-              strokeWidth={1.5}
-            />
-          )}
+        <span className="flex flex-col whitespace-nowrap leading-tight">
+          <span className="inline-flex items-center gap-1.5 font-bold">
+            {v.numero}
+            {v.facturaId && (
+              <FileText
+                aria-label="Con factura electrónica"
+                className="size-3.5 text-muted"
+                strokeWidth={1.5}
+              />
+            )}
+          </span>
+          <span className="t-small text-muted">{CANALES_CORTOS[v.canal]}</span>
         </span>
       ),
     },
@@ -141,31 +159,26 @@ export default function Ventas() {
     },
     {
       id: 'local',
-      encabezado: 'Local',
+      encabezado: 'Local y vendedor',
       ordenar: (v) => estado.locales[v.localId]?.nombre ?? v.localId,
-      ancho: 104,
-      celda: (v) => (
-        <span className="flex flex-col whitespace-nowrap leading-tight">
-          <span>{estado.locales[v.localId]?.nombre ?? v.localId}</span>
-          <span className="t-small text-muted">{CANALES_CORTOS[v.canal]}</span>
-        </span>
-      ),
-    },
-    {
-      id: 'vendedor',
-      encabezado: 'Vendedor',
-      truncar: true,
-      ancho: 120,
-      ordenar: (v) => estado.empleados[v.vendedorId]?.nombres ?? '',
+      ancho: 150,
       celda: (v) => {
         const e = estado.empleados[v.vendedorId];
-        return e ? primerNombre(e.nombres, e.apellidos) : '—';
+        return (
+          <span className="flex min-w-0 flex-col whitespace-nowrap leading-tight">
+            <span>{estado.locales[v.localId]?.nombre ?? v.localId}</span>
+            <span className="truncate t-small text-muted">
+              {e ? primerNombre(e.nombres, e.apellidos) : '—'}
+            </span>
+          </span>
+        );
       },
     },
     {
       id: 'cliente',
       encabezado: 'Cliente',
       truncar: true,
+      ancho: 150,
       ordenar: (v) => (v.clienteId ? nombreCliente(estado.clientes[v.clienteId]) : 'Consumidor final'),
       celda: (v) => (v.clienteId ? nombreCliente(estado.clientes[v.clienteId]) : 'Consumidor final'),
     },
@@ -194,7 +207,7 @@ export default function Ventas() {
       encabezado: 'Total',
       numerica: true,
       ordenar: (v) => v.total,
-      ancho: 120,
+      ancho: 112,
       celda: (v) =>
         v.estado === 'anulada' ? (
           <span className="text-subtle line-through">
@@ -208,7 +221,7 @@ export default function Ventas() {
       id: 'estado',
       encabezado: 'Estado',
       ordenar: (v) => v.estado,
-      ancho: 148,
+      ancho: 130,
       celda: (v) => <BadgeEstado estado={ESTADOS_VENTA[v.estado]} tamano="sm" />,
     },
   ];
@@ -234,7 +247,10 @@ export default function Ventas() {
       </div>
 
       <Table
-        className="mt-4"
+        className={cn(
+          'mt-4 transition-opacity duration-(--dur-fast)',
+          texto !== textoDiferido && 'opacity-60',
+        )}
         data-testid="ventas-tabla"
         etiqueta="Ventas"
         columnas={columnas}
@@ -255,7 +271,7 @@ export default function Ventas() {
             <BarraFiltros
               hoy={hoy}
               resueltos={resueltos}
-              params={params}
+              params={efectivos}
               opciones={opciones}
               etiquetas={etiquetas}
               historial={historial}

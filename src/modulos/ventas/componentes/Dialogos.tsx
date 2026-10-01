@@ -366,7 +366,11 @@ export function DialogoEditar({ recibo, abierto, alCerrar }: Base) {
             opciones={MEDIOS_EDITABLES.concat(MEDIOS_EDITABLES.includes(p.medio) ? [] : [p.medio]).map(
               (m) => ({ valor: m, etiqueta: MEDIOS_PAGO[m].etiqueta }),
             )}
-            ayuda={<Dinero valor={p.valor} />}
+            ayuda={
+              <>
+                Pago de <Dinero valor={p.valor} />
+              </>
+            }
             error={error?.campo === 'mediosPago' ? error.mensaje : undefined}
             data-testid={`editar-medio-${i}`}
           />
@@ -489,7 +493,7 @@ export function DialogoAbono({ recibo, abierto, alCerrar }: Base) {
           data-testid="abono-medio"
         />
         <InputNumero
-          etiqueta="Valor del abono"
+          etiqueta="Valor del abono, en pesos"
           prefijo="$"
           valor={valor}
           alCambiar={setValor}

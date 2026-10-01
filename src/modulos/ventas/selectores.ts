@@ -86,8 +86,12 @@ export const selReciboVenta = crearSelector<{ ventaId: Id }, ReciboVenta | null>
       Object.values(e.solicitudes).find(
         (s) => s.estado === 'pendiente' && s.datos.tipo === 'anulacion' && s.datos.ventaId === v.id,
       ) ?? null;
-    const solicitante = solicitudAnulacion
-      ? (e.usuarios[solicitudAnulacion.solicitadoPor]?.nombre ?? null)
+    // `solicitadoPor` es un usuario o, en lo que genera el sistema, el empleado que pidió.
+    const quien = solicitudAnulacion?.solicitadoPor;
+    const empleadoSolicita = quien ? e.empleados[quien] : undefined;
+    const solicitante = quien
+      ? (e.usuarios[quien]?.nombre ??
+        (empleadoSolicita ? `${empleadoSolicita.nombres} ${empleadoSolicita.apellidos}` : null))
       : null;
     const origen = v.ventaOrigenCambioId ? e.ventas[v.ventaOrigenCambioId] : null;
     const ventasDeCambio = detalle.devoluciones
@@ -164,3 +168,23 @@ export const selEtiquetasFiltro = crearSelector<
     producto: p ? `${p.nombre} · ${p.referencia}` : null,
   };
 });
+
+/**
+ * `?producto=` y `?vendedor=` pueden llegar de otro módulo con el id o con la clave legible de la URL (referencia del
+ * producto, slug del empleado): se resuelven al id que usa `selVentas`. Lo que no existe se devuelve tal cual (sin efecto).
+ */
+export const selResolverReferencias = crearSelector<
+  { producto: string | null; vendedor: string | null },
+  { producto: string | null; vendedor: string | null }
+>('selResolverReferencias', ['productos', 'empleados'], (e, { producto, vendedor }) => ({
+  producto: producto
+    ? (e.productos[producto]?.id ??
+      Object.values(e.productos).find((p) => p.referencia === producto)?.id ??
+      producto)
+    : null,
+  vendedor: vendedor
+    ? (e.empleados[vendedor]?.id ??
+      Object.values(e.empleados).find((x) => x.slug === vendedor)?.id ??
+      vendedor)
+    : null,
+}));
