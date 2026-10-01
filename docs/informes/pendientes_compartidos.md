@@ -38,3 +38,9 @@ Ramas a fusionar: ver cada informe.
 3. `rutas.ts` `ventas`: agregar `texto` al query.
 4. (= B4.2) `InputNumero`: seleccionar todo al enfocar.
 5. `npm run dev` con node_modules enlazado da 403 en la fuente por `@fs` (solo dev con worktree).
+
+## A1 (rama worktree-agent-ac4876801fee9a5d3, 3107223)
+1. `GuiaFlotante` (E2): la píldora "Prueba esto" (bottom-6 right-6) tapa "Confirmar venta" en /panel/pos → ocultarla/moverla ahí.
+2. `src/ui/texto/Cifra.tsx` `contarDesdeCero` queda en $0 en dev por StrictMode (en build funciona).
+3. PLAN 9.4: `<MatrizExistencias modo="pos">` no existe; A1 usa grilla compacta propia. Corregir texto.
+4. A3.2: A1 debe precargar `?cliente=` en POS cuando se agregue el parámetro.
