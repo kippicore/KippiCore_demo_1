@@ -38,3 +38,9 @@
 ## D5 (worktree-agent-a78270023939d8f26, 5ea88e3)
 1. `rutas.ts` `canalInstagram`: query `{ escenario: texto }` (precio-comentario, catalogo-dm); luego conectar la selección de Instagram a la URL.
 2. Instagram: no hay campo para escribir comentarios (solo guion).
+
+## C2 (worktree-agent-a4514dfe7eeebc61f, c0892c2)
+1. `src/config/turnos.ts`: exportar `franjaDeTurno(tipo, localId)`.
+2. `selRecargosTurnos`: devolver `valorNocturno` y `valorDominical` por persona.
+3. `Checkbox` y `Dinero` no reenvían `data-testid`.
+4. Datos: las 3 novedades sembradas son pasadas → sembrar al menos una vigente/próxima (p. ej. vacaciones de alguien la próxima semana) para que "Fuera hoy"/"Próximos 30 días" no arranquen en 0.
