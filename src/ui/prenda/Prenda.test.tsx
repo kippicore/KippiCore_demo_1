@@ -37,7 +37,7 @@ describe('<Prenda>', () => {
         dibujadas++;
       }
     }
-    expect(dibujadas).toBeGreaterThan(200);
+    expect(dibujadas).toBeGreaterThanOrEqual(CATALOGO.length);
   });
 
   it('vistas detalle y tejido; sin nombre es decorativa', () => {
