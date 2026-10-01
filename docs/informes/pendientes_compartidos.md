@@ -44,3 +44,9 @@ Ramas a fusionar: ver cada informe.
 2. `src/ui/texto/Cifra.tsx` `contarDesdeCero` queda en $0 en dev por StrictMode (en build funciona).
 3. PLAN 9.4: `<MatrizExistencias modo="pos">` no existe; A1 usa grilla compacta propia. Corregir texto.
 4. A3.2: A1 debe precargar `?cliente=` en POS cuando se agregue el parámetro.
+
+## Calibración (rama worktree-agent-a141b589a87802ec9, 79a15cb)
+1. `selSugerenciaPedido`: no descuenta lo que se vende durante la espera. Fórmula propuesta: rotación × (espera + cobertura) / 7 × factor estacional − existencias − en camino (≈1.600 prendas, Oxford ≈155 con 90 días).
+2. Separado creado y cancelado en el mismo periodo: total 0 en "Ventas detalladas" pero `selVentas.totales` lo suma → excluir separados cancelados en `hechosDeVenta`/`resumirHechos`.
+3. Escala 1,5: punto bajo de diciembre alto (≈$54 M).
+4. Patrones cerca del borde: P2 enero, P11 junio, P18 junio, P3.XL junio → correr `npm run informe` tras cualquier cambio del generador.
