@@ -1,5 +1,6 @@
 import { ChevronLeft, Info, MapPin, X } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router';
 import { APP } from '@/config/textos/guia';
 import { cn } from '../cn';
@@ -87,8 +88,10 @@ export function HojaLigera({ abierta, alCerrar, titulo, children, pie }: { abier
       previo?.focus?.();
     };
   }, [abierta, alCerrar]);
-  if (!abierta) return null;
-  return (
+  if (!abierta || typeof document === 'undefined') return null;
+  // En `document.body` (E1.2): el contenedor de cada pantalla de /app anima su aparición y crea un contexto de
+  // apilamiento; una hoja `fixed` dentro quedaba DEBAJO de la barra de pestañas, que tapaba el botón del pie.
+  return createPortal(
     <div className="fixed inset-0 z-(--z-modal)">
       <button type="button" aria-label="Cerrar" tabIndex={-1} onClick={alCerrar} className="absolute inset-0 bg-overlay animate-fade-in" />
       <div
@@ -109,7 +112,8 @@ export function HojaLigera({ abierta, alCerrar, titulo, children, pie }: { abier
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">{children}</div>
         {pie && <div className="border-t border-line px-4 py-3">{pie}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

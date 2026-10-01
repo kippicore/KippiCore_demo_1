@@ -44,6 +44,39 @@ export interface PropsPista {
  *
  *   <Pista id="inicio.alertas"><Card titulo="Requiere tu atención">…</Card></Pista>
  */
+/**
+ * ¿El panel "Prueba esto" (`data-testid="guia-panel"`, fijo abajo a la derecha) tapa la esquina del ancla de la pista?
+ * Mientras la tape, el punto no se muestra (E2.3): vuelve en cuanto la persona minimiza el panel, elige un ítem o
+ * desplaza la página. Se mide solo para la pista activa (una por pantalla).
+ */
+function usePuntoTapadoPorPanel(activa: boolean, id: string): boolean {
+  const [tapada, setTapada] = useState(false);
+  useEffect(() => {
+    if (!activa || typeof document === 'undefined') return;
+    const medir = () => {
+      const panel = document.querySelector('[data-testid="guia-panel"]');
+      const ancla = document.querySelector(`[data-pista="${id}"]`);
+      if (!panel || !ancla) return setTapada(false);
+      const p = panel.getBoundingClientRect();
+      const a = ancla.getBoundingClientRect();
+      // El punto va en la esquina superior derecha del ancla.
+      const x = a.right;
+      const y = a.top;
+      setTapada(x >= p.left - 8 && x <= p.right + 8 && y >= p.top - 8 && y <= p.bottom + 8);
+    };
+    medir();
+    const intervalo = setInterval(medir, 400);
+    window.addEventListener('scroll', medir, { passive: true });
+    window.addEventListener('resize', medir);
+    return () => {
+      clearInterval(intervalo);
+      window.removeEventListener('scroll', medir);
+      window.removeEventListener('resize', medir);
+    };
+  }, [activa, id]);
+  return activa && tapada;
+}
+
 export function Pista({ id, children, lado = 'abajo', alinear = 'fin', className }: PropsPista) {
   const rol = useRolActivo();
   const vistas = useGuia((s) => s.pistasVistas);
@@ -60,7 +93,8 @@ export function Pista({ id, children, lado = 'abajo', alinear = 'fin', className
       if (almacenPista.getState().activa === id) almacenPista.setState({ activa: null });
     };
   }, [elegible, id]);
-  const visible = elegible && activa === id;
+  const tapada = usePuntoTapadoPorPanel(elegible && activa === id, id);
+  const visible = elegible && activa === id && !tapada;
   const texto = id === 'app.hoy' && esNavegadorInterno() ? PISTAS_TEXTOS['app.hoy.navegadorInterno'] : PISTAS_TEXTOS[id];
   const cerrar = () => {
     setAbierta(false);
@@ -172,10 +206,7 @@ export function AvisoNavegadorInterno({ forzar, className }: { forzar?: boolean;
   return (
     <div data-testid="aviso-navegador-interno" role="note" className={cn('flex min-h-10 items-center gap-3 bg-surface-2 px-4 py-2 t-small text-ink-2', className)}>
       <Icono icono={Info} tamano={14} />
-      <p className="min-w-0 flex-1">
-        {ENTRADA.navegadorInterno}
-        {esIos() && <span className="block">{ENTRADA.navegadorInternoIos}</span>}
-      </p>
+      <p className="min-w-0 flex-1">{esIos() ? ENTRADA.navegadorInternoIos : ENTRADA.navegadorInterno}</p>
       <button
         type="button"
         onClick={() => {

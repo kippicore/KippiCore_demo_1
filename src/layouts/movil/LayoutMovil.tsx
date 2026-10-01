@@ -1,7 +1,9 @@
-import { useEffect, useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
 import { PESTANAS_APP } from '@/config/navegacion';
-import { ContextoRolForzado, useSesion } from '@/estado';
+import { ContextoRolForzado, useAhora, useDatos, useFiltroLocal, useSel, useSesion } from '@/estado';
+import { sumarDias } from '@/dominio/reglas/fechas';
+import { selAlertas, selCierresDelDia, selSolicitudesPendientes } from '@/selectores';
 import { RequiereDatos } from '@/app/RequiereDatos';
 import { rutaDeUrl } from '@/app/rutas';
 import { cn } from '@/ui/cn';
@@ -80,7 +82,10 @@ export function LayoutMovil() {
                     className={cn('relative flex h-full flex-col items-center justify-center gap-0.5 transition-colors duration-(--dur-fast)', activa ? 'text-ink' : 'text-ink-2/70')}
                   >
                     {activa && <span aria-hidden className="absolute top-0 h-0.5 w-4 bg-ink" />}
-                    <Icono icono={iconoNavegacion(t.icono)} tamano={22} />
+                    <span className="relative inline-flex">
+                      <Icono icono={iconoNavegacion(t.icono)} tamano={22} />
+                      {(t.id === 'hoy' || t.id === 'mas') && <PuntoPestana id={t.id} />}
+                    </span>
                     <span className="t-micro font-semibold">{t.etiqueta}</span>
                   </NavLink>
                 </li>
@@ -92,4 +97,46 @@ export function LayoutMovil() {
       </div>
     </ContextoRolForzado.Provider>
   );
+}
+
+/**
+ * Punto `accent` de 6 px en la pestaña (PLAN 8.5.3, E1.1): en *Hoy* si un cierre de anoche tiene diferencia y nadie lo
+ * ha revisado; en *Más* si hay solicitudes por aprobar o alertas urgentes o nuevas. Se calcula DESPUÉS del primer
+ * pintado (presupuesto de arranque de /app) y solo con los datos listos.
+ */
+function PuntoPestana({ id }: { id: 'hoy' | 'mas' }) {
+  const listos = useDatos((s) => s.estado !== null);
+  const [despues, setDespues] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setDespues(true), 300);
+    return () => clearTimeout(t);
+  }, []);
+  if (!listos || !despues) return null;
+  return id === 'hoy' ? <PuntoHoy /> : <PuntoMas />;
+}
+
+function Punto({ id, etiqueta }: { id: string; etiqueta: string }) {
+  return (
+    <span data-testid={`pestana-punto-${id}`} className="absolute -right-1 -top-0.5 size-1.5 rounded-full bg-accent">
+      <span className="sr-only">{etiqueta}</span>
+    </span>
+  );
+}
+
+function PuntoHoy() {
+  const ayer = sumarDias(useAhora().slice(0, 10), -1);
+  const cierres = useSel(selCierresDelDia, { fecha: ayer });
+  const pendiente = cierres.some((c) => c.sesionId !== null && c.diferencia !== null && c.diferencia !== 0 && !c.revisado);
+  return pendiente ? <Punto id="hoy" etiqueta="Un cierre con diferencia sin revisar" /> : null;
+}
+
+function PuntoMas() {
+  const ahora = useAhora();
+  const local = useFiltroLocal();
+  const descartadas = useSesion((s) => s.alertasDescartadas);
+  const leidas = useSesion((s) => s.notificacionesLeidas);
+  const solicitudes = useSel(selSolicitudesPendientes);
+  const alertas = useSel(selAlertas, { localId: local, ahora, descartadas, leidas });
+  const hay = solicitudes.length > 0 || alertas.some((a) => a.severidad === 'urgente' || a.nueva);
+  return hay ? <Punto id="mas" etiqueta="Hay alertas o solicitudes por aprobar" /> : null;
 }

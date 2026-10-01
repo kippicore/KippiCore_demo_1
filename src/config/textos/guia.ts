@@ -39,8 +39,9 @@ export const ENTRADA = {
     copiar: 'Copiar enlace',
     copiado: 'Enlace copiado',
   },
-  navegadorInterno: 'Para la mejor experiencia, ábrelo en Safari o Chrome',
-  navegadorInternoIos: 'Allá podrás agregarlo a tu pantalla de inicio',
+  // Una sola línea a 390 px junto a "Copiar enlace" (franja de 40 px, 8.4.7).
+  navegadorInterno: 'Se ve mejor en Safari o Chrome',
+  navegadorInternoIos: 'Ábrelo en Safari para instalarlo',
   pie: 'Demostración con datos ficticios: nombres, cifras y documentos son de ejemplo. Lo que registres se guarda solo en este navegador.',
   cargando: 'Preparando 18 meses de historia de {{marca}}… {{porcentaje}} %',
 } as const;

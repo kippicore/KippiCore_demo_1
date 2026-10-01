@@ -7,7 +7,7 @@ import { almacenGuia } from './guia';
 import { almacenSesion } from './sesion';
 import { ahoraBogota, hoyBogota, overrideHoy } from './reloj';
 import { codificarQr, urlAppConAcciones } from './qr';
-import { bus, suscribirDominio, type EventoDominioConContexto, type EventoUIEmitido } from './eventos';
+import { bus, emitirUI, suscribirDominio, type EventoDominioConContexto, type EventoUIEmitido } from './eventos';
 
 /**
  * `window.__kc` (PLAN 5.16, 9.2): puerta de pruebas y depuración. Se instala en desarrollo, con `?hoy=` (QA y
@@ -22,6 +22,7 @@ import { bus, suscribirDominio, type EventoDominioConContexto, type EventoUIEmit
  *   __kc.urlQr()                        URL de /app con las últimas acciones en el hash (la del QR)
  *   __kc.eventosUI()                    EventoUI emitidos en esta pestaña (los últimos 50): { tipo, datos }
  *   __kc.eventosDominio()               eventos de dominio de los comandos en vivo desde que se instaló __kc
+ *   __kc.emitirUI('app_abierta', {})    emite un EventoUI como lo haría la interfaz (e2e de la guía)
  */
 export interface Kc {
   estado: () => EstadoDominio | null;
@@ -39,6 +40,7 @@ export interface Kc {
   urlQr: () => Promise<string>;
   eventosUI: () => EventoUIEmitido[];
   eventosDominio: () => EventoDominioConContexto[];
+  emitirUI: typeof emitirUI;
 }
 
 export function instalarKc(): Kc {
@@ -87,6 +89,7 @@ export function instalarKc(): Kc {
     },
     eventosUI: () => bus.historialUI.slice(),
     eventosDominio: () => dominio.slice(),
+    emitirUI,
   };
   (globalThis as unknown as { __kc: Kc }).__kc = kc;
   return kc;

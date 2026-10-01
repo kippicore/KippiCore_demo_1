@@ -6,7 +6,7 @@ import { conKc, esperarDatos as esperarDatosBase, registrarVentaDePrueba } from 
  * E2 · Entrada, guía ligera, ayuda y "Cómo arrancaríamos" (PLAN 9.4, 2.2–2.8). Se verifica la pantalla de entrada
  * (1440, 1366 y 390), la personalización, la lista "Prueba esto" (que se marca sola al hacer las acciones), que nada
  * tape el POS, el menú "?", las pistas y la página "Cómo arrancaríamos". Los efectos en otros módulos se leen con
- * `window.__kc`; los `EventoUI` que emiten otros paquetes se simulan con el bus (`__kcBus`), nunca navegando a sus
+ * `window.__kc`; los `EventoUI` que emiten otros paquetes se simulan con `__kc.emitirUI`, nunca navegando a sus
  * pantallas (eso va en e2e/flujos).
  *
  *   PORT=4342 npx playwright test e2e/paquetes/guia.spec.ts --project=escritorio-1440 --project=escritorio-1366 --project=escritorio-1280 --project=celular-390 --workers=1
@@ -38,12 +38,12 @@ function vigilar(page: Page): string[] {
   return errores;
 }
 
-/** Simula un `EventoUI` que emite otro paquete (entrega el evento a los oyentes del bus, como `emitirUI`). */
+/** Simula un `EventoUI` que emite otro paquete (`window.__kc.emitirUI`, el mismo `emitirUI` de la interfaz). */
 async function emitir(page: Page, tipo: string, datos: Record<string, string | number | boolean | null> = {}) {
   await page.evaluate(
     ({ tipo, datos }) => {
-      const bus = (globalThis as unknown as { __kcBus: { ui: Set<(e: unknown) => void> } }).__kcBus;
-      for (const o of [...bus.ui]) o({ tipo, datos });
+      const kc = (globalThis as unknown as { __kc: { emitirUI: (t: string, d: unknown) => void } }).__kc;
+      kc.emitirUI(tipo, datos);
     },
     { tipo, datos },
   );
@@ -240,10 +240,10 @@ test.describe('Entrada en el navegador interno de WhatsApp', () => {
     await irA('/');
     const franja = page.getByTestId('aviso-navegador-interno');
     await expect(franja).toBeVisible();
-    await expect(franja).toContainText('Para la mejor experiencia, ábrelo en Safari o Chrome');
-    await expect(franja).toContainText('Allá podrás agregarlo a tu pantalla de inicio');
+    // iPhone: una sola línea con lo que gana al abrirla en Safari (franja de 40 px, 8.4.7).
+    await expect(franja).toContainText('Ábrelo en Safari para instalarlo');
     await expect(franja.getByRole('button', { name: /Copiar enlace/ })).toBeVisible();
-    expect((await franja.boundingBox())!.height).toBeLessThanOrEqual(96);
+    expect((await franja.boundingBox())!.height).toBeLessThanOrEqual(esCelular(info) ? 44 : 96);
     await expect(page.getByTestId(esCelular(info) ? 'abrir-app' : 'entrar-dueno')).toBeVisible();
   });
 });

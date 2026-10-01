@@ -106,7 +106,8 @@ export const RUTAS = {
   panel: ruta('/panel', 'F2', [D, V, B], 'Panel', []),
   comoArrancariamos: ruta('/panel/como-arrancariamos', 'E2', [D, V, B], 'Cómo arrancaríamos', []),
   // --- D1 Inicio ---
-  inicio: ruta('/panel/inicio', 'D1', [D], 'Inicio', []),
+  // ?resaltar=rol|moneda: resalta el selector de la barra superior (ítem 6 de "Prueba esto", E2).
+  inicio: ruta('/panel/inicio', 'D1', [D], 'Inicio', [], { ...resaltar }),
   // --- A1 Punto de venta y caja ---
   // ?cliente=<clienteId>: abre la venta con ese cliente y su saldo a favor cargados (el cambio de A3).
   pos: ruta('/panel/pos', 'A1', [D, V], 'Punto de venta', [], { cliente: texto }),
