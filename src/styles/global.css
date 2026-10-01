@@ -1,10 +1,76 @@
-/* Base mínima de fase 2 (F2-A1). F2-C la reemplaza con tokens.css y la base completa (8.14). */
+/* ==========================================================================
+   KippiCore CRM · Sistema de diseño HALDEN · global.css (PLAN 8.14, 8.2, 8.12)
+   Tailwind v4 + Figtree autohospedada (solo el archivo latino normal; latin-ext se pide únicamente si aparece
+   un carácter de su rango) + tokens + base. Cuerpo del escritorio 15 px; nada por debajo de 12 px.
+   ========================================================================== */
 @import 'tailwindcss';
-@import '@fontsource-variable/figtree';
+@import '@fontsource-variable/figtree/wght.css';
+@import './tokens.css';
 
-html {
-  font-family: 'Figtree Variable', system-ui, sans-serif;
-  font-size: 15px;
-  color: #0a0a0a;
-  background: #fafafa;
+@layer base {
+  html {
+    background-color: var(--c-canvas);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-canvas font-sans text-ink t-body antialiased;
+    font-optical-sizing: auto;
+    text-rendering: optimizeLegibility;
+    min-height: 100dvh;
+  }
+  :focus-visible {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background-color: var(--c-ink);
+    color: var(--c-inverse);
+  }
+  ::placeholder {
+    color: var(--c-placeholder);
+    opacity: 1;
+  }
+  table,
+  input,
+  output,
+  time,
+  data {
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+  hr {
+    border-color: var(--c-line);
+  }
+  button,
+  [role='button'] {
+    cursor: pointer;
+  }
+  button:disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+  .prenda * {
+    vector-effect: non-scaling-stroke;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--c-line-strong) transparent;
+  }
+
+  /* Sobre fondos `ink` (franja de rol, toasts, grupo píldora) el anillo de foco es `inverse` (8.12). */
+  .sobre-ink :focus-visible {
+    outline-color: var(--c-inverse);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }

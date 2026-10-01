@@ -9,3 +9,4 @@ blob-report
 *.local
 .vercel
 .env*
+.qa

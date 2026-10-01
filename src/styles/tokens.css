@@ -1,0 +1,651 @@
+/* ==========================================================================
+   KippiCore CRM · Sistema de diseño HALDEN · tokens.css (PLAN 8.14)
+   Única fuente de colores, tipografía, radios, sombras, capas y movimiento.
+   Lo importa global.css (después de Tailwind). Ningún componente escribe hex, z-index numéricos ni curvas:
+   todo sale de aquí.
+   ========================================================================== */
+
+/* Modo oscuro por atributo (la app /app pone data-theme="dark" en <html>) */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* --------------------------------------------------------------------------
+   1. Valores crudos por tema
+   -------------------------------------------------------------------------- */
+:root {
+  color-scheme: light;
+
+  /* Superficies */
+  --c-canvas: #f9f9f9;
+  --c-surface: #ffffff;
+  --c-surface-2: #f4f4f4;
+  --c-selected: #efefef;
+  --c-product: #efefef;
+  --c-glass: rgba(237, 237, 237, 0.8);
+  --c-overlay: rgba(0, 0, 0, 0.4);
+
+  /* Texto */
+  --c-ink: #000000;
+  --c-ink-2: #333333;
+  --c-muted: #666666;
+  --c-subtle: #707070;
+  --c-placeholder: #767676;
+  --c-disabled: #a3a3a3;
+  --c-inverse: #ffffff;
+
+  /* Líneas */
+  --c-line: #dddddd;
+  --c-line-soft: #e4e4e4;
+  --c-line-strong: #cccccc;
+  --c-control: #8c8c8c;
+
+  /* Acento: lo escribe la configuración de marca al arrancar (Proveedores → --marca-*) y semánticos */
+  --c-accent: var(--marca-acento, #a67c52);
+  --c-accent-ink: var(--marca-acento-texto, #7a5634);
+  --c-accent-soft: var(--marca-acento-suave, #f3ece4);
+  --c-success: #2f6b4f;
+  --c-success-soft: #eaf1ed;
+  --c-warning: #8a5e0f;
+  --c-warning-soft: #f6efe2;
+  --c-danger: #a3302a;
+  --c-danger-soft: #f6e9e8;
+  --c-focus: #000000;
+
+  /* Gráficos */
+  --c-chart-1: #000000;
+  --c-chart-2: #6e6e6e;
+  --c-chart-3: #a6a6a6;
+  --c-chart-4: #d4d4d4;
+  --c-chart-grid: #e4e4e4;
+  --c-chart-axis: #cccccc;
+  --c-heat-0: #f2f2f2;
+  --c-heat-1: #d9d9d9;
+  --c-heat-2: #b3b3b3;
+  --c-heat-3: #808080;
+  --c-heat-4: #4d4d4d;
+  --c-heat-5: #1a1a1a;
+
+  /* Constantes propias de piezas (no de interfaz): bisel del marco de teléfono (8.7.30) y portada de la tienda */
+  --c-device: #0a0a0a;
+  --c-device-boton: #1a1a1a;
+  --c-device-pantalla: #0a0a0a;
+  --tienda-hero: var(--marca-tienda-hero, #1e1c1a);
+  /* Texto sobre la portada oscura de la tienda (siempre claro, también en tema claro) */
+  --c-sobre-hero: #ffffff;
+
+  /* Layout */
+  --sidebar-w: 248px;
+  --sidebar-w-rail: 72px;
+  --topbar-h: 56px;
+  --topbar-gap: 12px;
+  --rolestrip-h: 0px; /* 36px cuando el rol ≠ dueño */
+  --monedastrip-h: 0px; /* 32px cuando la moneda ≠ COP */
+  --sticky-top: calc(var(--rolestrip-h) + var(--topbar-gap) + var(--topbar-h) + 8px + var(--monedastrip-h));
+  --drawer-w: 520px;
+  --drawer-w-lg: 720px;
+  --tabbar-h: 56px;
+
+  /* Capas */
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-hint: 15;
+  --z-sidebar: 20;
+  --z-topbar: 30;
+  --z-rolestrip: 35;
+  --z-tryit: 38;
+  --z-popover: 40;
+  --z-drawer: 50;
+  --z-modal: 60;
+  --z-modal-popover: 61;
+  --z-toast: 70;
+  --z-tooltip: 80;
+
+  /* Duraciones */
+  --dur-instant: 80ms;
+  --dur-fast: 140ms;
+  --dur-base: 200ms;
+  --dur-slow: 240ms;
+  --dur-slower: 320ms;
+  --dur-count: 900ms;
+}
+
+:root[data-rol]:not([data-rol='dueno']) {
+  --rolestrip-h: 36px;
+}
+:root[data-moneda]:not([data-moneda='COP']) {
+  --monedastrip-h: 32px;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --c-canvas: #0a0a0a;
+  --c-surface: #141414;
+  --c-surface-2: #1c1c1c;
+  --c-selected: #222222;
+  --c-product: #dcdcdc;
+  --c-glass: rgba(20, 20, 20, 0.75);
+  --c-overlay: rgba(0, 0, 0, 0.6);
+
+  --c-ink: #f2f2f2;
+  --c-ink-2: #d4d4d4;
+  --c-muted: #a3a3a3;
+  --c-subtle: #858585;
+  --c-placeholder: #858585;
+  --c-disabled: #5c5c5c;
+  --c-inverse: #0a0a0a;
+
+  --c-line: #262626;
+  --c-line-soft: #1f1f1f;
+  --c-line-strong: #333333;
+  --c-control: #6b6b6b;
+
+  --c-accent: #c49a6c;
+  --c-accent-ink: #d9b48a;
+  --c-accent-soft: #2a221a;
+  --c-success: #6fb08f;
+  --c-success-soft: #14231b;
+  --c-warning: #d2a54a;
+  --c-warning-soft: #2a2112;
+  --c-danger: #e07a72;
+  --c-danger-soft: #2b1514;
+  --c-focus: #f2f2f2;
+
+  --c-chart-1: #f2f2f2;
+  --c-chart-2: #a3a3a3;
+  --c-chart-3: #6b6b6b;
+  --c-chart-4: #3d3d3d;
+  --c-chart-grid: #1f1f1f;
+  --c-chart-axis: #333333;
+  --c-heat-0: #1a1a1a;
+  --c-heat-1: #333333;
+  --c-heat-2: #595959;
+  --c-heat-3: #8c8c8c;
+  --c-heat-4: #bfbfbf;
+  --c-heat-5: #f2f2f2;
+}
+
+/* --------------------------------------------------------------------------
+   2. Colores expuestos a Tailwind (bg-*, text-*, border-*, fill-*, stroke-*)
+   Se reinicia la paleta por defecto: bg-blue-500 y similares NO existen.
+   -------------------------------------------------------------------------- */
+@theme inline {
+  --color-*: initial;
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  --color-canvas: var(--c-canvas);
+  --color-surface: var(--c-surface);
+  --color-surface-2: var(--c-surface-2);
+  --color-selected: var(--c-selected);
+  --color-product: var(--c-product);
+  --color-glass: var(--c-glass);
+  --color-overlay: var(--c-overlay);
+
+  --color-ink: var(--c-ink);
+  --color-ink-2: var(--c-ink-2);
+  --color-muted: var(--c-muted);
+  --color-subtle: var(--c-subtle);
+  --color-placeholder: var(--c-placeholder);
+  --color-disabled: var(--c-disabled);
+  --color-inverse: var(--c-inverse);
+
+  --color-line: var(--c-line);
+  --color-line-soft: var(--c-line-soft);
+  --color-line-strong: var(--c-line-strong);
+  --color-control: var(--c-control);
+
+  --color-accent: var(--c-accent);
+  --color-accent-ink: var(--c-accent-ink);
+  --color-accent-soft: var(--c-accent-soft);
+  --color-success: var(--c-success);
+  --color-success-soft: var(--c-success-soft);
+  --color-warning: var(--c-warning);
+  --color-warning-soft: var(--c-warning-soft);
+  --color-danger: var(--c-danger);
+  --color-danger-soft: var(--c-danger-soft);
+  --color-focus: var(--c-focus);
+
+  --color-chart-1: var(--c-chart-1);
+  --color-chart-2: var(--c-chart-2);
+  --color-chart-3: var(--c-chart-3);
+  --color-chart-4: var(--c-chart-4);
+  --color-chart-grid: var(--c-chart-grid);
+  --color-chart-axis: var(--c-chart-axis);
+  --color-heat-0: var(--c-heat-0);
+  --color-heat-1: var(--c-heat-1);
+  --color-heat-2: var(--c-heat-2);
+  --color-heat-3: var(--c-heat-3);
+  --color-heat-4: var(--c-heat-4);
+  --color-heat-5: var(--c-heat-5);
+  --color-tienda-hero: var(--tienda-hero);
+  --color-sobre-hero: var(--c-sobre-hero);
+  --color-device: var(--c-device);
+  --color-device-boton: var(--c-device-boton);
+}
+
+/* --------------------------------------------------------------------------
+   3. Tipografía, radios, sombras, curvas, animaciones, puntos de quiebre
+   -------------------------------------------------------------------------- */
+@theme {
+  --font-*: initial;
+  --font-sans: 'Figtree Variable', 'Figtree', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+
+  --text-*: initial;
+  --text-display: 3.5rem;
+  --text-display--line-height: 3.75rem;
+  --text-display--letter-spacing: -0.01em;
+  --text-display--font-weight: 800;
+  --text-display-sm: 2.25rem;
+  --text-display-sm--line-height: 2.5rem;
+  --text-display-sm--letter-spacing: -0.005em;
+  --text-display-sm--font-weight: 800;
+  --text-h1: 2rem;
+  --text-h1--line-height: 2.25rem;
+  --text-h1--letter-spacing: 0em;
+  --text-h1--font-weight: 900;
+  --text-h1-app: 1.75rem;
+  --text-h1-app--line-height: 2rem;
+  --text-h1-app--letter-spacing: 0em;
+  --text-h1-app--font-weight: 900;
+  --text-h1-ficha: 1.5rem;
+  --text-h1-ficha--line-height: 1.75rem;
+  --text-h1-ficha--letter-spacing: 0em;
+  --text-h1-ficha--font-weight: 900;
+  --text-h2: 1.25rem;
+  --text-h2--line-height: 1.5rem;
+  --text-h2--letter-spacing: 0.005em;
+  --text-h2--font-weight: 800;
+  --text-h3: 1rem;
+  --text-h3--line-height: 1.375rem;
+  --text-h3--letter-spacing: 0em;
+  --text-h3--font-weight: 700;
+  --text-h3-tienda: 1.125rem;
+  --text-h3-tienda--line-height: 1.5rem;
+  --text-h3-tienda--font-weight: 700;
+  --text-body-lg: 1rem;
+  --text-body-lg--line-height: 1.5rem;
+  --text-body-lg--font-weight: 400;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.375rem;
+  --text-body--font-weight: 400;
+  --text-small: 0.8125rem;
+  --text-small--line-height: 1.125rem;
+  --text-small--font-weight: 400;
+  --text-label: 0.8125rem;
+  --text-label--line-height: 1.125rem;
+  --text-label--font-weight: 600;
+  --text-eyebrow: 0.75rem;
+  --text-eyebrow--line-height: 1rem;
+  --text-eyebrow--letter-spacing: 0.1em;
+  --text-eyebrow--font-weight: 700;
+  --text-micro: 0.75rem;
+  --text-micro--line-height: 1rem;
+  --text-micro--font-weight: 500;
+  --text-button: 0.8125rem;
+  --text-button--line-height: 1rem;
+  --text-button--letter-spacing: 0.04em;
+  --text-button--font-weight: 700;
+  --text-button-sm: 0.75rem;
+  --text-button-sm--line-height: 1rem;
+  --text-button-sm--letter-spacing: 0.04em;
+  --text-button-sm--font-weight: 700;
+  --text-button-lg: 0.875rem;
+  --text-button-lg--line-height: 1.25rem;
+  --text-button-lg--letter-spacing: 0.04em;
+  --text-button-lg--font-weight: 700;
+  --text-button-tienda: 1rem;
+  --text-button-tienda--line-height: 1.25rem;
+  --text-button-tienda--letter-spacing: 0.02em;
+  --text-button-tienda--font-weight: 700;
+  --text-nav: 0.875rem;
+  --text-nav--line-height: 1.25rem;
+  --text-nav--font-weight: 600;
+  --text-nav-tienda: 0.875rem;
+  --text-nav-tienda--line-height: 1.25rem;
+  --text-nav-tienda--font-weight: 700;
+  --text-kpi-sm: 1.5rem;
+  --text-kpi-sm--line-height: 1.75rem;
+  --text-kpi-sm--letter-spacing: -0.015em;
+  --text-kpi-sm--font-weight: 800;
+  --text-kpi: 2rem;
+  --text-kpi--line-height: 2.25rem;
+  --text-kpi--letter-spacing: -0.02em;
+  --text-kpi--font-weight: 800;
+  --text-kpi-xl: 2.75rem;
+  --text-kpi-xl--line-height: 3rem;
+  --text-kpi-xl--letter-spacing: -0.025em;
+  --text-kpi-xl--font-weight: 800;
+  --text-wordmark: 1.125rem;
+  --text-wordmark--line-height: 1;
+  --text-wordmark--letter-spacing: 0.18em;
+  --text-wordmark--font-weight: 900;
+  --text-wordmark-tienda: 1.25rem;
+  --text-wordmark-tienda--line-height: 1;
+  --text-wordmark-tienda--letter-spacing: 0.18em;
+  --text-wordmark-tienda--font-weight: 900;
+  --text-wordmark-entrada: 4rem;
+  --text-wordmark-entrada--line-height: 1;
+  --text-wordmark-entrada--letter-spacing: 0.18em;
+  --text-wordmark-entrada--font-weight: 900;
+
+  --radius-*: initial;
+  --radius-none: 0px;
+  --radius-xs: 2px;
+  --radius-pill: 6px;
+  --radius-chrome: 8px;
+  --radius-sheet: 12px;
+  --radius-screen: 40px;
+  --radius-device: 52px;
+  --radius-full: 9999px;
+
+  --shadow-*: initial;
+  --shadow-float: 0 8px 24px -8px rgb(0 0 0 / 0.12);
+  --shadow-drag: 0 12px 32px -8px rgb(0 0 0 / 0.18);
+
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --blur-*: initial;
+  --blur-glass: 9px;
+  --blur-glass-app: 16px;
+
+  --ease-*: initial;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
+  --breakpoint-desk: 80rem; /* 1280 */
+  --breakpoint-wide: 90rem; /* 1440 */
+
+  --animate-*: initial;
+  --animate-spin: kc-spin 0.8s linear infinite;
+  --animate-page-in: kc-page-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-fade-in: kc-fade-in 140ms cubic-bezier(0.2, 0, 0, 1) both;
+  --animate-fade-in-slow: kc-fade-in 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-pop-in: kc-pop-in 140ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-dialog-in: kc-dialog-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-drawer-in: kc-drawer-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-sheet-up: kc-sheet-up 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-toast-in: kc-toast-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-stack-in: kc-stack-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-shimmer: kc-shimmer 1.4s linear infinite;
+  --animate-hint: kc-hint 1.8s cubic-bezier(0.2, 0, 0, 1) infinite;
+  --animate-flash: kc-flash 600ms cubic-bezier(0.2, 0, 0, 1) both;
+  --animate-underline: kc-underline 1.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-float-up: kc-float-up 1.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-draw: kc-draw 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-row-in: kc-row-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  @keyframes kc-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes kc-page-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes kc-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes kc-pop-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes kc-dialog-in {
+    from {
+      opacity: 0;
+      transform: scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes kc-drawer-in {
+    from {
+      opacity: 0;
+      transform: translateX(24px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes kc-sheet-up {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: none;
+    }
+  }
+  @keyframes kc-toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes kc-stack-in {
+    from {
+      opacity: 0.4;
+      transform: translateX(32px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes kc-shimmer {
+    from {
+      background-position: -200% 0;
+    }
+    to {
+      background-position: 200% 0;
+    }
+  }
+  @keyframes kc-hint {
+    0% {
+      transform: scale(1);
+      opacity: 0.5;
+    }
+    70%,
+    100% {
+      transform: scale(2.4);
+      opacity: 0;
+    }
+  }
+  @keyframes kc-flash {
+    0% {
+      background-color: var(--c-accent-soft);
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
+  @keyframes kc-underline {
+    0% {
+      transform: scaleX(0);
+      opacity: 1;
+    }
+    30% {
+      transform: scaleX(1);
+      opacity: 1;
+    }
+    100% {
+      transform: scaleX(1);
+      opacity: 0;
+    }
+  }
+  @keyframes kc-float-up {
+    0% {
+      opacity: 0;
+      transform: translateY(0);
+    }
+    15% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+  }
+  @keyframes kc-draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes kc-row-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+/* --------------------------------------------------------------------------
+   4. Utilidades compuestas (una clase = un estilo tipográfico completo)
+   -------------------------------------------------------------------------- */
+@utility num {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+@utility t-display {
+  @apply text-display uppercase;
+}
+@utility t-display-sm {
+  @apply text-display-sm uppercase;
+}
+@utility t-h1 {
+  @apply text-h1 uppercase;
+}
+@utility t-h1-app {
+  @apply text-h1-app uppercase;
+}
+@utility t-h1-ficha {
+  @apply text-h1-ficha uppercase;
+}
+@utility t-h2 {
+  @apply text-h2 uppercase;
+}
+@utility t-h3 {
+  @apply text-h3;
+}
+@utility t-h3-tienda {
+  @apply text-h3-tienda;
+}
+@utility t-eyebrow {
+  @apply text-eyebrow uppercase;
+}
+@utility t-body-lg {
+  @apply text-body-lg;
+}
+@utility t-body {
+  @apply text-body;
+}
+@utility t-small {
+  @apply text-small;
+}
+@utility t-label {
+  @apply text-label;
+}
+@utility t-micro {
+  @apply text-micro;
+}
+@utility t-button {
+  @apply text-button uppercase;
+}
+@utility t-button-sm {
+  @apply text-button-sm uppercase;
+}
+@utility t-button-lg {
+  @apply text-button-lg uppercase;
+}
+@utility t-button-tienda {
+  @apply text-button-tienda uppercase;
+}
+@utility t-nav {
+  @apply text-nav;
+}
+@utility t-nav-tienda {
+  @apply text-nav-tienda;
+}
+@utility t-kpi-sm {
+  @apply text-kpi-sm num;
+}
+@utility t-kpi {
+  @apply text-kpi num;
+}
+@utility t-kpi-xl {
+  @apply text-kpi-xl num;
+}
+@utility t-wordmark {
+  @apply text-wordmark uppercase;
+}
+@utility t-wordmark-tienda {
+  @apply text-wordmark-tienda uppercase;
+}
+@utility t-wordmark-entrada {
+  @apply text-wordmark-entrada uppercase;
+}
+
+@utility glass {
+  background-color: var(--c-glass);
+  -webkit-backdrop-filter: blur(9px) saturate(1.1);
+  backdrop-filter: blur(9px) saturate(1.1);
+}
+@utility glass-app {
+  background-color: var(--c-glass);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+  backdrop-filter: blur(16px) saturate(1.1);
+}
+
+@utility skeleton {
+  background-color: var(--c-selected);
+  background-image: linear-gradient(90deg, transparent 0%, var(--c-surface-2) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
+}
+
+/* Referencias, SKU y EAN (8.2): pequeño, tabular, tracking 0,02 em */
+@utility t-ref {
+  @apply text-small num;
+  letter-spacing: 0.02em;
+}
+
+/* Subrayado de enlace del sistema: offset 3–4 px, 1 px */
+@utility subrayado {
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
