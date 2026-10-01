@@ -67,11 +67,14 @@ export default function Portada() {
         </div>
       </section>
 
-      <Pista id="tienda.franja" lado="abajo" alinear="fin">
-        <div data-testid="tienda-franja" className="sobre-ink bg-ink px-4 py-3 text-center t-small text-inverse md:px-6">
-          <span className="font-bold">{TEXTOS_FIJOS.vitrina.replace('{{marca}}', marca.nombre)}.</span> <span className="text-inverse/80">{TEXTOS.franja}</span>
-        </div>
-      </Pista>
+      {/* El punto de la pista sobresale 4 px del borde derecho de la franja: se recorta en horizontal para que /tienda no se desplace. */}
+      <div className="overflow-x-clip">
+        <Pista id="tienda.franja" lado="abajo" alinear="fin">
+          <div data-testid="tienda-franja" className="sobre-ink bg-ink px-4 py-3 text-center t-small text-inverse md:px-6">
+            <span className="font-bold">{TEXTOS_FIJOS.vitrina.replace('{{marca}}', marca.nombre)}.</span> <span className="text-inverse/80">{TEXTOS.franja}</span>
+          </div>
+        </Pista>
+      </div>
 
       <div className="mx-auto w-full max-w-[1600px] px-4 md:px-6">
         <section aria-labelledby="titulo-categorias" className="pt-16 md:pt-24">

@@ -11,7 +11,7 @@ export type VistaImportaciones = (typeof VISTAS_IMPORTACIONES)[number]['valor'];
 
 export const TEXTOS_LISTA = {
   titulo: 'Importaciones',
-  subtitulo: 'Dónde viene cada pedido a China, cuánto has pagado y cuándo llega a la bodega.',
+  subtitulo: 'Dónde viene cada pedido desde China, cuánto has pagado y cuándo llega a la bodega.',
   vacioTitulo: 'Todavía no hay pedidos con este filtro',
   vacioTexto: 'Cambia el estado o la fábrica, o crea un pedido nuevo para verlo aquí.',
   sinPedidosTitulo: 'Aún no hay pedidos a China',

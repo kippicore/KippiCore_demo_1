@@ -94,6 +94,8 @@ test('la portada muestra el hero, las categorías reales, las novedades, la fran
   // Franja "Vista previa de lo que KippiCore puede construir" con su pista.
   await expect(page.getByTestId('tienda-franja')).toContainText('Vista previa de lo que KippiCore puede construir para HALDEN');
   await expect(page.getByTestId('pista-tienda.franja')).toBeVisible();
+  // El punto de la pista no debe provocar desplazamiento horizontal.
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
   expect(errores).toEqual([]);
 });
 

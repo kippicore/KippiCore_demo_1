@@ -292,7 +292,7 @@ function ContenidoPlantilla({ tipo, localId }: { tipo: TipoTurno; localId: Id })
   return (
     <div className={cn('w-[134px] border px-2.5 py-1', ESTILO_TURNO[tipo])}>
       <p className="t-micro font-bold">{ETIQUETA_TIPO_TURNO[tipo]}</p>
-      <p className="t-micro num whitespace-nowrap opacity-80">{rangoHoras(p.inicio, p.fin)}</p>
+      <p className="t-micro num whitespace-nowrap opacity-80">{rangoCompacto(p.inicio, p.fin)}</p>
     </div>
   );
 }
@@ -315,7 +315,7 @@ function Plantilla({ tipo, localId }: { tipo: TipoTurno; localId: Id }) {
         )}
       >
         <p className="t-micro font-bold">{ETIQUETA_TIPO_TURNO[tipo]}</p>
-        <p className="t-micro num whitespace-nowrap opacity-80">{rangoHoras(p.inicio, p.fin)}</p>
+        <p className="t-micro num whitespace-nowrap opacity-80">{rangoCompacto(p.inicio, p.fin)}</p>
       </div>
     </Tooltip>
   );
