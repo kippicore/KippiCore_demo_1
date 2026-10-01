@@ -14,7 +14,7 @@ import {
 import { AHORA, estadoDe, HOY } from '@/selectores/pruebas/construir';
 import { IDS_REPORTES, REPORTES } from './definiciones';
 import { exportarReporte, hojasParaExportar } from './exportar';
-import { pdfDesprendible, pdfDocumentoPos, pdfEtiquetas, pdfFactura, pdfNotaCredito } from './plantillas-pdf';
+import { emisor, pdfDesprendible, pdfDocumentoPos, pdfEtiquetas, pdfFactura, pdfNotaCredito } from './plantillas-pdf';
 import type { FiltrosReporte, HojaReporte } from './tipos';
 
 /**
@@ -195,5 +195,14 @@ describe('plantillas PDF', () => {
       expect(new TextDecoder().decode(new Uint8Array(a.datos).slice(0, 5))).toBe('%PDF-');
       expect(a.datos.byteLength).toBeGreaterThan(3000);
     }
+  });
+});
+
+describe('emisor de los documentos en PDF (compartidos C-D)', () => {
+  it('con la marca de ejemplo usa la razón social; con marca personalizada, el nombre del negocio', () => {
+    const e = { empresa: { nombre: 'HALDEN', razonSocial: 'Halden Moda Masculina S.A.S.', nit: '9012345678', direccion: 'Calle 1', ciudad: 'Bogotá', telefono: '601' } } as unknown as Parameters<typeof emisor>[0];
+    expect(emisor(e, 'HALDEN')[0]).toBe('Halden Moda Masculina S.A.S.');
+    expect(emisor(e, 'Almacén La 14')[0]).toBe('Almacén La 14 · razón social de ejemplo');
+    expect(emisor(e, 'Almacén La 14').join(' ')).not.toContain('Halden');
   });
 });

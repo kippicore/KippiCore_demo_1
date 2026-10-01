@@ -406,6 +406,12 @@ describe('devoluciones (V3, 6.20.2)', () => {
     });
     hacer(e, 'devolucion.registrar', { ...d, notaCreditoId: 'ncr_1' });
     expect(e.notasCredito.ncr_1).toMatchObject({ numero: 'HAL-NC-0001', valor: 199_900, base: 167_983 });
+    // Recorrido ante la DIAN de la nota (compartidos C-D): mismo orden que la factura.
+    expect(e.notasCredito.ncr_1?.estado).toBe('generada');
+    expect(intentar(e, 'notaCredito.avanzarEstado', { notaId: 'ncr_1', estado: 'aceptada' })).toMatchObject({ ok: false, error: { codigo: 'ESTADO_INVALIDO' } });
+    hacer(e, 'notaCredito.avanzarEstado', { notaId: 'ncr_1', estado: 'enviada' });
+    hacer(e, 'notaCredito.avanzarEstado', { notaId: 'ncr_1', estado: 'aceptada' });
+    expect(e.notasCredito.ncr_1?.estado).toBe('aceptada');
   });
 });
 

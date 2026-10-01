@@ -22,9 +22,14 @@ export interface ContextoPlantilla {
 
 const MIME_PDF = 'application/pdf';
 
-function emisor(e: EstadoDominio, marca: string): string[] {
+/**
+ * Emisor del documento, igual que la vista previa de Facturación: la razón social de la demostración o, con marca
+ * personalizada, el nombre del negocio de la persona como razón social de ejemplo (compartidos C-D, pedido de D3).
+ */
+export function emisor(e: EstadoDominio, marca: string): string[] {
   const em = e.empresa;
-  return [`${em.razonSocial} (${marca})`, `NIT ${fmtNit(em.nit)}`, `${em.direccion}, ${em.ciudad} · ${em.telefono}`];
+  const propia = marca.trim().toLocaleLowerCase('es') !== em.nombre.trim().toLocaleLowerCase('es');
+  return [propia ? `${marca.trim()} · razón social de ejemplo` : em.razonSocial, `NIT ${fmtNit(em.nit)}`, `${em.direccion}, ${em.ciudad} · ${em.telefono}`];
 }
 
 function documentoVenta(e: EstadoDominio, facturaId: Id) {

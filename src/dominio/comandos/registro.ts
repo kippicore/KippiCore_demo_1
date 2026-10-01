@@ -123,6 +123,7 @@ const MANEJADORES = {
   'factura.emitir': facturacion.facturaEmitir,
   'factura.avanzarEstado': facturacion.facturaAvanzarEstado,
   'notaCredito.emitir': facturacion.notaCreditoEmitir,
+  'notaCredito.avanzarEstado': facturacion.notaCreditoAvanzarEstado,
   // Configuración
   'empresa.editar': configuracion.empresaEditar,
   'local.crear': configuracion.localCrear,

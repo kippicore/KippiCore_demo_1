@@ -351,6 +351,7 @@ export interface MapaComandos {
   'factura.emitir': { facturaId: Id; ventaId: Id; tipo: TipoDocumentoElectronico; adquirente: Adquirente };
   'factura.avanzarEstado': { facturaId: Id; estado: 'enviada' | 'aceptada' };
   'notaCredito.emitir': { notaId: Id; facturaId: Id; devolucionId: Id | null; motivo: string };
+  'notaCredito.avanzarEstado': { notaId: Id; estado: 'enviada' | 'aceptada' };
   // Configuración
   'empresa.editar': { cambios: Partial<Empresa> };
   'local.crear': { localId: Id; datos: DatosLocal };

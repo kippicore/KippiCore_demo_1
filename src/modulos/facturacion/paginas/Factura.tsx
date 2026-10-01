@@ -18,7 +18,7 @@ import {
   Fecha,
   Pista,
 } from '@/ui';
-import { useAvanceNotas, useAvanceSimulado, useEstadoNota } from '../avance';
+import { useAvanceSimulado } from '../avance';
 import { DialogoNotaCredito } from '../componentes/DialogoNotaCredito';
 import { HojaFactura, HojaPos } from '../componentes/HojaDocumento';
 import { Recorrido } from '../componentes/Recorrido';
@@ -32,10 +32,9 @@ export default function Factura() {
   const rol = useRolActivo();
   const { empleado } = useUsuarioActivo();
   const puede = usePuede();
-  const estadoNota = useEstadoNota();
   const [nota, setNota] = useState(false);
   useAvanceSimulado(vista ? [{ id: vista.factura.id, estado: vista.factura.estado }] : []);
-  useAvanceNotas(vista?.notas ?? []);
+  useAvanceSimulado(vista?.notas ?? [], 'nota');
 
   const migasBase = rol === 'vendedor' ? [{ texto: 'Ventas', a: rutas.ventas() }] : [{ texto: 'Inicio', a: rutas.inicio() }, { texto: 'Facturación', a: rutas.facturacion() }];
 
@@ -156,7 +155,7 @@ export default function Factura() {
                       <span className="block t-label num text-accent-ink">
                         <Dinero valor={-n.valor} />
                       </span>
-                      <span className="block t-small text-muted">{ESTADOS_FACTURA[estadoNota(n)].etiqueta.replace(' a la DIAN (simulación)', '')}</span>
+                      <span className="block t-small text-muted">{ESTADOS_FACTURA[n.estado].etiqueta.replace(' a la DIAN (simulación)', '')}</span>
                     </span>
                   </li>
                 ))}

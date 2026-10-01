@@ -5,7 +5,7 @@ import { useParamsRuta } from '@/app/useParamsRuta';
 import { ESTADOS_FACTURA } from '@/config/estados';
 import { useSel } from '@/estado';
 import { BadgeEstado, BotonDocumentoPdf, BotonEnlace, EmptyState, EncabezadoPagina } from '@/ui';
-import { useAvanceNotas, useEstadoNota } from '../avance';
+import { useAvanceSimulado } from '../avance';
 import { ORDEN_ESTADOS } from '../calculos';
 import { HojaNota } from '../componentes/HojaDocumento';
 import { Recorrido } from '../componentes/Recorrido';
@@ -16,13 +16,12 @@ import { TEXTOS } from '../textos';
 export default function NotaCredito() {
   const { notaId } = useParamsRuta('notaCredito');
   const vista = useSel(selVistaNota, { notaId });
-  const estadoNota = useEstadoNota();
   const migasBase = [
     { texto: 'Inicio', a: rutas.inicio() },
     { texto: 'Facturación', a: rutas.facturacion() },
   ];
-  useAvanceNotas(vista ? [vista.nota] : []);
-  const estado = vista ? estadoNota(vista.nota) : 'generada';
+  useAvanceSimulado(vista ? [vista.nota] : [], 'nota');
+  const estado = vista ? vista.nota.estado : 'generada';
   // Las notas no tienen historial propio: cada paso alcanzado se muestra con la hora de la nota.
   const historial = useMemo(
     () => (vista ? ORDEN_ESTADOS.filter((e) => ORDEN_ESTADOS.indexOf(e) <= ORDEN_ESTADOS.indexOf(estado)).map((e) => ({ estado: e, ts: vista.nota.ts })) : []),

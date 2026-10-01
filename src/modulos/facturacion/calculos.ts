@@ -171,17 +171,6 @@ export function minutosEntre(a: FechaHoraISO, b: FechaHoraISO): number {
   return Math.max(0, Math.round(f(b) - f(a)));
 }
 
-/**
- * El dominio solo avanza el estado de las facturas (`factura.avanzarEstado`); una nota crédito nace "generada" y no
- * tiene comando propio. Para que el recorrido se vea completo, el estado que se MUESTRA de una nota recién emitida
- * sigue el reloj de la app: generada el primer minuto, enviada el segundo y aceptada desde el tercero.
- */
-export function estadoMostradoNota(n: Pick<NotaCredito, 'estado' | 'ts'>, ahora: FechaHoraISO): EstadoFactura {
-  if (n.estado !== 'generada') return n.estado;
-  const minutos = minutosEntre(n.ts, ahora);
-  return minutos >= 2 ? 'aceptada' : minutos >= 1 ? 'enviada' : 'generada';
-}
-
 // ---------------------------------------------------------------------------------------------------------
 // Adquirente, códigos y resoluciones
 // ---------------------------------------------------------------------------------------------------------

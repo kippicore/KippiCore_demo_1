@@ -575,6 +575,7 @@ const INVALIDOS = {
   },
   'factura.avanzarEstado': { facturaId: 'fa_1', estado: 'aceptada' },
   'notaCredito.emitir': { notaId: 'ncr_x', facturaId: 'fa_1', devolucionId: NO, motivo: 'x' },
+  'notaCredito.avanzarEstado': { notaId: NO, estado: 'enviada' },
   'empresa.editar': { cambios: { nit: '123' } },
   'local.crear': {
     localId: 'lo_x',
@@ -751,8 +752,8 @@ function estadoRico(): EstadoDominio {
 }
 
 describe('atomicidad de los manejadores (5.6.4)', () => {
-  it('el catálogo tiene un manejador por comando (107)', () => {
-    expect(TIPOS_COMANDO).toHaveLength(107);
+  it('el catálogo tiene un manejador por comando (108)', () => {
+    expect(TIPOS_COMANDO).toHaveLength(108);
     expect(new Set(TIPOS_COMANDO)).toEqual(new Set(Object.keys(INVALIDOS)));
   });
 

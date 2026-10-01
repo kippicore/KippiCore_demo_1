@@ -118,6 +118,7 @@ export const PERMISOS_COMANDOS: Record<TipoComando, readonly Actor[]> = {
   'factura.emitir': [D, V, G, T],
   'factura.avanzarEstado': [D, V, G, T],
   'notaCredito.emitir': [D, G],
+  'notaCredito.avanzarEstado': [D, V, G, T],
   // Configuración
   'empresa.editar': [D],
   'local.crear': [D],

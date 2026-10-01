@@ -366,10 +366,13 @@ test.describe('Facturación · notas crédito', () => {
     const nota = await conKc(page, (kc) => {
       const e = kc.estado() as unknown as EstadoMin;
       const n = Object.values(e.notasCredito).sort((a, b) => (a.ts < b.ts ? 1 : -1))[0]!;
-      return { id: n.id, valor: n.valor, facturaId: n.facturaId, eventos: kc.eventosDominio().map((x) => x.tipo) };
+      return { id: n.id, valor: n.valor, facturaId: n.facturaId, estado: (n as unknown as { estado: string }).estado, eventos: kc.eventosDominio().map((x) => x.tipo) };
     });
     expect(nota.valor).toBe(v.total);
     expect(nota.eventos).toContain('NotaCreditoEmitida');
+    // Compartidos C-D: el avance es del dominio (notaCredito.avanzarEstado), no de la pestaña.
+    expect(nota.estado).toBe('aceptada');
+    expect(nota.eventos.filter((t) => t === 'NotaCreditoEstado')).toHaveLength(2);
     await capturar(page, 'nota');
     if (CAPTURAS) await page.getByTestId('nota-hoja').screenshot({ path: `${CAPTURAS}/nota-hoja-${page.viewportSize()?.width ?? 0}.png` });
 

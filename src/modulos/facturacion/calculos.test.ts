@@ -4,7 +4,6 @@ import {
   adquirenteDeCliente,
   coincideDocumento,
   CONSUMIDOR_FINAL,
-  estadoMostradoNota,
   filtrarDocumentos,
   minutosEntre,
   partirCodigo,
@@ -108,14 +107,6 @@ describe('recorrido de estados', () => {
     expect(p.map((x) => x.situacion)).toEqual(['hecho', 'en_curso', 'pendiente']);
     expect(p[0]?.ts).toBe('2026-09-30T10:00:00');
     expect(pasosRecorrido('aceptada', []).map((x) => x.situacion)).toEqual(['hecho', 'hecho', 'hecho']);
-  });
-
-  it('la nota recién emitida sigue el reloj: generada, enviada, aceptada', () => {
-    const n = { estado: 'generada' as const, ts: '2026-09-30T10:00:00' };
-    expect(estadoMostradoNota(n, '2026-09-30T10:00:00')).toBe('generada');
-    expect(estadoMostradoNota(n, '2026-09-30T10:01:00')).toBe('enviada');
-    expect(estadoMostradoNota(n, '2026-09-30T10:02:00')).toBe('aceptada');
-    expect(estadoMostradoNota({ ...n, estado: 'aceptada' }, '2026-09-30T10:00:00')).toBe('aceptada');
   });
 
   it('cuenta minutos entre instantes', () => {

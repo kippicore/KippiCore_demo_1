@@ -127,6 +127,7 @@ export const NOMBRES_ACCIONES = {
   'factura.emitir': 'emitirFactura',
   'factura.avanzarEstado': 'avanzarEstadoFactura',
   'notaCredito.emitir': 'emitirNotaCredito',
+  'notaCredito.avanzarEstado': 'avanzarEstadoNotaCredito',
   'empresa.editar': 'editarEmpresa',
   'local.crear': 'crearLocal',
   'local.editar': 'editarLocal',

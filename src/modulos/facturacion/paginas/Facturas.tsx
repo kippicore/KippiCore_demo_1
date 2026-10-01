@@ -36,7 +36,7 @@ import {
   type ColumnaTabla,
   type RangoFechas,
 } from '@/ui';
-import { useAvanceNotas, useAvanceSimulado, useEstadoNota } from '../avance';
+import { useAvanceSimulado } from '../avance';
 import {
   filtrarDocumentos,
   resumirDocumentos,
@@ -78,14 +78,12 @@ export default function Facturas() {
   const [resoluciones, setResoluciones] = useState(false);
 
   const todas = useSel(selDocumentos);
-  // La nota crédito nace "generada" y el dominio no la avanza: su estado mostrado sigue el reloj de la app.
-  const estadoNota = useEstadoNota();
-  const filas = useMemo<FilaDocumento[]>(
-    () => todas.map((f) => (f.clase === 'nota' ? { ...f, estado: estadoNota(f) } : f)),
-    [todas, estadoNota],
-  );
+  const filas: FilaDocumento[] = todas;
   useAvanceSimulado(filas.filter((f) => f.clase !== 'nota' && f.estado !== 'aceptada'));
-  useAvanceNotas(todas.filter((f) => f.clase === 'nota'));
+  useAvanceSimulado(
+    filas.filter((f) => f.clase === 'nota' && f.estado !== 'aceptada'),
+    'nota',
+  );
 
   const filtro = useMemo(
     () => ({

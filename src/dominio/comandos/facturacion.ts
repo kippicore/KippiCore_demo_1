@@ -132,3 +132,33 @@ export const notaCreditoEmitir = manejador<'notaCredito.emitir', { nota: NotaCre
     ctx.emitir({ tipo: 'NotaCreditoEmitida', notaId: plan.nota.id });
   },
 });
+
+/**
+ * Recorrido simulado de una nota crédito ante la DIAN (compartidos C-D, pedido de D3): las mismas reglas que
+ * `factura.avanzarEstado` (generada → enviada → aceptada), sobre la nota.
+ */
+export const notaCreditoAvanzarEstado = manejador<'notaCredito.avanzarEstado', { id: Id; estado: 'enviada' | 'aceptada' }>({
+  validar(estado, d) {
+    const n = requerirExiste(estado.notasCredito, d.notaId, 'la nota crédito', 'notaId');
+    exigir(
+      d.estado === 'enviada' || d.estado === 'aceptada',
+      'ESTADO_INVALIDO',
+      'El estado sigue el orden generada → enviada → aceptada.',
+      'estado',
+    );
+    exigir(
+      n.estado === ANTERIOR[d.estado],
+      'ESTADO_INVALIDO',
+      `La nota crédito está ${n.estado}; sigue el orden generada → enviada → aceptada.`,
+      'estado',
+    );
+    return { id: n.id, estado: d.estado };
+  },
+  escribir(estado, plan, ctx) {
+    const n = estado.notasCredito[plan.id];
+    if (!n) return;
+    n.estado = plan.estado;
+    marcarEditado(n, ctx);
+    ctx.emitir({ tipo: 'NotaCreditoEstado', notaId: n.id, estado: plan.estado });
+  },
+});

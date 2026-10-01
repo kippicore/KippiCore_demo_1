@@ -51,6 +51,7 @@ export type EventoDominio =
   | { tipo: 'FacturaEmitida'; facturaId: Id; ventaId: Id }
   | { tipo: 'FacturaEstado'; facturaId: Id; estado: EstadoFactura }
   | { tipo: 'NotaCreditoEmitida'; notaId: Id }
+  | { tipo: 'NotaCreditoEstado'; notaId: Id; estado: EstadoFactura }
   | { tipo: 'NotificacionCreada'; notificacionId: Id }
   | { tipo: 'AprobacionSolicitada' | 'AprobacionResuelta'; solicitudId: Id }
   | { tipo: 'TasaRegistrada'; moneda: MonedaExtranjera; valor: number }
