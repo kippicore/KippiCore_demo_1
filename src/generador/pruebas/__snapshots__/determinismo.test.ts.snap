@@ -19,4 +19,4 @@ exports[`determinismo del generador > PRNG: sfc32 con cyrb128 da la misma secuen
 ]
 `;
 
-exports[`determinismo del generador > dos construcciones con las mismas entradas dan la misma huella (y la de referencia) 1`] = `"3d56dd40cf41bb3cf761ab905a74c23e"`;
+exports[`determinismo del generador > dos construcciones con las mismas entradas dan la misma huella (y la de referencia) 1`] = `"278f758087ff6265a2345ab218008ee4"`;

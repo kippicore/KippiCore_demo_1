@@ -15,6 +15,9 @@ export default defineConfig({
           name: 'dominio',
           globals: true,
           environment: 'node',
+          // Las pruebas del generador construyen 18 meses (≈ 1 s cada una, más con la carga en paralelo).
+          testTimeout: 60_000,
+          hookTimeout: 60_000,
           include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'],
         },
       },

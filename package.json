@@ -18,7 +18,8 @@
     "test:watch": "vitest",
     "test:tz": "TZ=UTC vitest run --project dominio && TZ=Asia/Tokyo vitest run --project dominio && TZ=America/Los_Angeles vitest run --project dominio",
     "test:e2e": "playwright test",
-    "medir": "tsx scripts/medir-generador.ts"
+    "medir": "tsx scripts/medir-generador.ts",
+    "informe": "tsx scripts/informe-coherencia.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

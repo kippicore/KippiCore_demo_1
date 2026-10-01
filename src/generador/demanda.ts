@@ -240,7 +240,7 @@ export class Demanda {
     if (p.categoria === 'camisas' && familia === 'azul')
       // La Oxford azul cielo es la combinación estrella (N1, P3); el resto del azul pesa menos para que el azul
       // sea ≈ 1 de cada 3 camisas (P12).
-      return p.id === 'pd_cam_0142' && colorId === 'col_azc' ? 1.4 : 0.3;
+      return p.id === 'pd_cam_0142' && colorId === 'col_azc' ? 1.2 : 0.2;
     if (p.categoria === 'punto' && (familia === 'beige' || familia === 'camel'))
       return fecha >= this.inicioTendenciaBeige ? 1.8 : 0.9;
     return 1;
