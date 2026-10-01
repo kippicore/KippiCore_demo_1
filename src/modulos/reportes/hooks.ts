@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FechaISO, Id } from '@/dominio/tipos';
 import { useAhora, useEstadoDominio, useFiltroLocal, useHoy, useMoneda, useRolActivo, useSel } from '@/estado';
-import { hojasParaExportar, rangoPorDefecto, REPORTES, type FiltrosReporte, type IdReporte } from '@/reportes';
+import { hojasParaExportar, rangoPorDefectoDe, REPORTES, type FiltrosReporte, type IdReporte } from '@/reportes';
 import { selLocales } from '@/selectores';
 import { armarFiltros, opcionesLocal, resolverLocal, resumirHojas, totalFilas, type OpcionLocalReporte, type VistaHoja } from './calculos';
 
@@ -28,7 +28,7 @@ export interface FiltrosPantalla {
 }
 
 /**
- * Filtros de la pantalla: rango (por defecto, el mes en curso), local (el de la barra superior mientras no se elija
+ * Filtros de la pantalla: rango (por defecto, el mes en curso; el estado de resultados, el último mes completo), local (el de la barra superior mientras no se elija
  * otro aquí; si el reporte no lo ofrece, todos), referencia del kárdex y periodo de nómina.
  */
 export function useFiltrosPantalla(id: IdReporte): FiltrosPantalla {
@@ -38,7 +38,9 @@ export function useFiltrosPantalla(id: IdReporte): FiltrosPantalla {
   const global = useFiltroLocal();
   const e = useEstadoDominio();
   const locales = useSel(selLocales, { incluirBodega: true });
-  const [rango, setRango] = useState<RangoReporte>(() => rangoPorDefecto(hoy));
+  // Mientras no se elija otro, cada reporte abre con su rango por defecto (el estado de resultados, el último mes completo).
+  const [elegidoRango, setRango] = useState<RangoReporte | null>(null);
+  const rango = useMemo(() => elegidoRango ?? rangoPorDefectoDe(id, hoy), [elegidoRango, id, hoy]);
   // El local elegido aquí vale mientras el de la barra superior no cambie (se deriva, sin efectos).
   const [elegido, setElegido] = useState<{ valor: string; global: string } | null>(null);
   const [productoId, setProductoId] = useState<Id>(e.meta.narrativa.productoOxford);

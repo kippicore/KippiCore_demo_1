@@ -2,6 +2,7 @@ import { Component, Fragment, type ErrorInfo, type ReactNode } from 'react';
 import { TriangleAlert } from 'lucide-react';
 import { Button, Dinero, EmptyState, EncabezadoPagina, Pista, PestanasEnlace, Select } from '@/ui';
 import type { MesISO } from '@/dominio/tipos';
+import { useHoy } from '@/estado';
 import { mesAnio } from '@/lib/formato';
 import { rutas } from '@/app/rutas';
 import { mesesHasta, type Frase } from '../calculos';
@@ -53,7 +54,10 @@ export interface PropsEncabezadoGastos {
 
 /** Encabezado con las pestañas del módulo; la pista "Estado de resultados" vive sobre su pestaña (CONTRATOS 10). */
 export function EncabezadoGastos({ titulo, subtitulo, acciones, mes, local, migaFinal }: PropsEncabezadoGastos) {
+  const hoy = useHoy();
   const q = { mes, local: local ?? null };
+  // Sin mes en el enlace, el estado de resultados abre en el último mes completo (no en el mes en curso a medio llenar).
+  const mesResultados = mes === hoy.slice(0, 7) ? undefined : mes;
   const pestanaResultados = (
     // La pista es un botón dentro de un enlace: su clic abre el globo y no navega. El span solo intercepta ese clic
     // (el teclado ya llega al botón de la pista y al enlace por separado).
@@ -81,7 +85,7 @@ export function EncabezadoGastos({ titulo, subtitulo, acciones, mes, local, miga
           pestanas={[
             { a: rutas.gastos({ mes: q.mes, local: q.local }), etiqueta: 'Gastos', fin: true },
             { a: rutas.gastosRecurrentes(), etiqueta: 'Recurrentes' },
-            { a: rutas.estadoResultados({ mes: q.mes, local: q.local === 'general' ? null : q.local }), etiqueta: pestanaResultados },
+            { a: rutas.estadoResultados({ mes: mesResultados, local: q.local === 'general' ? null : q.local }), etiqueta: pestanaResultados },
             { a: rutas.puntoEquilibrio({ mes: q.mes, local: q.local === 'general' ? null : q.local }), etiqueta: 'Punto de equilibrio' },
           ]}
         />

@@ -29,7 +29,8 @@ export function TarjetasKpi() {
     ventas_mes: rutas.ventas({ desde: `${mes}-01`, hasta: hoy, ...local }),
     ticket: rutas.ventas({ desde: `${mes}-01`, hasta: hoy, ...local }),
     unidades: rutas.ventas({ desde: `${mes}-01`, hasta: hoy, ...local }),
-    margen: rutas.estadoResultados({ mes, ...local }),
+    // Los primeros días del mes casi no hay ventas que comparar con el arriendo: se abre el último mes completo.
+    margen: rutas.estadoResultados({ ...(Number(hoy.slice(8, 10)) < 8 ? {} : { mes }), ...local }),
     efectivo: rutas.caja(),
   };
 

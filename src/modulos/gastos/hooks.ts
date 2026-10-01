@@ -5,6 +5,7 @@ import { useFiltroLocal, useHoy, useSel } from '@/estado';
 import { selLocales } from '@/selectores';
 import { rutas } from '@/app/rutas';
 import { useParamsRuta } from '@/app/useParamsRuta';
+import { sumarMesesAMes } from '@/lib/fechas';
 import { mesEfectivo } from './calculos';
 import { GENERAL } from './textos';
 
@@ -34,7 +35,9 @@ export function useFiltrosMesLocal(ruta: RutaConFiltros): FiltrosMesLocal {
   const navegar = useNavigate();
   // En Gastos también se filtra por la bodega (tiene nómina propia); en Resultados y Equilibrio, solo los que venden.
   const locales = useSel(selLocales, { incluirBodega: ruta === 'gastos' });
-  const mes = mesEfectivo(params.mes, hoy);
+  // Sin `?mes=`, el estado de resultados abre en el último mes completo (el mes en curso, a comienzos de mes, cargaría
+  // el arriendo entero contra pocos días de ventas); las demás vistas, en el mes en curso.
+  const mes = params.mes || ruta !== 'estadoResultados' ? mesEfectivo(params.mes, hoy) : sumarMesesAMes(hoy.slice(0, 7), -1);
   const ids = useMemo(() => new Set<string>(locales.map((l) => l.id)), [locales]);
   const valido = (l: string | null): l is string => !!l && (l === 'todos' || ids.has(l) || (ruta === 'gastos' && l === GENERAL));
   const localDeLaUrl = valido(params.local);

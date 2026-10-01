@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, test } from '../fixtures';
+import { conHoy, expect, test } from '../fixtures';
 import { conKc, esperarDatos } from '../kc';
 
 /**
@@ -220,7 +220,7 @@ test('recurrentes: CRUD y "Generar este mes" con vista previa', async ({ page, i
 });
 
 test('estado de resultados: cifras de los selectores, explicación, cascada y local por local', async ({ page, irA }) => {
-  await abrir(page, irA, '/panel/gastos/resultados');
+  await abrir(page, irA, '/panel/gastos/resultados?mes=2026-09');
   const r = await conKc(page, (kc) => {
     const er = (localId: string, prorratear = false) => kc.sel('selEstadoResultados', { desde: '2026-09-01', hasta: '2026-09-30', localId, prorratear }) as unknown as ER;
     return { todos: er('todos'), p93: er('p93'), usq: er('usq'), zr: er('zr') };

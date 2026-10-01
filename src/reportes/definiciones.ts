@@ -484,8 +484,24 @@ function resultados(e: EstadoDominio, f: FiltrosReporte): HojaReporte[] {
   const locales = Object.values(e.locales).filter((l) => l.vende && !l.eliminadoEn).sort((a, b) => a.orden - b.orden);
   const cols = f.localId === 'todos' ? [...locales.map((l) => l.id), 'todos'] : [f.localId];
   const er = Object.fromEntries(cols.map((c) => [c, selEstadoResultados(e, { desde: f.desde, hasta: f.hasta, localId: c, prorratear: c !== 'todos' })]));
+  // La columna Total reparte igual que los locales: "gastos operativos del local" es la suma de los locales y los
+  // generales (los que ningún local explica: administración, bodega) son el resto del gasto del negocio. Así la
+  // columna Total suma lo mismo que las de los locales y la utilidad operativa cuadra fila a fila.
+  const porLocal = locales.filter((l) => er[l.id]);
+  const sumaLocales = (k: 'gastosOperativos' | 'gastosGeneralesProrrateados') => porLocal.reduce((a, l) => a + (er[l.id]?.[k] ?? 0), 0);
+  const gastoNegocio = (er['todos']?.gastosOperativos ?? 0) + (er['todos']?.gastosGeneralesProrrateados ?? 0);
+  const totalOperativos = sumaLocales('gastosOperativos');
+  const total = {
+    gastosOperativos: totalOperativos,
+    gastosGeneralesProrrateados: gastoNegocio - totalOperativos,
+    utilidadOperativa: er['todos']?.utilidadOperativa ?? 0,
+  };
+  const valor = (c: string, k: keyof typeof total | 'ventasNetas' | 'costoVentas' | 'utilidadBruta'): number => {
+    if (c === 'todos' && porLocal.length > 0 && (k === 'gastosOperativos' || k === 'gastosGeneralesProrrateados' || k === 'utilidadOperativa')) return total[k];
+    return er[c]?.[k] ?? 0;
+  };
   const linea = (concepto: string, k: 'ventasNetas' | 'costoVentas' | 'utilidadBruta' | 'gastosOperativos' | 'gastosGeneralesProrrateados' | 'utilidadOperativa') =>
-    Object.fromEntries([['concepto', concepto], ...cols.map((c) => [c, er[c]?.[k] ?? 0])]) as Record<string, string | number>;
+    Object.fromEntries([['concepto', concepto], ...cols.map((c) => [c, valor(c, k)])]) as Record<string, string | number>;
   return [
     {
       nombre: 'Estado de resultados',
@@ -874,6 +890,22 @@ export function nombreCategoria(c: Categoria): string {
 /** Rango por defecto de los reportes: del día 1 del mes hasta hoy. */
 export function rangoPorDefecto(hoy: FechaISO): { desde: FechaISO; hasta: FechaISO } {
   return { desde: `${hoy.slice(0, 7)}-01`, hasta: hoy };
+}
+
+/** Último mes completo respecto de `hoy` (el 1 de octubre: septiembre entero). */
+export function rangoUltimoMesCompleto(hoy: FechaISO): { desde: FechaISO; hasta: FechaISO } {
+  const [a, m] = hoy.split('-').map(Number) as [number, number];
+  const mes = m === 1 ? `${a - 1}-12` : `${a}-${String(m - 1).padStart(2, '0')}`;
+  return rangoDeMes(mes);
+}
+
+/**
+ * Rango con el que abre cada reporte. El estado de resultados es un cierre de periodo:
+ * abre en el último mes completo (con "Hoy" o con 1 día del mes cargarían el arriendo entero a un día y darían
+ * pérdidas absurdas). Los demás, del día 1 del mes hasta hoy.
+ */
+export function rangoPorDefectoDe(id: IdReporte, hoy: FechaISO): { desde: FechaISO; hasta: FechaISO } {
+  return id === 'resultados' ? rangoUltimoMesCompleto(hoy) : rangoPorDefecto(hoy);
 }
 
 /** Mes completo como rango. */
