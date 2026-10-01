@@ -95,7 +95,7 @@ Clientes que aparecen en guiones: **Andrés Gutiérrez** (cliente frecuente de U
 
 **Tratamiento:** la interfaz tutea en todo ("Registra", "Mira", "Tus locales"), como Nequi o Rappi. Los **mensajes de negocio** van en **usted** por defecto: a la agente de aduanas, al agente de carga, al transportador, a Wilson cuando el aviso es operativo y a los clientes VIP ("Carolina, buenas tardes. ¿Me confirma cuándo sale el levante del IMP-2026-07 y cuánto hay que girar de tributos?"). Los clientes no VIP se tutean. El tratamiento se puede cambiar por contacto y por cliente (`tratamiento: 'tu' | 'usted'`). Los mensajes a las fábricas van en inglés.
 
-**Precios:** terminación en ,900 como en el retail colombiano real (ej. Camisa Oxford entallada $219.900, Pantalón chino elástico $199.900, Blazer de lana fría $789.900, traje $1.490.000). Ningún precio redondo "de software". Dos referencias distintas nunca comparten precio en un mismo guion.
+**Precios:** terminación en ,900 como en el retail colombiano real (ej. Camisa Oxford entallada $219.900, Pantalón chino elástico $199.900, Blazer de lana fría $789.900, traje $1.489.900; F2-A1 lleva todos los precios a la terminación 900). Ningún precio redondo "de software". Dos referencias distintas nunca comparten precio en un mismo guion.
 
 ---
 
@@ -498,7 +498,7 @@ Regla para los cuatro módulos prioritarios (**inventario, pagos, nómina, prove
 | Búsqueda por nombre, referencia o código + "Simular escaneo" | I | Respuesta instantánea; el escaneo agrega un producto disponible con un destello |
 | Grilla talla × color con disponibilidad (otros locales en gris) | I | Visual, táctil, legible a distancia |
 | Carrito con descuento por línea o global (% o valor) | I | Totales en vivo; IVA incluido y desglosado |
-| Asociar cliente o crearlo rápido (con autorización de datos) | I | Formulario de 4 campos; validación de celular 3XX; "Consumidor final" es lo normal (≈ 60 % de las ventas) |
+| Asociar cliente o crearlo rápido (con autorización de datos) | I | Formulario de 4 campos; validación de celular 3XX; "Consumidor final" es lo normal (≈ 85 % de las ventas; DECISIONES 01/10/2026) |
 | Selector de vendedor cuando vende el dueño | I | W1; por defecto, el vendedor de turno más cercano; la comisión va a quien se elija |
 | Pago mixto y cálculo de cambio | I | Teclado de billetes frecuentes ($20.000, $50.000, $100.000); medios: efectivo, datáfono débito y crédito, Nequi, Daviplata, transferencia / llave Bre-B, QR Bre-B, bono de regalo, crédito con financiera aliada (genérico, sin marcas) |
 | Confirmación con efectos en cascada + factura electrónica o documento equivalente electrónico POS (ambos simulados) | I | W1 |
@@ -749,7 +749,7 @@ Los hallazgos automáticos se **calculan** de los datos; estos son los patrones 
 |---|---|
 | Ventas de un mes típico (septiembre, octubre) | ~$330 millones en total (con `escala` = 1) |
 | Parámetro `escala` (`config/demo.ts`, 0,5–1,5) | Multiplica las ventas diarias (y, en proporción, clientes y cantidades de importación) sin cambiar la narrativa. Miguel lo ajusta antes de enviar el enlace con las cifras que conozca del cliente; las cifras de este documento son con `escala` = 1 |
-| Ventas a consumidor final (sin cliente identificado) | ≈ 60 %. Con eso, ~450 clientes registrados en 18 meses son verosímiles |
+| Ventas a consumidor final (sin cliente identificado) | ≈ 85 % (solo ≈ 15 % con cliente identificado; DECISIONES 01/10/2026, que reemplaza el 60 % anterior). Con eso, ~450 clientes registrados en 18 meses tienen 2–4 compras al año y una distribución sesgada (VIP con 15 o más compras, la mayoría con 1–3) |
 | Índice estacional mensual (1,00 = mes típico) | Ene 0,70 · Feb 0,72 · Mar 0,85 · Abr 0,88 · May 0,95 · Jun 1,35 · Jul 0,95 · Ago 0,92 · Sep 1,15 · Oct 0,95 · Nov 1,30 · Dic 1,85 |
 | Crecimiento año contra año | +9% a +12% |
 | Ventas por día | 15 (martes de febrero) a 60 (sábado de diciembre); ~30 en promedio |
@@ -772,7 +772,7 @@ Los hallazgos automáticos se **calculan** de los datos; estos son los patrones 
 | P8 | **Domingo distinto por local** | Domingo: Zona Rosa (centro comercial) índice 1,45; Usaquén 1,35 con pico 11:00 a. m.–2:00 p. m. (mercado de las pulgas); Parque 93 0,80 | Mapa de calor filtrado por local | "Los domingos, Zona Rosa vende 80% más que Parque 93. Vale la pena reforzar el turno." |
 | P9 | **Pagos digitales en ascenso** | Mes actual (por valor): datáfono 44 %, efectivo 18 %, Nequi 13 %, transferencia / llave Bre-B 7 %, QR Bre-B 4 %, separado 5 %, Daviplata 4 %, crédito con financiera aliada 3 %, bono de regalo 1 %, crédito propio (VIP) 1 %. Hace 12 meses: Nequi 8 %, Daviplata 3 %, transferencia 2 %, QR Bre-B 0 % (Bre-B crece este año; la fecha de arranque se verifica antes de presentar) | Análisis de medios de pago | "Los pagos por Nequi, Daviplata y Bre-B pasaron del 13 % al 28 % de tus ventas en un año, y no te cobran comisión de datáfono." (la cifra la pone el selector) |
 | P10 | **Comisión y retenciones del datáfono** | Comisión ~2,6 % sobre lo cobrado con datáfono ≈ $3,8 millones al mes, más retenciones ilustrativas descontables; se ven en la conciliación del datáfono (B3) y como gasto | Pagos (datáfono), Costos y gastos, Análisis | "El mes pasado vendiste $ 145 millones con tarjeta y te consignaron $ 139 millones: $ 3,8 millones de comisión y $ 2,3 millones de retenciones que puedes descontar." |
-| P11 | **Clientes VIP en riesgo** | ~450 clientes: VIP 8 %, frecuente 22 %, ocasional 35 %, en riesgo 25 %, nuevo 10 %. ~30 clientes VIP sin compra en más de 90 días. ~40 % de las ventas con cliente asociado (el resto, consumidor final); ~70 % de las ventas con cliente van a clientes recurrentes | Clientes, Análisis de clientes | "31 clientes que te han comprado más de $3 millones no vuelven hace más de 90 días. Escríbeles." |
+| P11 | **Clientes VIP en riesgo** | ~450 clientes: VIP 8 %, frecuente 22 %, ocasional 35 %, en riesgo 25 %, nuevo 10 %. ~30 clientes VIP sin compra en más de 90 días. ~15 % de las ventas con cliente asociado (el resto, consumidor final; DECISIONES 01/10/2026); ~70 % de las ventas con cliente van a clientes recurrentes | Clientes, Análisis de clientes | "31 clientes que te han comprado más de $3 millones no vuelven hace más de 90 días. Escríbeles." |
 | P12 | **Colores** | Azul (navy + azul cielo) ~34% de las camisas; beige y camel subiendo en suéteres en los últimos 3 meses | Análisis de colores | "El azul es una de cada tres camisas que vendes." |
 | P13 | **El dólar se come el margen** | Blazers de lana fría: margen ~57% en el pedido anterior (IMP-2026-03) y ~51% en IMP-2026-06, por una tasa ~8% más alta con el mismo precio de venta | Costo aterrizado, rentabilidad por referencia | "Por la tasa de cambio, los blazers del último pedido te dejan 6 puntos menos de margen." |
 | P14 | **Fábrica incumplida** | Ningbo Weiye: retraso promedio ~12 días, defectos ~4,8%. Guangzhou Huameng: 96% a tiempo, defectos ~1,1%. Las otras, intermedias | Comparativo de proveedores | "Ningbo Weiye llega en promedio 12 días tarde y tiene 4 veces más defectos que Guangzhou Huameng." |
@@ -914,7 +914,7 @@ Se hace cumplir con `no-restricted-imports` por carpeta en `eslint.config.js` (f
 ├─ vercel.json                     reescrituras SPA + cabeceras (5.14)
 ├─ vite.config.ts                  alias @/, PWA, worker ES, manualChunks
 ├─ tsconfig.json · tsconfig.node.json
-├─ eslint.config.js · .prettierrc · .editorconfig · .nvmrc (20)
+├─ eslint.config.js · .prettierrc · .editorconfig · .nvmrc (24; Vitest 5 exige Node ≥ 22.12)
 ├─ vitest.config.ts · playwright.config.ts   proyectos chromium (1440 × 900, 1366 × 657, 1280 × 800, 390 × 844), webkit y firefox (hash del estado)
 ├─ package.json                    scripts: dev, build, preview, typecheck, lint, format, test, test:tz, test:e2e, medir
 ├─ public/
@@ -964,7 +964,7 @@ Se hace cumplir con `no-restricted-imports` por carpeta en `eslint.config.js` (f
    │  ├─ tallas.ts                 curvas y su distribución de demanda (P3, P4)
    │  ├─ nombres.ts                nombres y apellidos colombianos, barrios, dominios de correo genéricos
    │  ├─ elenco.ts                 dueño, 14 empleados, personas de rol, clientes con guion (Andrés Gutiérrez, Ricardo Peñuela)
-   │  ├─ proveedores.ts            5 fábricas chinas + 9 proveedores locales; contactos de la cadena (nombres comerciales en inglés, WeChat simulado)
+   │  ├─ proveedores.ts            5 fábricas chinas + 10 proveedores locales; contactos de la cadena (nombres comerciales en inglés, WeChat simulado)
    │  ├─ importaciones.ts          plan narrativo de pedidos (recibidos y en curso) relativo al ancla, con tipo de carga
    │  ├─ gastos.ts                 gastos fijos y recurrentes por local; publicidad estacional
    │  ├─ calendario.ts             campañas de temporada y citas guionadas
@@ -1583,7 +1583,7 @@ export interface Empresa {
   nombre: string;                 // 'HALDEN' (se muestra con useMarca(): la marca personalizada del store `sesion` tiene prioridad)
   descriptor: string;             // 'Moda masculina · Bogotá'
   razonSocial: string;            // ficticia, p. ej. 'Halden Moda Masculina S.A.S.'
-  nit: string;                    // ficticio con dígito de verificación: '901.234.567-8'
+  nit: string;                    // ficticio con dígito de verificación válido: '901.234.567-7'
   direccion: string; ciudad: string; telefono: string; correo: string;
   colores: { acento: string; acentoTexto: string; acentoSuave: string; tiendaHero: string };
   duenoNombre: string;            // 'Juan Camilo Ospina' — persona interna; nunca en el saludo
@@ -1880,7 +1880,7 @@ export interface Venta extends Trazabilidad {
   ts: FechaHoraISO;
   localId: Id;
   vendedorId: Id;                          // empleado (si vende el dueño, el que él elija; la cajera registra a nombre del vendedor)
-  clienteId: Id | null;                    // null = consumidor final (≈ 60 % de las ventas)
+  clienteId: Id | null;                    // null = consumidor final (≈ 85 % de las ventas; DECISIONES 01/10/2026)
   canal: Canal;
   tipo: TipoVenta;
   lineas: LineaVenta[];
@@ -1994,7 +1994,7 @@ export interface Cliente extends Trazabilidad, Eliminable {
   tratamiento: 'tu' | 'usted';             // 'usted' por defecto para VIP; mensajes prellenados y bot lo respetan
   autorizacionDatos: { aceptada: boolean; fecha: FechaHoraISO; canal: OrigenCliente };
   tallasDeclaradas: Partial<Record<'camisa' | 'pantalon' | 'calzado' | 'blazer', string>>;
-  origen: OrigenCliente;
+  canalAlta: OrigenCliente;                // F2-A1: no se llama `origen` porque choca con Trazabilidad.origen
   localRegistroId: Id | null;
   registradoPorId: Id | null;              // empleado
   notas: NotaCliente[];
@@ -2481,6 +2481,7 @@ export interface EventoVista {
 export interface ResolucionFacturacion {
   id: Id;
   numero: string;                           // ficticio: '18764000000000'
+  tipo: TipoDocumentoElectronico;           // F2-A1: una resolución por tipo
   prefijo: string;                          // 'HAL-FE'
   desde: number; hasta: number;
   vigenteDesde: FechaISO; vigenteHasta: FechaISO;
@@ -2579,7 +2580,7 @@ export interface Alerta {
 ```ts
 export type TipoConsecutivo =
   | 'venta' | 'devolucion' | 'traslado' | 'conteo' | 'factura' | 'documento_pos' | 'nota_credito'
-  | 'cuenta_por_pagar' | 'liquidacion' | 'producto' | 'bono';
+  | 'cuenta_por_pagar' | 'liquidacion' | 'producto' | 'variante' | 'bono';   // 'variante': consecutivo del EAN-13 (F2-A1)
 export interface MetaEstado {
   semilla: string;
   ancla: FechaISO;
@@ -2658,6 +2659,11 @@ export interface EstadoDominio {
   // agregados materializados (solo los escribe tx.ts; verificados por prueba)
   agregados: {
     existencias: Record<ClaveExistencia, number>;
+    // F2-A1: índices para validar en O(1) durante la construcción masiva; solo los escribe tx.ts y una prueba los verifica.
+    saldosCuentas: Record<Id, COP>;                          // V7
+    efectivoSesion: Record<Id, COP>;                         // V8, por sesión de caja
+    datafonoDia: Record<string, { debito: COP; credito: COP }>;   // V11, por `${localId}@${fecha}`
+    marcacionesDia: Record<string, Id[]>;                    // P3, por `${empleadoId}@${fecha}`
   };
 }
 ```
@@ -2700,9 +2706,9 @@ export interface MapaComandos {
   'conteo.aplicar': { conteoId: Id; motivos: Record<Id, MotivoAjuste> };
   'conteo.cancelar': { conteoId: Id };
   // Ventas y caja
-  'caja.abrir': { sesionId: Id; localId: Id; baseInicial: COP };
+  'caja.abrir': { sesionId: Id; localId: Id; baseInicial: COP; por: Id | null };   // por: empleado que abre (F2-A1)
   'caja.egreso': { egresoId: Id; sesionId: Id; concepto: string; valor: COP; categoria: CategoriaGasto };
-  'caja.cerrar': { sesionId: Id; denominaciones: Record<string, number> | null; efectivoContado: COP; observacion: string | null };   // ciego si el rol no es dueño
+  'caja.cerrar': { sesionId: Id; denominaciones: Record<string, number> | null; efectivoContado: COP; observacion: string | null; por: Id | null };   // ciego si el rol no es dueño
   'caja.revisarCierre': { sesionId: Id; nota: string | null };   // el dueño marca el cierre como revisado (W11)
   'venta.registrar': DatosRegistrarVenta;
   'venta.editar': { ventaId: Id; cambios: { clienteId?: Id | null; vendedorId?: Id; canal?: Canal; nota?: string | null; mediosPago?: { pagoId: Id; medio: MedioPago }[] } };
@@ -2785,7 +2791,7 @@ export interface MapaComandos {
   'evento.editar': { eventoId: Id; cambios: Partial<DatosEvento> };
   'evento.eliminar': { eventoId: Id };
   // Facturación
-  'factura.emitir': { facturaId: Id; ventaId: Id; adquirente: Adquirente };
+  'factura.emitir': { facturaId: Id; ventaId: Id; tipo: TipoDocumentoElectronico; adquirente: Adquirente };   // tipo (F2-A1)
   'factura.avanzarEstado': { facturaId: Id; estado: 'enviada' | 'aceptada' };
   'notaCredito.emitir': { notaId: Id; facturaId: Id; devolucionId: Id | null; motivo: string };
   // Configuración
@@ -2822,7 +2828,7 @@ export interface DatosRegistrarVenta {
   pagos: DatosPago[];                      // separado: abono inicial; crédito: puede ir vacío
   fechaLimiteSeparado: FechaISO | null;
   ventaOrigenCambioId: Id | null;
-  facturaInmediata: { facturaId: Id; adquirente: Adquirente } | null;
+  facturaInmediata: { facturaId: Id; tipo: TipoDocumentoElectronico; adquirente: Adquirente } | null;
   nota: string | null;
 }
 export interface DatosDevolucion {
@@ -2833,6 +2839,7 @@ export interface DatosDevolucion {
   compensacion: CompensacionDevolucion;
   reembolso: { medio: MedioPago; sesionCajaId: Id | null } | null;
   notaCreditoId: Id | null;                // obligatorio si la venta tiene factura
+  clienteNuevo: (DatosCliente & { clienteId: Id }) | null;   // F2-A1: crear el cliente en el paso (6.21)
 }
 export type DatosProducto = Pick<Producto,
   'referencia' | 'nombre' | 'categoria' | 'linea' | 'tipoPrenda' | 'curvaTallas' | 'temporada' | 'proveedorId' |
@@ -3022,13 +3029,13 @@ vacacionesProv  = (salario + comisiones) × 4,17 %
 neto            = totalDevengado − (salud + pensión + fondoSolidaridad)
 costoEmpleador  = totalDevengado + aportes + provisiones
 ```
-Cada valor se redondea a peso. Prueba unitaria del divisor: salario $ 1.950.000, jornada 42 h ⇒ `valorHora` = $ 9.286. Verificación con el caso de W6 en modo **"Salario pactado"** (sin comisiones, extras ni recargos): costo ≈ $ 2.990.939 con exoneración y ≈ $ 3.254.189 sin ella (prueba unitaria exacta).
+Cada valor se redondea a peso. Prueba unitaria del divisor: salario $ 1.950.000, jornada 42 h ⇒ `valorHora` = $ 9.286. Verificación con el caso de W6 en modo **"Salario pactado"** (sin comisiones, extras ni recargos): costo $ 2.990.941 con exoneración y $ 3.254.191 sin ella (prueba unitaria exacta; F2-A1: redondear cada valor a peso da 2 pesos más que la cifra anterior, que truncaba las provisiones).
 
 **Dos modos de costo** (`selCostoEmpleado(empleadoId, { modo, exoneracion })`): `'pactado'` liquida un mes completo con los insumos en cero (salario, auxilio, aportes y provisiones: el número del guion); `'mes_actual'` usa los insumos reales del mes en curso hasta hoy, mensualizados (comisión de las ventas del POS, extras y recargos de la asistencia): la comisión es salario y genera aportes y prestaciones. Los dos se muestran con un conmutador y la nota legal.
 
 **6.20.6 Prestación de servicios.** `bruto = honorarios × días/30 + comisiones`; `retención = bruto × retencionFuente`; `neto = bruto − retención`; `costo = bruto`. `ibcContratista = 40 % de honorarios` (informativo). **Lo que le queda a la persona** (comparativo de W6): `neto − ibcContratista × seguridadSocialContratista` (≈ 11,4 % de los honorarios con los valores ilustrativos). Si `pilaVerificada` es falso para el mes, la liquidación muestra advertencia y la cuenta por pagar queda "pendiente de soporte PILA".
 
-**6.20.7 Asistencia** (`reglas/asistencia.ts`): por empleado y día, se cruza el turno con la primera entrada y la última salida. `minutosTarde = max(0, entrada − inicio − tolerancia)`. Ausente: turno pasado sin entrada y sin novedad. Horas trabajadas = salida − entrada − descanso. Ordinarias = min(trabajadas, programadas). Extra = excedente sobre lo programado (diurna o nocturna según la franja). Recargo nocturno = horas ordinarias entre `jornadaNocturna.inicio` y `fin`. Dominical/festivo = horas en domingo o festivo (`reglas/festivos.ts`). Los insumos de una liquidación son la suma del periodo (cuando no hay marcaciones —meses antiguos— el generador entrega `insumos` explícitos).
+**6.20.7 Asistencia** (`reglas/asistencia.ts`): por empleado y día, se cruza el turno con la primera entrada y la última salida. Llega tarde si `entrada − inicio > tolerancia`, y entonces `minutosTarde = entrada − inicio` (F2-A1: así 10:25 en un turno de 10:00 son 25 minutos, como dice N6). Ausente: turno pasado sin entrada y sin novedad. Horas trabajadas = salida − entrada − descanso. Ordinarias = min(trabajadas, programadas). Extra = excedente sobre lo programado (diurna o nocturna según la franja). Recargo nocturno = horas ordinarias entre `jornadaNocturna.inicio` y `fin`. Dominical/festivo = horas en domingo o festivo (`reglas/festivos.ts`). Los insumos de una liquidación son la suma del periodo (cuando no hay marcaciones —meses antiguos— el generador entrega `insumos` explícitos).
 
 **6.20.8 Segmentación** (`reglas/segmentacion.ts`), en este orden: **nuevo** si la primera compra (o el registro, si no ha comprado) fue hace ≤ 60 días; **en riesgo** si la última compra fue hace > 90 días; **VIP** si compró ≥ $3.000.000 en los últimos 12 meses; **frecuente** si tiene ≥ 3 compras en 12 meses; **ocasional** el resto.
 
@@ -3065,7 +3072,7 @@ Convenciones de la tabla: **Valida** = validaciones principales (mensajes en esp
 | `pago.conciliar` | Refs existentes | `ventas.pagos.conciliado`, `movimientosCuenta.conciliado` | `EntidadCambiada` | D G |
 | `caja.abrir` | No hay otra sesión abierta en el local ese día; base ≥ 0 | `sesionesCaja` | `CajaAbierta` | D V G |
 | `caja.egreso` | Sesión abierta; valor ≤ efectivo esperado | `sesionesCaja.egresos`, `gastos` (pagado desde la caja), `movimientosCuenta` | `GastoRegistrado` | D V |
-| `caja.cerrar` | Sesión abierta; `efectivoContado` = Σ denominaciones si vienen; ciego para V | `sesionesCaja.cierre` (instantánea del esperado, diferencia) | `CajaCerrada` | D V G |
+| `caja.cerrar` | Sesión abierta; `efectivoContado` = Σ denominaciones si vienen; ciego para V | `sesionesCaja.cierre` (instantánea del esperado, diferencia) y, si hay diferencia, un `movimientosCuenta` de tipo `ajuste` en la caja (F2-A1: el saldo de la caja es el efectivo contado) | `CajaCerrada` | D V G |
 | `caja.revisarCierre` | Sesión cerrada y no revisada | `sesionesCaja.revision` | `CierreRevisado` | D |
 | `aprobacion.solicitar` | Descuento > máximo del vendedor, o anulación de una venta propia no anulada (con motivo) | `solicitudes` | `AprobacionSolicitada` | V G |
 | `aprobacion.resolver` | Pendiente | `solicitudes`; traslado ⇒ `traslados.aprobacion` (rechazo ⇒ cancelado); anulación aprobada ⇒ ejecuta `venta.anular` con `solicitudId` | `AprobacionResuelta` + los del efecto | D |
@@ -3111,7 +3118,7 @@ Convenciones de la tabla: **Valida** = validaciones principales (mensajes en esp
 | `marcacion.corregir` / `eliminar` | Nota obligatoria | `marcaciones` | `EntidadCambiada` | D |
 | `novedad.*` | Rango válido; sin solape del mismo tipo | `novedades` | `EntidadCambiada` | D G |
 | `pila.verificar` | Contrato de prestación | `contratos.verificacionesPila` | `EntidadCambiada` | D G |
-| `nomina.aprobar` | Periodo sin liquidación previa; empleados activos en el periodo | `liquidaciones` (instantánea con 6.20.5–6 y `nominaElectronica` simulada), `gastos` (nómina por local, seguridad social), `cuentasPorPagar` (neto por empleado, PILA, honorarios; prima y cesantías en sus fechas) | `NominaAprobada` | D G |
+| `nomina.aprobar` | Periodo sin liquidación previa; empleados activos en el periodo con esa periodicidad de pago | `liquidaciones` (instantánea con 6.20.5–6 y `nominaElectronica` simulada), `gastos` (nómina por local, seguridad social), `cuentasPorPagar` (neto por empleado y honorarios; la PILA del mes la crea la liquidación que cierra el mes, con los aportes y deducciones de las quincenas de ese mes. F2-A1: prima, cesantías e intereses NO los crea este comando: el generador los causa con `cxp.crear` en sus fechas y el flujo los proyecta) | `NominaAprobada` | D G |
 | `nomina.pagar` | Aprobada y no pagada | `cuentasPorPagar.abonos` (neto), `movimientosCuenta`, `liquidaciones.pagada` | `NominaPagada`, `PagoRegistrado` | D G |
 | `nomina.anularAprobacion` | No pagada | elimina liquidación, gastos y CxP asociados | `EntidadCambiada` | D |
 | `evento.*` | Fin ≥ inicio | `eventos` | `EntidadCambiada` | D G |
@@ -3293,7 +3300,7 @@ Regla de rango: en días abiertos completos, el total de los tres locales se aco
 | Aspecto | Regla del generador |
 |---|---|
 | Unidades por venta | Distribución por local: Parque 93 media 1,6 · Zona Rosa 1,3 · Usaquén 1,4 (líneas 1–4; cantidad por línea casi siempre 1; corbatas a veces 2) |
-| Ticket (P1) | Se logra con la mezcla de categorías por local: Parque 93 pesa sastrería (trajes $1.490.000, blazers $789.900); Zona Rosa pesa casual (chinos, polos, camisas); Usaquén intermedio. Objetivo: P93 ≈ $520.000 · ZR ≈ $315.000 · USQ ≈ $365.000 |
+| Ticket (P1) | Se logra con la mezcla de categorías por local: Parque 93 pesa sastrería (trajes $1.489.900, blazers $789.900); Zona Rosa pesa casual (chinos, polos, camisas); Usaquén intermedio. Objetivo: P93 ≈ $520.000 · ZR ≈ $315.000 · USQ ≈ $365.000 |
 | Mezcla por mes | Junio: camisas, polos, corbatas (Día del Padre) y trajes (grados); septiembre: camisas y suéteres; noviembre: todo con descuento; diciembre: trajes, blazers, suéteres, calzado; enero: liquidación de temporada (descuentos 15 %) |
 | Tallas (P3, P4) | Camisas y prendas superiores: S 13 % · M 38 % · L 29 % · XL 15 % · XXL 5 %. Pantalones: 30: 12 % · 32: 28 % · 34: 26 % · 36: 16 % · 28: 6 % · 38: 8 % · 40: 4 %. Calzado: 40–42 dominan. Sastrería: 48–52 dominan. Los pedidos a China se hacen casi parejos por talla (de ahí que la M se agote) |
 | Colores (P12) | Azul (navy + azul cielo) ≈ 34 % de las camisas; beige y camel suben en suéteres en los últimos 3 meses |
@@ -3312,7 +3319,7 @@ Regla de rango: en días abiertos completos, el total de los tres locales se aco
 
 - ≈ 450 clientes (× `escala`) generados en `generador/personas.ts` con nombres y apellidos colombianos de `seed/nombres.ts`, celular 3XX de 10 dígitos (prefijos móviles válidos), correo plausible, cumpleaños, barrio, tallas latentes (camisa, pantalón, calzado, blazer), colores preferidos, local habitual, vendedor preferido, fecha de alta y **tipo latente** con su frecuencia media de compra y su factor de ticket.
 - Mezcla objetivo de segmentos (P11): VIP 8 % · frecuente 22 % · ocasional 35 % · en riesgo 25 % · nuevo 10 %. Los "en riesgo" tienen una fecha de abandono (> 90 días antes del ancla); ≈ 31 de ellos compraron más de $3 millones.
-- Elección del cliente al materializar una venta: ≈ 40 % de las ventas con cliente identificado y ≈ 60 % a consumidor final (lo normal en una tienda de centro comercial; hace verosímiles ~450 clientes registrados); peso = frecuencia latente × (activo en la fecha: alta ≤ d < abandono) × (1,8 si es su local habitual); ≈ 70 % de las ventas con cliente van a clientes recurrentes. Al elegir cliente, las tallas de las líneas salen de sus tallas latentes (las "tallas preferidas" derivadas cuadran).
+- Elección del cliente al materializar una venta: ≈ 15 % de las ventas con cliente identificado y ≈ 85 % a consumidor final (DECISIONES 01/10/2026; `config/demo.ts` → `CLIENTES.proporcionVentasConCliente`, tipos latentes en `seed/clientes.ts`: VIP con 15 o más compras, la mayoría con 1–3); peso = frecuencia latente × (activo en la fecha: alta ≤ d < abandono) × (1,8 si es su local habitual); ≈ 70 % de las ventas con cliente van a clientes recurrentes. Al elegir cliente, las tallas de las líneas salen de sus tallas latentes (las "tallas preferidas" derivadas cuadran).
 - Clientes guionados en `seed/elenco.ts`: **Andrés Gutiérrez** (frecuente, Usaquén, 6 compras previas, chino talla 32) y **Ricardo Peñuela** (VIP de Parque 93, ≈ $6,4 millones históricos, cumpleaños = día del ancla, cita "Toma de medidas" el próximo sábado a las 11:00 a. m.).
 - La interfaz nunca enlaza a números o correos de terceros reales: ver 10, riesgo R14.
 
@@ -5180,6 +5187,25 @@ Fuentes: `plan/critica_cliente.md` (C1–C20), `plan/critica_tecnica.md` (T1–T
 | Selector de vendedor cuando vende el dueño | En el POS (W1, 4.3 7.2, A1) |
 | QR de 96 px "en la puerta de entrada" | 160 px en la entrada y el modal; 96 px en documentos (8.7.28) |
 | "Recibo" de tirilla del PRD | Documento equivalente electrónico POS (simulado) en W1, 4.3, 6.14, 8.10.3, A1 y D3 |
+
+### 11.5 Ajustes de F2-A1 (implementación de fundaciones, 01/10/2026)
+
+Decisiones tomadas al implementar F2-A1 por coherencia; cada una tiene su línea en `DECISIONES.md`.
+
+| Tema | Ajuste | Dónde |
+|---|---|---|
+| Versiones | TypeScript 5.9 (typescript-eslint exige < 6.1), ESLint 9 (eslint-plugin-jsx-a11y no soporta 10), React Router 7.18, Vite 8 + vite-plugin-pwa 1.3 + @vite-pwa/assets-generator 1.0, Vitest 5; `.nvmrc` 24 (Vitest 5 exige Node ≥ 22.12) | 5.2, 5.4 |
+| Agregados | Además de existencias: `saldosCuentas`, `efectivoSesion`, `datafonoDia` y `marcacionesDia`, solo escritos por `tx.ts`, para validar en O(1) durante la construcción (saldo del generador, esperado de caja, abono del datáfono, alternancia de marcaciones). La prueba de coherencia de F2-A2 los verifica contra los hechos | 6.16 |
+| Tipos | `TipoConsecutivo` + `variante`; `ResolucionFacturacion.tipo`; `tipo` en `factura.emitir` y `facturaInmediata`; `por` en `caja.abrir` y `caja.cerrar`; `clienteNuevo` en `DatosDevolucion`; `Cliente.canalAlta` (antes `origen`, que chocaba con `Trazabilidad.origen`) | 6.8, 6.14, 6.16, 6.17 |
+| Nómina | W6 exacto con redondeo a peso: $ 2.990.941 / $ 3.254.191; PILA en la liquidación que cierra el mes; prima, cesantías e intereses los causa el generador | 6.20.5, 6.21 |
+| Asistencia | Minutos tarde contados desde el inicio del turno cuando se pasa la tolerancia | 6.20.7 |
+| Caja | La diferencia del arqueo queda como ajuste en la cuenta de la caja | 6.21 |
+| Ventas | Separado cancelado se muestra como "anulada"; anulación reembolsa lo pagado menos los créditos de devoluciones previas; descuento por encima del máximo solo se exige al rol vendedor; el vendedor vende a su nombre y en su local | 6.21 |
+| Importaciones | La recepción se permite desde el levante (`nacionalizado`); las defectuosas no entran al inventario; la re-estimación de hitos mueve el vencimiento del saldo a la fábrica | 6.21 M6 |
+| Estado inicial | Sin PRNG: maestros desde config y seed; clientes generados e historial de tasas los agrega F2-A2; `costoVigente` = 0 hasta que la carga inicial aplica costos; consecutivo de producto desde 1000 | 7.4 |
+| Motor | `construir` recibe la fuente generada inyectada (el dominio no importa el generador) | 5.6.4 |
+| Semilla | 85 referencias, 883 variantes; traje a $ 1.489.900 (todo termina en 900); 21 colores (8.1.4 + mostaza + 4 con patrón); 10 proveedores locales; NIT con dígito válido; clientes identificados ≈ 15 % | 1.5, 4.7, 7.6, 7.7, 8.1.4 |
+| Reglas nuevas | `reglas/fechas.ts` (aritmética de fechas pura que reutiliza `lib/fechas.ts`), `reglas/caja.ts` y `reglas/rutas-dominio.ts` (enlaces de las notificaciones; `rutas.ts` debe coincidir) | 5.4 |
 
 ### 11.4 Lo descartado y su porqué
 
