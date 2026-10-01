@@ -1,4 +1,4 @@
-import type { Categoria, FechaISO, Id } from '@/dominio/tipos';
+import type { Categoria, COP, FechaISO, Id, ParteFrase } from '@/dominio/tipos';
 import { diaSemana, diferenciaDias, sumarDias, sumarMesesAMes } from '@/dominio/reglas/fechas';
 import { margenBruto } from '@/dominio/reglas/costeo';
 import { rellenarPlantilla } from '@/dominio/reglas/texto';
@@ -22,7 +22,12 @@ import { pesosEnPalabras } from './texto';
 export interface Hallazgo {
   id: string;
   patron: string;
+  /** La frase en pesos (para exportar o leer en texto plano). */
   frase: string;
+  /** La misma frase en trozos, con el dinero aparte para convertirlo a la moneda activa (compartidos C-D). */
+  partes: ParteFrase[];
+  /** Cifras de dinero de la frase, en COP, por nombre del hueco de la plantilla. */
+  cifras: Record<string, COP>;
   /** Cifra protagonista (en la unidad del hallazgo). */
   cifra: number;
   enlace: string;
@@ -31,6 +36,35 @@ export interface Hallazgo {
 }
 
 const r1 = (x: number) => Math.round(x * 10) / 10;
+
+/**
+ * Trozos de una plantilla: los huecos con dinero (`cifras`) quedan aparte para `<Dinero>`; el resto se rellena como
+ * la frase. Sin espacios sobrantes al final (huecos opcionales vacíos).
+ */
+export function partesDe(plantilla: string, datos: Record<string, string | number>, cifras: Record<string, COP>): ParteFrase[] {
+  const r: ParteFrase[] = [];
+  const texto = (t: string) => {
+    if (!t) return;
+    const ultima = r[r.length - 1];
+    if (ultima && 'texto' in ultima) ultima.texto += t;
+    else r.push({ texto: t });
+  };
+  let i = 0;
+  for (const m of plantilla.matchAll(/\{\{(\w+)\}\}/g)) {
+    texto(plantilla.slice(i, m.index));
+    const clave = m[1] ?? '';
+    const valor = cifras[clave];
+    if (valor !== undefined) r.push({ dinero: valor, corta: true });
+    else texto(String(datos[clave] ?? ''));
+    i = (m.index ?? 0) + m[0].length;
+  }
+  texto(plantilla.slice(i));
+  const ultima = r[r.length - 1];
+  if (ultima && 'texto' in ultima) ultima.texto = ultima.texto.trimEnd();
+  const primera = r[0];
+  if (primera && 'texto' in primera) primera.texto = primera.texto.trimStart();
+  return r.filter((x) => !('texto' in x) || x.texto !== '');
+}
 const pct = (x: number) => `${String(Math.round(x * 100))} %`;
 /** 0,54 → "5 de cada 10"; 0,34 → "1 de cada 3". */
 function deCadaN(p: number): string {
@@ -70,10 +104,10 @@ export const selHallazgos = crearSelector<{ hoy: FechaISO; localId?: Id | 'todos
   TABLAS,
   (e, { hoy, maximo = 5 }) => {
     const c: Hallazgo[] = [];
-    const agregar = (id: string, datos: Record<string, string | number>, cifra: number, relevancia: number) => {
+    const agregar = (id: string, datos: Record<string, string | number>, cifra: number, relevancia: number, cifras: Record<string, COP> = {}) => {
       const p = plantilla(id);
       if (!p || !Number.isFinite(relevancia) || relevancia <= 0) return;
-      c.push({ id, patron: p.patron, frase: rellenarPlantilla(p.plantilla, datos).trim(), cifra, enlace: p.enlace, relevancia });
+      c.push({ id, patron: p.patron, frase: rellenarPlantilla(p.plantilla, datos).trim(), partes: partesDe(p.plantilla, datos, cifras), cifras, cifra, enlace: p.enlace, relevancia });
     };
     const reconocida = (v: { anulacion: unknown; separado: { cerrado: { resultado: string } | null } | null }) =>
       !v.anulacion && v.separado?.cerrado?.resultado !== 'cancelado';
@@ -180,6 +214,7 @@ export const selHallazgos = crearSelector<{ hoy: FechaISO; localId?: Id | 'todos
         { valor: pesosEnPalabras(dormida.aCosto), categoria: NOMBRES_CATEGORIA[dormida.categoria as Categoria].toLowerCase(), meses: Math.floor(dormida.dias / 30) },
         Math.round(dormida.dias),
         dormida.dias / Math.max(1, rot.tienda.dias) - 1,
+        { valor: dormida.aCosto },
       );
 
     // P7 y P8: sábados en la tarde y domingos por local (últimas 12 semanas, por valor).
@@ -236,6 +271,7 @@ export const selHallazgos = crearSelector<{ hoy: FechaISO; localId?: Id | 'todos
         { vendido: pesosEnPalabras(dat.abonado.bruto), consignado: pesosEnPalabras(dat.abonado.neto), comision: pesosEnPalabras(dat.abonado.comision), retenciones: pesosEnPalabras(ret) },
         dat.abonado.comision,
         0.5,
+        { vendido: dat.abonado.bruto, consignado: dat.abonado.neto, comision: dat.abonado.comision, retenciones: ret },
       );
     }
 
@@ -297,7 +333,9 @@ export const selHallazgos = crearSelector<{ hoy: FechaISO; localId?: Id | 'todos
     if (pr.diasTranscurridos >= 3 && pr.anioAnterior && pr.anioAnterior > 0) {
       const v = pr.proyeccion / pr.anioAnterior - 1;
       const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-      agregar('proyeccion-mes', { mes: meses[Number(hoy.slice(5, 7)) - 1] ?? '', proyeccion: pesosEnPalabras(pr.proyeccion), variacion: `${pct(Math.abs(v))} ${v >= 0 ? 'más' : 'menos'}` }, pr.proyeccion, 0.4 + Math.abs(v));
+      agregar('proyeccion-mes', { mes: meses[Number(hoy.slice(5, 7)) - 1] ?? '', proyeccion: pesosEnPalabras(pr.proyeccion), variacion: `${pct(Math.abs(v))} ${v >= 0 ? 'más' : 'menos'}` }, pr.proyeccion, 0.4 + Math.abs(v), {
+        proyeccion: pr.proyeccion,
+      });
     }
 
     return c.sort((a, b) => b.relevancia - a.relevancia || (a.id < b.id ? -1 : 1)).slice(0, Math.max(3, maximo));

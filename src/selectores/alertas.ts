@@ -1,4 +1,4 @@
-import type { Alerta, Categoria, EstadoDominio, FechaHoraISO, Id, Notificacion, SolicitudAprobacion } from '@/dominio/tipos';
+import type { Alerta, Categoria, COP, EstadoDominio, FechaHoraISO, Id, Notificacion, ParteFrase, SolicitudAprobacion } from '@/dominio/tipos';
 import { asistenciaDia } from '@/dominio/reglas/asistencia';
 import { saldoCxP } from '@/dominio/reglas/cuentas';
 import { diferenciaDias, lunesDe, minutosDeHora, sumarDias } from '@/dominio/reglas/fechas';
@@ -27,6 +27,25 @@ import { capital, enumerar, montoExtranjero, pesos, pesosEnPalabras, relativaDia
 export function hora12(hhmm: string): string {
   const h = Number(hhmm.slice(0, 2));
   return `${h % 12 === 0 ? 12 : h % 12}:${hhmm.slice(3, 5)} ${h < 12 ? 'a. m.' : 'p. m.'}`;
+}
+
+/** Trozos de una frase con dinero: `texto` en pesos (como siempre) y `partes` para `<Dinero>` (compartidos C-D). */
+type Trozo = string | { cop: COP; palabras?: boolean };
+function frase(...trozos: Trozo[]): { texto: string; partes: ParteFrase[] } {
+  const partes: ParteFrase[] = [];
+  let texto = '';
+  for (const t of trozos) {
+    if (typeof t === 'string') {
+      texto += t;
+      const ultima = partes[partes.length - 1];
+      if (ultima && 'texto' in ultima) ultima.texto += t;
+      else if (t) partes.push({ texto: t });
+    } else {
+      texto += t.palabras ? pesosEnPalabras(t.cop) : pesos(t.cop);
+      partes.push({ dinero: t.cop, corta: !!t.palabras });
+    }
+  }
+  return { texto, partes };
 }
 
 const ORDINAL = ['', 'primera', 'segunda', 'tercera', 'cuarta', 'quinta', 'sexta', 'séptima', 'octava', 'novena', 'décima'];
@@ -122,7 +141,7 @@ export const selAlertas = crearSelector<{ localId: Id | 'todos'; ahora: FechaHor
           modulo: 'caja',
           severidad: 'atencion',
           titulo: `La caja de ${nombreLocal(s.localId)} cerró ${cuando} con ${dif < 0 ? 'un faltante' : 'un sobrante'}`,
-          contexto: `${dif < 0 ? 'Faltan' : 'Sobran'} ${pesos(Math.abs(dif))} en efectivo. Cerró ${quien}${s.cierre.ciego ? ' (arqueo ciego)' : ''}.${otras.length ? ` ${enumerar(otras)} cuadraron.` : ''}`,
+          ...contexto(frase(`${dif < 0 ? 'Faltan' : 'Sobran'} `, { cop: Math.abs(dif) }, ` en efectivo. Cerró ${quien}${s.cierre.ciego ? ' (arqueo ciego)' : ''}.${otras.length ? ` ${enumerar(otras)} cuadraron.` : ''}`)),
           accion: { texto: 'Ver cierre', ruta: rutas.caja({ sesion: s.id }) },
           ts: s.cierre.ts,
           localId: s.localId,
@@ -167,7 +186,7 @@ export const selAlertas = crearSelector<{ localId: Id | 'todos'; ahora: FechaHor
         const s = saldoCxP(c);
         const tasa = c.moneda === 'COP' ? 1 : selTasaVigente(e, { moneda: c.moneda, fecha: hoy });
         const cop = c.moneda === 'COP' ? s : Math.round((s / 100) * tasa);
-        const monto = c.moneda === 'COP' ? pesos(s) : `${montoExtranjero(s, c.moneda)}, unos ${pesosEnPalabras(cop)} con la tasa de ejemplo`;
+        const monto: Trozo[] = c.moneda === 'COP' ? [{ cop: s }] : [`${montoExtranjero(s, c.moneda)}, unos `, { cop, palabras: true }, ' con la tasa de ejemplo'];
         const esSaldoFabrica = c.categoria === 'proveedor_importacion' && c.concepto.toLowerCase().includes('saldo');
         r.push({
           id: `cxp:${c.id}:por_vencer`,
@@ -175,7 +194,7 @@ export const selAlertas = crearSelector<{ localId: Id | 'todos'; ahora: FechaHor
           modulo: 'pagos',
           severidad: fecha < hoy ? 'urgente' : 'atencion',
           titulo: `${capital(relativaDias(fecha, hoy))} vence ${esSaldoFabrica ? `el saldo a ${c.terceroNombre}` : c.concepto}`,
-          contexto: `${monto}.${esSaldoFabrica ? ' Se paga cuando el pedido quede listo para despacho.' : ''} Es el pago más grande del mes.`,
+          ...contexto(frase(...monto, `.${esSaldoFabrica ? ' Se paga cuando el pedido quede listo para despacho.' : ''} Es el pago más grande del mes.`)),
           accion: { texto: 'Ver la plata de los próximos 90 días', ruta: rutas.flujo({ semana: lunesDe(fecha) }) },
           ts: ahora,
           localId: c.localId,
@@ -257,7 +276,7 @@ export const selAlertas = crearSelector<{ localId: Id | 'todos'; ahora: FechaHor
         modulo: 'ventas',
         severidad: 'atencion',
         titulo: `${porVencer.filas.length === 1 ? '1 separado vence' : `${porVencer.filas.length} separados vencen`} esta semana`,
-        contexto: `Saldo pendiente: ${pesos(porVencer.saldo)}. Puedes recordarles por WhatsApp con un clic.`,
+        ...contexto(frase('Saldo pendiente: ', { cop: porVencer.saldo }, '. Puedes recordarles por WhatsApp con un clic.')),
         accion: { texto: 'Cobrar', ruta: rutas.porCobrar({ filtro: 'separados-por-vencer' }) },
         ts: ahora,
         localId: null,
@@ -299,7 +318,13 @@ export const selAlertas = crearSelector<{ localId: Id | 'todos'; ahora: FechaHor
           modulo: 'clientes',
           severidad: 'info',
           titulo: `Hoy cumple años ${nombreCliente(c)}`,
-          contexto: `${seg}${m.localHabitualId ? ` de ${nombreLocal(m.localHabitualId)}` : ''}: ${pesosEnPalabras(m.valor)} en compras. Tienes un mensaje listo (en ${c.tratamiento === 'usted' ? 'usted' : 'tú'}).`,
+          ...contexto(
+            frase(
+              `${seg}${m.localHabitualId ? ` de ${nombreLocal(m.localHabitualId)}` : ''}: `,
+              { cop: m.valor, palabras: true },
+              ` en compras. Tienes un mensaje listo (en ${c.tratamiento === 'usted' ? 'usted' : 'tú'}).`,
+            ),
+          ),
           accion: { texto: 'Enviar saludo', ruta: rutas.cliente(c.id, { mensaje: 'cumpleanos' }) },
           ts: ahora,
           localId: m.localHabitualId,
@@ -322,7 +347,7 @@ export const selAlertas = crearSelector<{ localId: Id | 'todos'; ahora: FechaHor
         tipo: 'mercancia_dormida',
         modulo: 'inventario',
         severidad: 'info',
-        titulo: `Tienes ${pesosEnPalabras(peor.costo)} quietos en ${NOMBRES_CATEGORIA[peor.categoria].toLowerCase()}`,
+        ...titulo(frase('Tienes ', { cop: peor.costo, palabras: true }, ` quietos en ${NOMBRES_CATEGORIA[peor.categoria].toLowerCase()}`)),
         contexto: `${Math.round(peor.dias)} días de inventario, contra ${Math.round(tienda.dias)} del promedio de la tienda.`,
         accion: { texto: 'Ver mercancía dormida', ruta: rutas.analisisProductos({ vista: 'rotacion', resaltar: peor.categoria }) },
         ts: ahora,
@@ -378,6 +403,9 @@ export const selAlertas = crearSelector<{ localId: Id | 'todos'; ahora: FechaHor
       .sort((a, b) => a.prioridad - b.prioridad || (a.ts < b.ts ? 1 : -1));
   },
 );
+
+const contexto = (f: { texto: string; partes: ParteFrase[] }) => ({ contexto: f.texto, contextoPartes: f.partes });
+const titulo = (f: { texto: string; partes: ParteFrase[] }) => ({ titulo: f.texto, tituloPartes: f.partes });
 
 /** Cuántas notificaciones nuevas van arriba de las alertas del guion. */
 export const MAX_NUEVAS_ARRIBA = 2;

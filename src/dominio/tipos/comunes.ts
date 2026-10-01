@@ -11,6 +11,11 @@ export type HoraHHmm = string;
 export type MesISO = string;
 /** Pesos colombianos enteros. */
 export type COP = number;
+/**
+ * Trozo de una frase armada por un selector (hallazgos, alertas): texto tal cual o una cifra de dinero en COP que la
+ * pantalla pinta con `<Dinero>` en la moneda activa (compartidos C-D).
+ */
+export type ParteFrase = { texto: string } | { dinero: COP; /** "$ 53,2 M" en lugar de "$ 53.177.420". */ corta?: boolean };
 /** USD o CNY × 100, enteros. */
 export type Centavos = number;
 /** 0.19 = 19 %. */

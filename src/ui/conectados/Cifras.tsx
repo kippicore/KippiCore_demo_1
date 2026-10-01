@@ -1,4 +1,4 @@
-import type { COP, FechaHoraISO, FechaISO } from '@/dominio/tipos';
+import type { COP, FechaHoraISO, FechaISO, ParteFrase } from '@/dominio/tipos';
 import { useAhora, useDinero, useHoy } from '@/estado';
 import { cifraCorta, dinero as formatoDinero, fecha, fechaCorta, fechaHora, fechaLarga, hora, relativa, relativaDias } from '@/lib/formato';
 import { cn } from '../cn';
@@ -51,6 +51,21 @@ export function Dinero({ valor, corta, animar, incremento, contarDesdeCero, clav
       {corta ? d.corta(valor) : d(valor)}
       {chip}
     </span>
+  );
+}
+
+/** Trozo de una frase armada por un selector (`Hallazgo.partes`, `Alerta.tituloPartes`). */
+export type ParteConDinero = ParteFrase;
+
+/**
+ * Frase con cifras de dinero que siguen la moneda activa (compartidos C-D): los selectores entregan los trozos y el
+ * dinero en COP; cada cifra se pinta con `<Dinero>` (`corta`: "$ 53,2 M", "US$ 13,5 mil").
+ */
+export function FraseConDinero({ partes }: { partes: readonly ParteConDinero[] }) {
+  return (
+    <>
+      {partes.map((p, i) => ('dinero' in p ? <Dinero key={i} valor={p.dinero} corta={p.corta} /> : <span key={i}>{p.texto}</span>))}
+    </>
   );
 }
 

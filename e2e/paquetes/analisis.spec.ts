@@ -32,12 +32,29 @@ test.describe('Análisis · Resumen', () => {
     const errores = vigilar(page);
     await irA('/panel/analisis');
     await esperarDatos(page);
-    const esperado = await conKc(page, (kc) => (kc.sel('selHallazgos', { hoy: '2026-09-30', maximo: 5 }) as { id: string; frase: string }[]).map((h) => ({ id: h.id, frase: h.frase })));
+    type Parte = { texto: string } | { dinero: number };
+    const esperado = await conKc(page, (kc) =>
+      (kc.sel('selHallazgos', { hoy: '2026-09-30', maximo: 5 }) as { id: string; frase: string; partes: Parte[] }[]).map((h) => ({ id: h.id, frase: h.frase, partes: h.partes })),
+    );
     expect(esperado.length).toBeGreaterThanOrEqual(3);
     expect(esperado.length).toBeLessThanOrEqual(5);
     const items = page.getByTestId('hallazgo');
     await expect(items).toHaveCount(esperado.length);
-    for (let i = 0; i < esperado.length; i++) await expect(items.nth(i).getByTestId('hallazgo-frase')).toHaveText(esperado[i]?.frase ?? '');
+    // La frase se arma con sus trozos: el texto tal cual y el dinero con <Dinero> (sigue la moneda activa).
+    for (let i = 0; i < esperado.length; i++) {
+      const frase = items.nth(i).getByTestId('hallazgo-frase');
+      const h = esperado[i]!;
+      if (h.partes.every((p) => 'texto' in p)) await expect(frase).toHaveText(h.frase);
+      for (const p of h.partes) if ('texto' in p) await expect(frase).toContainText(p.texto.trim());
+      await expect(frase.locator('[data-valor]')).toHaveCount(h.partes.filter((p) => 'dinero' in p).length);
+    }
+    // Con US$ el dinero de las frases se convierte (antes quedaba en pesos).
+    const conDinero = esperado.findIndex((h) => h.partes.some((p) => 'dinero' in p));
+    if (conDinero >= 0) {
+      await page.getByTestId('moneda-USD').click();
+      await expect(items.nth(conDinero).getByTestId('hallazgo-frase')).toContainText('US$');
+      await page.getByTestId('moneda-COP').click();
+    }
     await expect(page.locator('[data-pista="analisis.hallazgos"]')).toBeVisible();
     await expect(page.getByTestId('pista-analisis.hallazgos')).toBeVisible();
     await items.first().getByTestId('hallazgo-enlace').click();

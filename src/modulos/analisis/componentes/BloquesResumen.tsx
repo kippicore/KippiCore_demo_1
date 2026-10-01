@@ -5,7 +5,7 @@ import { useDinero, useHoy, useSel } from '@/estado';
 import { semanaIso } from '@/lib/fechas';
 import { fechaCorta, MESES, mesCorto, porcentaje } from '@/lib/formato';
 import { selHallazgos, selMapaCalor, selProyeccionMes, selVentasPorMes, selVentasPorSemana } from '@/selectores';
-import { BarraProgreso, Card, cn, Dinero, EmptyState, GraficoDinero, Icono, MapaCalor, Pista, Variacion } from '@/ui';
+import { BarraProgreso, Card, cn, Dinero, EmptyState, FraseConDinero, GraficoDinero, Icono, MapaCalor, Pista, Variacion } from '@/ui';
 import { diasDelMes } from '@/dominio/reglas/fechas';
 import { etiquetaSemana, franjaMasFuerte, notaFranja, resumenCalor, resumenMeses } from '../calculos';
 import { TXT } from '../textos';
@@ -48,7 +48,7 @@ export function BloqueHallazgos({ resaltar }: { resaltar: string | null }) {
                   {i + 1}
                 </span>
                 <p className="min-w-0 flex-1 basis-[420px] t-h3 text-ink" data-testid="hallazgo-frase">
-                  {h.frase}
+                  <FraseConDinero partes={h.partes} />
                 </p>
                 <Link to={h.enlace} className="inline-flex shrink-0 items-center gap-1.5 t-label font-bold text-ink underline-offset-4 hover:underline" data-testid="hallazgo-enlace">
                   {TXT.hallazgos.verMas}

@@ -1,4 +1,4 @@
-import type { FechaHoraISO, Id, RefDocumento } from './comunes';
+import type { FechaHoraISO, Id, ParteFrase, RefDocumento } from './comunes';
 
 /** Mensajería, notificaciones y alertas (PLAN 6.15). */
 /** Libro (arreglo). */
@@ -90,6 +90,9 @@ export interface Alerta {
   nueva: boolean;
   /** Orden en "Requiere tu atención" (2.3.3). */
   prioridad: number;
+  /** El título y el contexto en trozos, con el dinero aparte en COP (si llevan dinero). */
+  tituloPartes?: ParteFrase[];
+  contextoPartes?: ParteFrase[];
   /** Solicitud que se puede aprobar o rechazar desde la misma alerta en el escritorio (compartidos C-D). */
   aprobacion?: { solicitudId: Id };
 }

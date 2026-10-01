@@ -18,7 +18,7 @@ import { useState } from 'react';
 import type { Alerta, TipoAlerta } from '@/dominio/tipos';
 import { useAcciones, useAhora, useFiltroLocal, usePuede, useSel, useSesion } from '@/estado';
 import { selAlertas, selSolicitudesPendientes } from '@/selectores';
-import { avisar, Badge, BotonIcono, Button, Card, cn, EmptyState, EnlaceVerTodo, Icono, Pista } from '@/ui';
+import { avisar, Badge, BotonIcono, Button, Card, cn, EmptyState, EnlaceVerTodo, FraseConDinero, Icono, Pista } from '@/ui';
 import { alertasVisibles } from '../calculos';
 import { TXT } from '../textos';
 
@@ -116,9 +116,9 @@ function FilaAlerta({ alerta: a, primera }: { alerta: Alerta; primera: boolean }
               {TXT.alertas.nuevo}
             </Badge>
           )}
-          {a.titulo}
+          {a.tituloPartes ? <FraseConDinero partes={a.tituloPartes} /> : a.titulo}
         </p>
-        <p className="mt-0.5 t-small text-muted">{a.contexto}</p>
+        <p className="mt-0.5 t-small text-muted">{a.contextoPartes ? <FraseConDinero partes={a.contextoPartes} /> : a.contexto}</p>
         <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-2" onClickCapture={marcarLeida}>
           {a.aprobacion && <BotonesAprobacion solicitudId={a.aprobacion.solicitudId} />}
           <EnlaceVerTodo a={a.accion.ruta}>{a.accion.texto}</EnlaceVerTodo>

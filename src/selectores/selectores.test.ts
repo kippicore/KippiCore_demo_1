@@ -549,7 +549,10 @@ describe('análisis, pivote y hallazgos', () => {
     expect((r.categorias[0]?.dias ?? 0) / (r.categorias[1]?.dias ?? 1)).toBeGreaterThanOrEqual(1.05);
     const h = selHallazgos(e, { hoy: HOY, maximo: 12 });
     expect(h.find((x) => x.id === 'vendedora-estrella')?.frase).toContain('Valentina');
-    expect(h.find((x) => x.id === 'categoria-dormida')?.frase).toContain('calzado');
+    const dormida = h.find((x) => x.id === 'categoria-dormida');
+    expect(dormida?.frase).toContain('calzado');
+    expect(dormida?.cifras.valor).toBe(selRotacion(e, { hoy: HOY }).categorias[0]?.aCosto);
+    expect(dormida?.partes[1]).toEqual({ dinero: dormida?.cifras.valor, corta: true });
     expect(medidas.get('P2.lider30')?.ok).toBe(true);
     expect(medidas.get('P5.primera')?.ok).toBe(true);
     // Novedades: una vigente hoy y otra en los próximos 30 días; contratistas con y sin PILA del mes.
@@ -568,6 +571,10 @@ describe('análisis, pivote y hallazgos', () => {
     expect(h.length).toBeGreaterThanOrEqual(4);
     for (const x of h) {
       expect(x.frase).not.toMatch(/\{\{/);
+      // Compartidos C-D: los trozos dicen lo mismo que la frase, con el dinero aparte en COP.
+      const dinero = Object.values(x.cifras);
+      expect(x.partes.filter((p) => 'dinero' in p).map((p) => ('dinero' in p ? p.dinero : 0))).toEqual(expect.arrayContaining(dinero));
+      for (const p of x.partes) if ('texto' in p) expect(x.frase).toContain(p.texto.trim());
       expect(x.enlace.startsWith('/panel/')).toBe(true);
     }
   });
@@ -588,6 +595,11 @@ describe('alertas, narrativa, catálogo, clientes, nómina y calendario', () => 
     const aprob = a.filter((x) => x.tipo === 'aprobacion_pendiente');
     expect(aprob.find((x) => x.aprobacion)?.accion.ruta).toMatch(/^\/panel\/inventario\//);
     expect(aprob.find((x) => !x.aprobacion)?.accion.ruta).toMatch(/^\/panel\/ventas\/vt_/);
+    // El dinero de las alertas viaja aparte en COP para <Dinero> (la frase en texto sigue en pesos).
+    const caja = a.find((x) => x.tipo === 'caja_con_diferencia');
+    expect(caja?.contextoPartes?.find((p) => 'dinero' in p)).toEqual({ dinero: 40_000, corta: false });
+    const dormidaAlerta = a.find((x) => x.tipo === 'mercancia_dormida');
+    expect(dormidaAlerta?.tituloPartes?.some((p) => 'dinero' in p && p.dinero > 40_000_000)).toBe(true);
     const stock = a.find((x) => x.tipo === 'stock_bajo');
     expect(stock?.accion.ruta).toMatch(/^\/panel\/inventario\/HL-CAM-0142\?trasladar=/);
     expect(a.find((x) => x.tipo === 'caja_con_diferencia')?.contexto).toContain('40.000');
