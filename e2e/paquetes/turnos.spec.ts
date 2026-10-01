@@ -171,7 +171,7 @@ test.describe('turnos', () => {
     await expect.poll(() => nTurnos(page)).toBe(antes + 1);
     const nuevo = await conKc(page, (kc) => {
       const t = Object.values(
-        kc.estado().turnos as unknown as Record<
+        (kc.estado() as unknown as { turnos: unknown }).turnos as Record<
           string,
           {
             id: string;
@@ -231,7 +231,7 @@ test.describe('turnos', () => {
     await expect.poll(() => nTurnos(page)).toBe(antes + 1);
     const nuevo = await conKc(page, (kc) =>
       Object.values(
-        kc.estado().turnos as unknown as Record<
+        (kc.estado() as unknown as { turnos: unknown }).turnos as Record<
           string,
           { empleadoId: string; fecha: string; excedeJornadaAceptado: boolean }
         >,
@@ -307,7 +307,7 @@ test.describe('turnos: formulario, copiar semana y parámetros', () => {
       page,
       (kc) =>
         Object.values(
-          kc.estado().turnos as unknown as Record<
+          (kc.estado() as unknown as { turnos: unknown }).turnos as Record<
             string,
             { id: string; empleadoId: string; fecha: string; excedeJornadaAceptado: boolean }
           >,

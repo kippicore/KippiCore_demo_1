@@ -150,7 +150,7 @@ function CuerpoNovedades({
       ordenar: (x) => x.nombre,
       celda: (x) => (
         <span className="whitespace-nowrap font-bold text-ink" title={x.nombre}>
-          {personas[x.novedad.empleadoId]?.nombre.split(' ').slice(0, 2).join(' ') ?? x.nombre}
+          {personas[x.novedad.empleadoId]?.corto ?? x.nombre}
         </span>
       ),
     },
@@ -170,26 +170,31 @@ function CuerpoNovedades({
         ),
     },
     {
-      id: 'desde',
-      encabezado: 'Desde',
+      id: 'fechas',
+      encabezado: 'Fechas',
+      ancho: 130,
       ordenar: (x) => x.novedad.desde,
-      celda: (x) => <Fecha valor={x.novedad.desde} formato="fecha" className="num" />,
-    },
-    {
-      id: 'hasta',
-      encabezado: 'Hasta',
-      ordenar: (x) => x.novedad.hasta,
-      celda: (x) => <Fecha valor={x.novedad.hasta} formato="fecha" className="num" />,
+      celda: (x) => (
+        <span className="flex flex-col whitespace-nowrap num">
+          <span>
+            <span className="text-muted">Del </span>
+            <Fecha valor={x.novedad.desde} formato="fecha" />
+          </span>
+          <span>
+            <span className="text-muted">al </span>
+            <Fecha valor={x.novedad.hasta} formato="fecha" />
+          </span>
+        </span>
+      ),
     },
     {
       id: 'dias',
       encabezado: 'Días',
-      ancho: 80,
+      ancho: 70,
       numerica: true,
       ordenar: (x) => x.dias,
       celda: (x) => <span className="num">{x.dias}</span>,
     },
-    { id: 'paga', encabezado: 'Se paga', celda: (x) => (x.novedad.remunerada ? 'Sí' : 'No') },
     {
       id: 'estado',
       encabezado: 'Estado',
@@ -210,7 +215,7 @@ function CuerpoNovedades({
     {
       id: 'efecto',
       encabezado: 'Qué pasa en la nómina',
-      ancho: 340,
+      ancho: 300,
       celda: (x) => efectoEnNomina(x.novedad.tipo, x.novedad.remunerada, x.dias, parametros.incapacidad),
     },
   ];
@@ -264,7 +269,7 @@ function CuerpoNovedades({
               <>
                 <BotonPildora
                   etiqueta="Persona"
-                  valor={empleado ? (personas[empleado]?.nombre.split(' ')[0] ?? '…') : 'Todas'}
+                  valor={empleado ? (personas[empleado]?.corto ?? '…') : 'Todas'}
                   data-testid="novedades-filtro-persona"
                 >
                   <Select

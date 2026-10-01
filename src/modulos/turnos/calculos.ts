@@ -282,7 +282,7 @@ export function efectoEnNomina(
     const aCargo = Math.min(dias, p.diasACargoEmpleador);
     return dias <= p.diasACargoEmpleador
       ? `${aCargo} ${aCargo === 1 ? 'día a cargo del negocio, pagado' : 'días a cargo del negocio, pagados'} al ${porcentaje(p.porcentajePago, 2)}.`
-      : `Los ${p.diasACargoEmpleador} primeros días los paga el negocio y los ${dias - p.diasACargoEmpleador} siguientes los cubre la EPS; todos al ${porcentaje(p.porcentajePago, 2)}.`;
+      : `Los ${p.diasACargoEmpleador} primeros días los paga el negocio y ${dias - p.diasACargoEmpleador === 1 ? 'el siguiente lo cubre' : `los ${dias - p.diasACargoEmpleador} siguientes los cubre`} la EPS; todos al ${porcentaje(p.porcentajePago, 2)}.`;
   }
   if (tipo === 'vacaciones') return 'Se pagan como vacaciones y no cuentan como ausencia.';
   if (!remunerada) return 'No se paga: se descuentan estos días del salario.';

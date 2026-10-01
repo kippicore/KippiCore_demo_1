@@ -209,6 +209,8 @@ export const selParametrosTurnos = crearSelector<void, ParametrosTurnos>(
 export interface PersonaVista {
   id: Id;
   nombre: string;
+  /** Primer nombre y primer apellido. */
+  corto: string;
   cargo: Cargo;
   localId: Id | null;
   slug: string;
@@ -222,7 +224,14 @@ export const selPersonas = crearSelector<void, Record<Id, PersonaVista>>(
     const r: Record<Id, PersonaVista> = {};
     for (const x of Object.values(e.empleados))
       if (!x.eliminadoEn)
-        r[x.id] = { id: x.id, nombre: nombreEmpleado(x), cargo: x.cargo, localId: x.localId, slug: x.slug };
+        r[x.id] = {
+          id: x.id,
+          nombre: nombreEmpleado(x),
+          corto: nombreCorto(x.nombres, x.apellidos),
+          cargo: x.cargo,
+          localId: x.localId,
+          slug: x.slug,
+        };
     return r;
   },
 );

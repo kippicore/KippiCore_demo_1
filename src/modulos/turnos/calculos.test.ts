@@ -248,6 +248,9 @@ describe('novedades', () => {
     expect(efectoEnNomina('incapacidad', true, 5, p)).toBe(
       `Los 2 primeros días los paga el negocio y los 3 siguientes los cubre la EPS; todos al 66,67${D}%.`,
     );
+    expect(efectoEnNomina('incapacidad', true, 3, p)).toBe(
+      `Los 2 primeros días los paga el negocio y el siguiente lo cubre la EPS; todos al 66,67${D}%.`,
+    );
     expect(efectoEnNomina('vacaciones', true, 10, p)).toBe(
       'Se pagan como vacaciones y no cuentan como ausencia.',
     );

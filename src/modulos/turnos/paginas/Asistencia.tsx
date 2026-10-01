@@ -29,7 +29,7 @@ import { useAhora, useSel } from '@/estado';
 import { selLocales } from '@/selectores';
 import { rutas } from '@/app/rutas';
 import { DIAS_CORTOS, fechaCorta, hora, porcentaje } from '@/lib/formato';
-import { puntualidad, rangoHoras, textoHoras, textoMinutos } from '../calculos';
+import { puntualidad, rangoCompacto, textoHoras, textoMinutos } from '../calculos';
 import { DialogoMarcaciones } from '../componentes/DialogoMarcaciones';
 import { EncabezadoTurnos, LimiteError } from '../componentes/Piezas';
 import { useFiltrosAsistencia, type FiltrosAsistencia } from '../hooks';
@@ -127,51 +127,39 @@ function CuerpoAsistencia({ f }: { f: FiltrosAsistencia }) {
     {
       id: 'persona',
       encabezado: 'Persona',
-      ancho: 150,
+      ancho: 170,
       ordenar: (x) => x.corto,
       celda: (x) => (
-        <span className="whitespace-nowrap" title={x.nombre}>
-          {x.corto}
+        <span className="flex flex-col whitespace-nowrap" title={x.nombre}>
+          <span className="font-bold text-ink">{x.corto}</span>
+          <span className="t-small text-muted">{local(x.localId)}</span>
         </span>
       ),
     },
     {
-      id: 'local',
-      encabezado: 'Local',
-      ancho: 130,
-      celda: (x) => <span className="whitespace-nowrap">{local(x.localId)}</span>,
-    },
-    {
       id: 'turno',
       encabezado: 'Turno',
-      ancho: 280,
+      ancho: 190,
       celda: (x) =>
         x.turno ? (
-          <span className="num whitespace-nowrap">{`${ETIQUETA_TIPO_TURNO[x.turno.tipo]} · ${rangoHoras(x.turno.inicio, x.turno.fin)}`}</span>
+          <span className="flex flex-col whitespace-nowrap">
+            <span>{ETIQUETA_TIPO_TURNO[x.turno.tipo]}</span>
+            <span className="t-small num text-muted">{rangoCompacto(x.turno.inicio, x.turno.fin)}</span>
+          </span>
         ) : (
           <span className="text-muted">Sin turno</span>
         ),
     },
     {
-      id: 'entrada',
-      encabezado: 'Entró',
-      ancho: 110,
-      numerica: true,
+      id: 'marcas',
+      encabezado: 'Entró y salió',
+      ancho: 190,
       celda: (x) =>
         x.dia.entrada ? (
-          <span className="num whitespace-nowrap">{hora(x.dia.entrada)}</span>
-        ) : (
-          <span className="text-muted">—</span>
-        ),
-    },
-    {
-      id: 'salida',
-      encabezado: 'Salió',
-      ancho: 110,
-      numerica: true,
-      celda: (x) =>
-        x.dia.salida ? (
-          <span className="num whitespace-nowrap">{hora(x.dia.salida)}</span>
+          <span className="num whitespace-nowrap">
+            {hora(x.dia.entrada)} –{' '}
+            {x.dia.salida ? hora(x.dia.salida) : <span className="text-muted">sin salida</span>}
+          </span>
         ) : (
           <span className="text-muted">—</span>
         ),
@@ -179,7 +167,7 @@ function CuerpoAsistencia({ f }: { f: FiltrosAsistencia }) {
     {
       id: 'estado',
       encabezado: 'Estado',
-      ancho: 190,
+      ancho: 175,
       celda: (x) => (
         <span className="flex items-center gap-2 whitespace-nowrap">
           <BadgeEstado estado={ESTADOS_ASISTENCIA[x.dia.estado]} tamano="sm" />
@@ -217,12 +205,12 @@ function CuerpoAsistencia({ f }: { f: FiltrosAsistencia }) {
       ancho: 170,
       ordenar: (r) => r.corto,
       celda: (r) => (
-        <span className="font-bold text-ink" title={r.nombre}>
-          {r.corto}
+        <span className="flex flex-col whitespace-nowrap" title={r.nombre}>
+          <span className="font-bold text-ink">{r.corto}</span>
+          <span className="t-small text-muted">{local(r.localId)}</span>
         </span>
       ),
     },
-    { id: 'local', encabezado: 'Local', ancho: 150, celda: (r) => local(r.localId) },
     {
       id: 'turnos',
       encabezado: 'Turnos',
@@ -320,7 +308,7 @@ function CuerpoAsistencia({ f }: { f: FiltrosAsistencia }) {
           </BotonPildora>
           <BotonPildora
             etiqueta="Persona"
-            valor={f.empleado ? (personas[f.empleado]?.nombre.split(' ')[0] ?? '…') : 'Todas'}
+            valor={f.empleado ? (personas[f.empleado]?.corto ?? '…') : 'Todas'}
             data-testid="asistencia-filtro-persona"
           >
             <Select
