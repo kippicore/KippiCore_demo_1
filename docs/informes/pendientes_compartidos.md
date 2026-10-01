@@ -50,3 +50,11 @@ Ramas a fusionar: ver cada informe.
 2. Separado creado y cancelado en el mismo periodo: total 0 en "Ventas detalladas" pero `selVentas.totales` lo suma → excluir separados cancelados en `hechosDeVenta`/`resumirHechos`.
 3. Escala 1,5: punto bajo de diciembre alto (≈$54 M).
 4. Patrones cerca del borde: P2 enero, P11 junio, P18 junio, P3.XL junio → correr `npm run informe` tras cualquier cambio del generador.
+
+## B3 (rama worktree-agent-a80a1fb01076e2511, d9f95fe)
+1. (= B4.1) `BotonAccionesFila`.
+2. (= A4.1) cabecera fija de `Table` con overflow-x → propuesta `overflow-x: clip` + sticky.
+3. (= B4.2) `InputNumero` concatena.
+4. Opcional `GraficoBase`: marcar punto bajo y clic.
+5. Flujo: abre en 90 días y el punto bajo (≈$15,9 M) se ve como muesca porque la proyección sube a ≈$800 M. **Revisar credibilidad**: un negocio de ~$330 M/mes no acumula $800 M de caja en 90 días; probablemente faltan egresos proyectados de compras/importaciones futuras y retiros del socio. Decidir vista por defecto (30 o 60 días).
+6. No hay comando para eliminar cuentas de caja/banco.
