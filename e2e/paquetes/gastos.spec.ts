@@ -255,6 +255,12 @@ test('estado de resultados: cifras de los selectores, explicación, cascada y lo
   await expect(page.getByTestId('resultados-kpi-ventas').locator('[title]').first()).toHaveAttribute('title', new RegExp(miles(r.usq.ventasNetas).replace(/\./g, '\\.')));
 });
 
+test('estado de resultados: sin ?mes= abre el último mes completo (el 1 de octubre, septiembre)', async ({ page }) => {
+  await page.goto(conHoy('/panel/gastos/resultados', '2026-10-01T15:30'));
+  await esperarDatos(page);
+  await expect(page.getByTestId('gastos-selector-mes')).toContainText('Septiembre de 2026');
+});
+
 test('estado de resultados: honra ?mes=&local=, exporta y respeta la moneda', async ({ page, irA }) => {
   await abrir(page, irA, '/panel/gastos/resultados?mes=2026-08&local=zr');
   await expect(page.getByTestId('gastos-selector-mes')).toContainText('Agosto de 2026');
