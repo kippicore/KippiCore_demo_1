@@ -5231,7 +5231,7 @@ Decisiones tomadas al implementar F2-B; cada una tiene su línea en `DECISIONES.
 | Tema | Ajuste | Dónde |
 |---|---|---|
 | Motor | La construcción va por defecto en el hilo principal por tramos (≈ 30 ms, cediendo con `scheduler.yield`); el worker queda como alternativa medible (`?motor=`) y respaldo. Con CPU ×4 el worker pagaba ≈ 750 ms de clonación con una tarea larga de ≈ 700 ms | 5.6.12 |
-| Presupuesto | `escala` = 1: primer render útil de `/app` con CPU ×4 ≈ 2,24–2,44 s (criterio < 2,5 s, margen estrecho); `/panel/inicio` ≈ 2,32–2,40 s (< 4,5 s). Palancas en el informe | 5.6.12, 7.1 |
+| Presupuesto | `escala` = 1: primer render útil de `/app` con CPU ×4 ≈ 2,21–2,44 s (criterio < 2,5 s, margen estrecho); `/panel/inicio` ≈ 2,32–2,40 s (< 4,5 s). Palancas en el informe | 5.6.12, 7.1 |
 | QA | Con `?hoy=` el registro sigue en `localStorage` con claves `kc:halden:v1:qa:*` (no se fuerza el modo memoria) | 5.9 |
 | Bundle | `codeSplitting.groups` de rolldown con un grupo `precarga` (con `manualChunks` jsPDF entraba en la carga inicial de toda ruta) | 5.15 |
 | Exportes | `<BotonDocumentoPdf documento>` para las plantillas PDF (desprendible, factura, POS, nota crédito, etiquetas) junto a `<BotonExportar reporte>` | 5.12, 9.4 C1, A1, A2, D3 |

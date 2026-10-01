@@ -1,6 +1,6 @@
 # Informe F2-B · Estado, selectores, reportes, utilidades, rutas y contratos
 
-Todo en verde en esta máquina (Apple M3, Node 26, Chromium/WebKit/Firefox de Playwright 1.63): `npm run typecheck`, `npm run lint`, `npm test` (44 archivos, 373 pruebas, 22 `todo` explícitos de la pista de calibración, 0 omitidos) y `npm run test:e2e` (21 pasan, 39 omitidos a propósito: las fundaciones solo corren en 1440 × 900). Sin push. Commits `F2-B: …` sobre `main` (3 del agente anterior + 5 de esta sesión).
+Todo en verde en esta máquina (Apple M3, Node 26, Chromium/WebKit/Firefox de Playwright 1.63): `npm run typecheck`, `npm run lint`, `npm test` (44 archivos, 373 pruebas, 22 `todo` explícitos de la pista de calibración, 0 omitidos) y `npm run test:e2e` (21 pasan, 39 omitidos a propósito: las fundaciones solo corren en 1440 × 900). Sin push. Commits `F2-B: …` sobre `main` (3 del agente anterior + 6 de esta sesión).
 
 ## Qué se entregó (completo contra 9.2 F2-B)
 
@@ -34,12 +34,12 @@ Comandos: `npm run test:e2e` (todo; el proyecto `rendimiento` corre al final), `
 
 ## Mediciones de arranque (Chromium, CPU ×4 con `Emulation.setCPUThrottlingRate`, en frío, 390 × 844)
 
-e2e `rendimiento` (mediana de 5 tras un calentamiento), dos corridas completas:
+e2e `rendimiento` (mediana de 5 tras un calentamiento), tres corridas completas:
 
 | Ruta | Primer render útil | Construcción | Presupuesto |
 |---|---|---|---|
-| `/app` (Hoy con cifras) | **2.244 – 2.259 ms** (rango 2.222–2.298) | ≈ 2.080 ms | < 2.500 ms ✓ |
-| `/panel/inicio` (6 tarjetas) | **2.325 – 2.336 ms** (rango 2.293–2.353) | ≈ 2.070 ms | < 4.500 ms ✓ |
+| `/app` (Hoy con cifras) | **2.211 – 2.259 ms** (rango 2.208–2.298) | ≈ 2.040–2.080 ms | < 2.500 ms ✓ |
+| `/panel/inicio` (6 tarjetas) | **2.323 – 2.336 ms** (rango 2.293–2.361) | ≈ 2.065–2.072 ms | < 4.500 ms ✓ |
 
 Desglose por estrategia (`scripts/medir-arranque.mjs`, mediana de 5; el worker simula ×4 con `?lentitudWorker=4` porque CDP no estrangula workers):
 
@@ -80,7 +80,7 @@ Bundle: JS inicial (index + modulepreload) ≈ 130 KB gzip (< 180 KB). jsPDF (13
 
 ## Riesgos y pendientes
 
-- **Intermitencia observada** (3 veces en ≈ 10 corridas de las fundaciones, solo con mucha carga en paralelo): tras una carga o recarga, la página quedó completa, visible y con datos, pero `window.__kc` no apareció en 30 s. Se agregó el estado de la instalación (`window.__kcInstalacion`: importando / instalado / error) y los recursos al mensaje de error de `esperarDatos`; desde entonces, 3 corridas completas en verde. Si reaparece, el mensaje dice si la importación diferida de `estado/kc` quedó colgada o falló.
+- **Intermitencia observada** (3 veces en ≈ 10 corridas de las fundaciones, solo con mucha carga en paralelo): tras una carga o recarga, la página quedó completa, visible y con datos, pero `window.__kc` no apareció en 30 s. Se agregó el estado de la instalación (`window.__kcInstalacion`: importando / instalado / error) y los recursos al mensaje de error de `esperarDatos`; desde entonces, 3 corridas completas de `npm run test:e2e` y 2 de las fundaciones en verde. Si reaparece, el mensaje dice si la importación diferida de `estado/kc` quedó colgada o falló.
 - `scripts/presupuesto.mjs` (5.15: fallar el build si un chunk pasa del presupuesto) no existe; hoy el único guardián es el e2e de la carga inicial.
 - Los 22 `it.todo` son de la pista de calibración (P5, P11, P13, P14, P15, P18 y puntuales).
 
