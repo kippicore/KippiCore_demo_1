@@ -197,7 +197,10 @@ function FilaEfecto({ efecto: x, indice, baseVenta }: { efecto: EfectoPos; indic
     ) : (
       <Cifra valor={valor} formatear={entero} incremento={(n) => entero(n)} className="font-bold" />
     );
-  const mostrarAntesDespues = x.mostrarAntesDespues !== false;
+  // Pago sin efectivo (Nequi, tarjeta…): el efectivo esperado de la caja no cambia. En vez de "$ 619.900 → $ 619.900"
+  // se dice qué entró y por dónde.
+  const sinEfectivo = x.clave === 'caja' && x.antes === x.despues && !!x.porMedio && x.porMedio.length > 0;
+  const mostrarAntesDespues = x.mostrarAntesDespues !== false && !sinEfectivo;
   return (
     <li className="grid grid-cols-[20px_minmax(0,1fr)_auto_auto] items-center gap-x-3 py-2.5 animate-row-in [@media(min-height:800px)]:py-4" style={{ animationDelay: `${indice * 80}ms` }} data-testid={`pos-efecto-${x.clave}`}>
       <Icono icono={x.clave === 'caja' ? Banknote : ICONOS[x.clave]} tamano={16} className="text-ink-2" />
@@ -208,6 +211,7 @@ function FilaEfecto({ efecto: x, indice, baseVenta }: { efecto: EfectoPos; indic
         {x.clave === 'caja' && x.porMedio && x.porMedio.length > 0 ? (
           <p className="truncate t-small num text-muted" data-testid="pos-efecto-caja-medios">
             {x.porMedio.map((m) => `${MEDIOS_PAGO[m.medio].corta} ${m.valor > 0 ? '+' : '−'}${d(Math.abs(m.valor))}`).join(' · ')}
+            {sinEfectivo && ' · no es efectivo'}
           </p>
         ) : x.detalle ? (
           <p className="truncate t-small text-muted" title={x.detalle}>
@@ -219,6 +223,10 @@ function FilaEfecto({ efecto: x, indice, baseVenta }: { efecto: EfectoPos; indic
         <p className="t-body num text-ink" data-testid={`pos-efecto-${x.clave}-cifras`}>
           <span className="text-muted">{x.formato === 'dinero' ? <Dinero valor={x.antes} /> : entero(x.antes)} → </span>
           {cifra}
+        </p>
+      ) : sinEfectivo && x.mostrarAntesDespues !== false ? (
+        <p className="t-small text-muted" data-testid="pos-efecto-caja-sin-efectivo">
+          Efectivo sin cambio
         </p>
       ) : (
         <span />
