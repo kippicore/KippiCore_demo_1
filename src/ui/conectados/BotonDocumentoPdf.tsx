@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { Id } from '@/dominio/tipos';
 import { emitirUI, useAhora, useEstadoDominio, useMarca } from '@/estado';
 import { descargarBlob } from '@/lib/descargar';
+import { FileDown } from 'lucide-react';
+import { Button, type TamanoBoton, type VarianteBoton } from '../primitivos/Button';
 
 /**
  * `<BotonDocumentoPdf documento={…} />` (PLAN 5.12): descarga un documento con las PLANTILLAS PDF ÚNICAS de
@@ -27,9 +29,11 @@ export interface PropsBotonDocumentoPdf {
   documento: DocumentoPdf;
   /** Texto del botón (por defecto "Descargar PDF"). */
   etiqueta?: string;
+  variante?: VarianteBoton;
+  tamano?: TamanoBoton;
 }
 
-export function BotonDocumentoPdf({ documento, etiqueta = 'Descargar PDF' }: PropsBotonDocumentoPdf) {
+export function BotonDocumentoPdf({ documento, etiqueta = 'Descargar PDF', variante = 'secondary', tamano = 'sm' }: PropsBotonDocumentoPdf) {
   const estado = useEstadoDominio();
   const marca = useMarca();
   const ahora = useAhora();
@@ -63,12 +67,12 @@ export function BotonDocumentoPdf({ documento, etiqueta = 'Descargar PDF' }: Pro
   };
 
   return (
-    <span data-testid={`documento-${documento.tipo}`} style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
-      <button type="button" disabled={preparando} onClick={() => void descargar()} data-formato="pdf">
-        {preparando ? 'Preparando el archivo…' : etiqueta}
-      </button>
+    <span data-testid={`documento-${documento.tipo}`} className="inline-flex flex-wrap items-center gap-2">
+      <Button variante={variante} tamano={tamano} icono={FileDown} cargando={preparando} onClick={() => void descargar()} data-formato="pdf">
+        {etiqueta}
+      </Button>
       {error && (
-        <span role="alert" style={{ color: '#9b2c2c', fontSize: 13 }}>
+        <span role="alert" className="t-small text-danger">
           {error}
         </span>
       )}

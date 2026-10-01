@@ -48,6 +48,7 @@ export interface PropsCombobox {
   enModal?: boolean;
   /** Pegado o escaneo de un código completo: se llama al presionar Enter sin ítem activo. */
   alEnter?: (texto: string) => void;
+  autoFocus?: boolean;
   className?: string;
   'data-testid'?: string;
 }
@@ -69,7 +70,7 @@ export function Resaltado({ texto, consulta }: { texto: string; consulta: string
 }
 
 export const Combobox = forwardRef<HTMLInputElement, PropsCombobox>(function Combobox(
-  { texto, alCambiarTexto, grupos, placeholder, etiqueta, vacio, fijo, atajo, tamano = 'md', claseCampo, anchoLista, abrirAlEnfocar, enModal, alEnter, className, ...resto },
+  { texto, alCambiarTexto, grupos, placeholder, etiqueta, vacio, fijo, atajo, tamano = 'md', claseCampo, anchoLista, abrirAlEnfocar, enModal, alEnter, autoFocus, className, ...resto },
   ref,
 ) {
   const [abierto, setAbierto] = useState(false);
@@ -99,6 +100,7 @@ export const Combobox = forwardRef<HTMLInputElement, PropsCombobox>(function Com
                 if (e.key === 'Enter' && alEnter && total === 0) alEnter(texto);
               }}
               placeholder={placeholder}
+              autoFocus={autoFocus}
               aria-label={etiqueta ?? placeholder}
               data-testid={resto['data-testid']}
               className={cn(CLASE_CAMPO, tamano === 'sm' ? 'h-8' : 'h-9', 'pl-9', atajo ? 'pr-16' : 'pr-3', claseCampo)}
