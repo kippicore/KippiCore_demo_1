@@ -67,7 +67,7 @@ export const TEXTOS = {
     subtitulo: 'Cuánto te dejó cada local después de pagar la mercancía y los gastos.',
     prorratear: 'Repartir los gastos generales entre los locales',
     prorratearAyuda:
-      'El arriendo de la bodega, el contador, la vigilancia y la pauta no son de un local. Si lo activas, se reparten según lo que vendió cada uno. La nómina de la bodega queda aparte.',
+      'La bodega (su arriendo, su nómina y su seguridad social), el contador, la vigilancia y la pauta no son de un local. Si lo activas, se reparten según lo que vendió cada uno.',
     nota:
       'Es un cálculo para entender tu negocio: va antes de impuestos de renta y no cuenta lo que pagas por mercancía nueva, porque esa plata se vuelve inventario y solo es costo cuando la vendes.',
   },
@@ -75,7 +75,7 @@ export const TEXTOS = {
     titulo: 'Punto de equilibrio',
     subtitulo: 'Lo que cada local tiene que vender al mes para no perder plata.',
     repartir: 'Incluir la parte de los gastos generales',
-    repartirAyuda: 'Suma a cada local lo que le toca del arriendo de la bodega, el contador, la vigilancia y la pauta.',
+    repartirAyuda: 'Suma a cada local lo que le toca de la bodega (arriendo, nómina y seguridad social), el contador, la vigilancia y la pauta.',
     formula:
       'Se calcula dividiendo los gastos fijos del mes (arriendo, servicios, nómina y seguridad social) entre el margen bruto: lo que queda de cada venta después de pagar la mercancía.',
   },

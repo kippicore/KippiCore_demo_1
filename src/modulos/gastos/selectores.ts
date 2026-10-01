@@ -39,8 +39,8 @@ export interface ResultadosPorLocal {
   /** El negocio completo (incluye todos los gastos, también los generales). */
   total: EstadoResultados;
   /**
-   * Gastos del negocio que los tres locales no explican: los generales (si no se repartieron) y los de la bodega
-   * (nómina y seguridad social), que no se reparten. 0 si solo queda el residuo del redondeo.
+   * Gastos del negocio que los tres locales no explican: los generales y los de la bodega, si no se repartieron (con
+   * el reparto, el dominio los suma a cada local y aquí solo queda el residuo del redondeo, que se ignora).
    */
   sinAsignar: COP;
 }

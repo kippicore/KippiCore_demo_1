@@ -49,15 +49,16 @@ describe('selResultadosPorLocal', () => {
     expect(suma).toBe(v.total.utilidadOperativa);
   });
 
-  it('repartiendo los generales solo queda sin asignar lo de la bodega (nómina y seguridad social)', () => {
+  it('repartiendo, los generales y la bodega quedan en los locales: nada sin asignar y la suma es el negocio', () => {
     const sin = selResultadosPorLocal(e, { mes: MES, prorratear: false });
     const con = selResultadosPorLocal(e, { mes: MES, prorratear: true });
     expect(con.locales.every((x) => x.er.gastosGeneralesProrrateados > 0)).toBe(true);
     const bodega = selGastos(e, { desde: '2026-09-01', hasta: '2026-09-30', localId: 'bod' }).filas.reduce((a, g) => a + g.valor - g.iva, 0);
     expect(bodega).toBeGreaterThan(0);
-    expect(Math.abs(con.sinAsignar - bodega)).toBeLessThanOrEqual(3);
-    expect(con.sinAsignar).toBeLessThan(sin.sinAsignar);
-    const suma = con.locales.reduce((a, x) => a + x.er.utilidadOperativa, 0) - con.sinAsignar;
+    // Sin repartir, la bodega y los generales quedan aparte; repartiendo, solo el residuo del redondeo (que se ignora).
+    expect(sin.sinAsignar).toBeGreaterThanOrEqual(bodega);
+    expect(con.sinAsignar).toBe(0);
+    const suma = con.locales.reduce((a, x) => a + x.er.utilidadOperativa, 0);
     expect(Math.abs(suma - con.total.utilidadOperativa)).toBeLessThanOrEqual(3);
   });
 });

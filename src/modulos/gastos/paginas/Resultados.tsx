@@ -244,7 +244,7 @@ function CuerpoResultados({ f, prorratear, setProrratear }: { f: ReturnType<type
                 <li>
                   <BarraProgreso
                     valor={totalCategorias > 0 ? er.gastosGeneralesProrrateados / (totalCategorias + er.gastosGeneralesProrrateados) : 1}
-                    etiqueta="Parte de los gastos generales"
+                    etiqueta="Parte de los gastos generales y de la bodega"
                     detalle={
                       <span className="font-semibold text-ink">
                         <Dinero valor={er.gastosGeneralesProrrateados} corta />

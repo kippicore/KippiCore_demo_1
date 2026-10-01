@@ -348,6 +348,13 @@ describe('plata vs. recálculo ingenuo', () => {
     const porLocal = ['p93', 'usq', 'zr', 'bod'].map((l) => selEstadoResultados(e, { desde: '2026-08-01', hasta: '2026-08-31', localId: l, prorratear: true }));
     const suma = porLocal.reduce((a, x) => a + x.utilidadOperativa, 0);
     expect(Math.abs(suma - er.utilidadOperativa)).toBeLessThan(5);
+    // La bodega no vende: con el reparto entrega su nómina y seguridad social a los tres locales (utilidad 0) y los
+    // tres locales solos ya suman el negocio.
+    expect(porLocal[3]?.utilidadOperativa).toBe(0);
+    expect(porLocal[3]?.gastosGeneralesProrrateados).toBe(-(porLocal[3]?.gastosOperativos ?? 0));
+    expect(porLocal[3]?.gastosOperativos).toBeGreaterThan(0);
+    const tres = porLocal.slice(0, 3).reduce((a, x) => a + x.utilidadOperativa, 0);
+    expect(Math.abs(tres - er.utilidadOperativa)).toBeLessThan(5);
     expect(selResumenGastos(e, { mes: '2026-08', localId: 'todos' }).total).toBe(selGastos(e, { desde: '2026-08-01', hasta: '2026-08-31' }).total);
     expect(selPuntoEquilibrio(e, { localId: 'zr', mes: '2026-08' }).ventasEquilibrio).toBeGreaterThan(0);
   });

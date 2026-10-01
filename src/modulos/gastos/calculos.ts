@@ -76,7 +76,7 @@ export function explicarResultados(er: EstadoResultados, opciones: { sujeto: 'lo
           { dinero: er.gastosOperativos },
           ' propios del local y ',
           { dinero: er.gastosGeneralesProrrateados },
-          ' que le tocan de los gastos generales.',
+          ' que le tocan de los gastos generales y de la bodega.',
         ]
       : ['De ahí salen arriendo, nómina, servicios y demás: ', { dinero: gastos }, '.'],
   );

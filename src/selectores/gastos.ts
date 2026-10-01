@@ -56,7 +56,10 @@ export interface EstadoResultados {
   utilidadBruta: COP;
   margenBruto: number;
   gastosOperativos: COP;
-  /** Generales prorrateados (si se pidió y hay un local elegido). */
+  /**
+   * Parte de los gastos compartidos (generales y bodega) que le toca al local, si se pidió `prorratear`; en la bodega,
+   * −sus propios gastos (los entrega a los locales que venden).
+   */
   gastosGeneralesProrrateados: COP;
   utilidadOperativa: COP;
   margenOperativo: number;
@@ -65,31 +68,41 @@ export interface EstadoResultados {
 
 /**
  * Estado de resultados (6.20.10): ventas netas sin IVA − costo de la mercancía vendida = utilidad bruta − gastos
- * operativos (sin IVA si `ivaGastosDescontable`; los generales se prorratean por participación en ventas si se
- * pide) = utilidad operativa. Las compras de mercancía no son gasto.
+ * operativos (sin IVA si `ivaGastosDescontable`; con `prorratear`, los gastos COMPARTIDOS se reparten por
+ * participación en las ventas) = utilidad operativa. Las compras de mercancía no son gasto.
+ *
+ * Gastos compartidos = los generales (sin local) y los de los locales que no venden (la bodega: su nómina, seguridad
+ * social y arriendo sirven a los tres locales). Sin `prorratear`, cada local ve solo sus gastos y la bodega los suyos.
+ * Con `prorratear`, a un local que vende se le suma su parte de los compartidos, y la bodega entrega los suyos
+ * (`gastosGeneralesProrrateados` = −sus gastos, utilidad 0): la suma de los locales (con o sin la bodega) es el
+ * negocio, salvo el redondeo.
  */
 export const selEstadoResultados = crearSelector<{ desde: FechaISO; hasta: FechaISO; localId: Id | 'todos'; prorratear: boolean }, EstadoResultados>(
   'selEstadoResultados',
-  ['ventas', 'devoluciones', 'productos', 'variantes', 'gastos', 'parametros'],
+  ['ventas', 'devoluciones', 'productos', 'variantes', 'gastos', 'parametros', 'locales'],
   (e, { desde, hasta, localId, prorratear }) => {
     const hechos = hechosEnFechas(e, { desde, hasta });
     const r = resumirHechos(hechosEnRango(hechos, desde, hasta, localId));
     const sinIva = e.parametros.impuestos.ivaGastosDescontable;
     const valor = (g: Gasto) => (sinIva ? g.valor - g.iva : g.valor);
+    const noVende = (id: Id | null) => id !== null && e.locales[id]?.vende === false;
     const porCat: Partial<Record<CategoriaGasto, COP>> = {};
     let gastos = 0;
-    let generales = 0;
+    let compartidos = 0;
     for (const g of Object.values(e.gastos)) {
       if (g.eliminadoEn || g.fecha < desde || g.fecha > hasta) continue;
       if (localId === 'todos' || g.localId === localId) {
         gastos += valor(g);
         porCat[g.categoria] = (porCat[g.categoria] ?? 0) + valor(g);
-      } else if (g.localId === null) generales += valor(g);
+      } else if (g.localId === null || noVende(g.localId)) compartidos += valor(g);
     }
     let prorrateo = 0;
-    if (localId !== 'todos' && prorratear && generales > 0) {
-      const total = resumirHechos(hechos).baseNeta;
-      prorrateo = total > 0 ? Math.round((generales * r.baseNeta) / total) : 0;
+    if (localId !== 'todos' && prorratear) {
+      if (noVende(localId)) prorrateo = -gastos;
+      else if (compartidos > 0) {
+        const total = resumirHechos(hechos).baseNeta;
+        prorrateo = total > 0 ? Math.round((compartidos * r.baseNeta) / total) : 0;
+      }
     }
     const utilidadBruta = r.baseNeta - r.costo;
     const operativos = gastos + prorrateo;
@@ -111,7 +124,7 @@ export const selEstadoResultados = crearSelector<{ desde: FechaISO; hasta: Fecha
 export const selPuntoEquilibrio = crearSelector<
   { localId: Id | 'todos'; mes: MesISO },
   { gastosFijos: COP; margenBruto: number; ventasEquilibrio: COP | null; ventasNetasMes: COP }
->('selPuntoEquilibrio', ['ventas', 'devoluciones', 'productos', 'variantes', 'gastos', 'parametros'], (e, { localId, mes }) => {
+>('selPuntoEquilibrio', ['ventas', 'devoluciones', 'productos', 'variantes', 'gastos', 'parametros', 'locales'], (e, { localId, mes }) => {
   const rango = rangoMes(mes);
   const er = selEstadoResultados(e, { ...rango, localId, prorratear: false });
   const FIJAS: CategoriaGasto[] = ['arriendo', 'servicios', 'nomina', 'seguridad_social'];
