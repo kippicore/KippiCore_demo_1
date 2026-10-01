@@ -15,3 +15,8 @@
 1. Comando `notaCredito.avanzarEstado` (acción `avanzarEstadoNotaCredito` { notaId, estado: 'enviada'|'aceptada' }, evento `NotaCreditoEstado`); retirar el avance en memoria de D3.
 2. `src/reportes/plantillas-pdf.ts` `emisor()`: con marca personalizada usar el nombre de la marca activa como razón social (hoy "Halden Moda Masculina S.A.S. (<negocio>)").
 3. Opcional: `rutas.facturacion({ tipo })` con valor para notas crédito.
+
+## D2 (worktree-agent-a2b20e48cdd9aa6fc, c51fa2f)
+1. Hallazgos con dinero en palabras (no convierte moneda): `Hallazgo` debe traer `cifras` en COP para armar la frase con `<Dinero>`.
+2. CONTRATOS §10: documentar `?vista=` de analisis (hallazgos|proyeccion|meses|calor|semanas), `?resaltar=` de analisisProductos, `?vista=<ejemplo>` de tablaDinamica.
+3. **Datos (calibración)**: `selDesempenoVendedores` destaca a Natalia Ríos (≈36 % sobre el promedio) por encima de Valentina Gómez; el guion pide a Valentina como estrella indiscutible del negocio (no solo de Parque 93). Calzado queda 3.º en días de inventario (181) tras abrigos (388) y suéteres (191); el guion pide al calzado como la categoría dormida evidente (P5). Ajustar generador/seed o la definición de los selectores para que la historia sea coherente en todas las pantallas.
