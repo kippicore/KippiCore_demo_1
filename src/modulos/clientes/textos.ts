@@ -13,7 +13,7 @@ export const TEXTOS = {
     sinClientesTexto: 'Cada cliente que registres en el punto de venta o aquí queda con su historial y su forma de tratamiento.',
     errorTitulo: 'No pudimos cargar tus clientes',
     errorTexto: 'Recarga la página. Si sigue pasando, tus datos de la demo siguen a salvo en este navegador.',
-    segmentosAyuda: 'Los segmentos se calculan solos con las compras de cada cliente: nadie los etiqueta a mano.',
+    segmentosAyuda: 'Se calculan solos con sus compras.',
     todos: 'Todos',
   },
   ficha: {

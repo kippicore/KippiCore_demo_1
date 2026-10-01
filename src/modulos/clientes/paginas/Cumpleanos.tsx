@@ -90,8 +90,8 @@ function CumpleanosDelMes() {
       ancho: 150,
       ordenar: (f) => f.fecha,
       celda: (f) => (
-        <span className="flex items-center gap-2">
-          <Fecha valor={f.fecha} formato="corta" />
+        <span className="flex items-center gap-2 whitespace-nowrap">
+          <Fecha valor={f.fecha} formato="corta" className="whitespace-nowrap" />
           {f.estado === 'hoy' && <Badge tono="accent" tamano="sm">Hoy</Badge>}
         </span>
       ),
@@ -104,23 +104,22 @@ function CumpleanosDelMes() {
         <span className="flex items-center gap-3">
           <Avatar nombre={`${f.cliente.nombres} ${f.cliente.apellidos}`} tamano={32} />
           <span className="min-w-0">
-            <span className="block truncate font-semibold text-ink">
+            <span className="block max-w-[24ch] truncate font-semibold text-ink">
               {f.cliente.nombres} {f.cliente.apellidos}
             </span>
             <span className="block t-small text-muted">
-              {f.edad ? `Cumple ${plural(f.edad, 'año')}` : 'Cumpleaños'} · {nombreLocal(f.localHabitualId) || 'Sin local'}
+              {f.edad ? `Cumple ${plural(f.edad, 'año')}` : 'Cumpleaños'} · {f.cliente.tratamiento === 'usted' ? TEXTOS.trato.usted : TEXTOS.trato.tu}
             </span>
           </span>
         </span>
       ),
     },
     { id: 'segmento', encabezado: 'Segmento', ordenar: (f) => SEGMENTOS_ORDEN.indexOf(f.segmento), celda: (f) => <InsigniaSegmento segmento={f.segmento} tamano="sm" /> },
-    { id: 'trato', encabezado: 'Trato', celda: (f) => <span className="t-small text-ink-2">{f.cliente.tratamiento === 'usted' ? TEXTOS.trato.usted : TEXTOS.trato.tu}</span> },
     {
       id: 'mensaje',
       encabezado: 'Mensaje sugerido',
       celda: (f) => (
-        <span className="block max-w-[38ch] truncate t-small text-ink-2">
+        <span className="block max-w-[28ch] truncate t-small text-ink-2">
           {armarMensaje('cumpleanos', f.cliente, f.cliente.tratamiento, {
             marca: marca.nombre,
             local: nombreLocal(f.localHabitualId) || 'nuestro local',

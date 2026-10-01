@@ -22,6 +22,7 @@ import {
   EncabezadoPagina,
   Fecha,
   FranjaResumen,
+  Icono,
   ItemMenu,
   Menu,
   MuestraColor,
@@ -39,7 +40,7 @@ import { ModalNota } from '../componentes/ModalNota';
 import { ModalSeguimiento } from '../componentes/ModalSeguimiento';
 import { ModalTallas } from '../componentes/ModalTallas';
 import { InsigniaSegmento, Partes } from '../componentes/Partes';
-import { CATEGORIAS_ETIQUETA, type TipoMensajeCliente } from '../reglas';
+import { CATEGORIAS_ETIQUETA, diaDelMes, diasParaCumple, edadQueCumple, fechaCumple, type TipoMensajeCliente } from '../reglas';
 import { selPerfilCliente, type FilaHistorial, type PerfilCliente } from '../selectores';
 import { TEXTOS } from '../textos';
 
@@ -146,6 +147,36 @@ function FichaDeCliente() {
     else avisar({ tipo: 'exito', texto: 'Seguimiento quitado del calendario' });
   };
 
+  const aviso = (() => {
+    if (!cliente.cumpleanos) return null;
+    const dias = diasParaCumple(cliente.cumpleanos, hoy);
+    if (dias > 7) return null;
+    const anio = Number(hoy.slice(0, 4)) + (cliente.cumpleanos < hoy.slice(5) ? 1 : 0);
+    const edad = edadQueCumple(cliente.anioNacimiento, anio);
+    const felicitado = perfil.mensajes.some((m) => m.origen.tipo === 'cumpleanos' && m.ts.slice(0, 4) === hoy.slice(0, 4));
+    const texto =
+      dias === 0
+        ? `Hoy cumple ${edad ? plural(edad, 'año') : 'años'}.`
+        : dias === 1
+          ? 'Mañana cumple años.'
+          : `Cumple años en ${dias} días, el ${diaDelMes(fechaCumple(cliente.cumpleanos, anio))}.`;
+    return (
+      <div className="mt-6 flex items-center justify-between gap-4 border border-line bg-accent-soft px-5 py-4" data-testid="ficha-cumple">
+        <p className="flex items-center gap-3 t-body text-ink">
+          <Icono icono={Cake} tamano={18} />
+          {texto}
+        </p>
+        {felicitado ? (
+          <Badge tono="success">Ya lo felicitaste</Badge>
+        ) : (
+          <Button variante="secondary" tamano="sm" icono={MessageCircle} onClick={() => setEscribiendo({ tipo: 'cumpleanos' })} data-testid="ficha-felicitar">
+            Felicitarlo
+          </Button>
+        )}
+      </div>
+    );
+  })();
+
   return (
     <>
       <EncabezadoPagina
@@ -191,6 +222,8 @@ function FichaDeCliente() {
           </>
         }
       />
+
+      {aviso}
 
       {(perfil.porCobrar.length > 0 || metricas.saldoAFavor > 0) && (
         <div className="mt-6 grid gap-3 md:grid-cols-2" data-testid="ficha-saldos">
@@ -346,27 +379,30 @@ function Compras({ perfil }: { perfil: PerfilCliente }) {
   const navegar = useNavigate();
   const ahora = useAhora();
   const resaltar = useResaltar();
+  const recien = (ts: string) => diferenciaMinutos(ts, ahora) >= 0 && diferenciaMinutos(ts, ahora) <= 15;
   const columnas: ColumnaTabla<FilaHistorial>[] = [
     {
       id: 'venta',
       encabezado: 'Venta',
       ordenar: (h) => h.ts,
       celda: (h) => (
-        <span className="flex items-center gap-2">
-          <Link to={rutas.venta(h.id)} onClick={(e) => e.stopPropagation()} className="font-semibold text-ink underline-offset-4 hover:underline">
-            {h.numero}
-          </Link>
-          {diferenciaMinutos(h.ts, ahora) <= 15 && diferenciaMinutos(h.ts, ahora) >= 0 && (
-            <Badge tono="accent" tamano="sm">
-              Recién hecha
-            </Badge>
-          )}
+        <span className="flex flex-col items-start gap-0.5">
+          <span className="flex items-center gap-2">
+            <Link to={rutas.venta(h.id)} onClick={(e) => e.stopPropagation()} className="font-semibold text-ink underline-offset-4 hover:underline">
+              {h.numero}
+            </Link>
+            {recien(h.ts) && (
+              <Badge tono="accent" tamano="sm">
+                Recién hecha
+              </Badge>
+            )}
+          </span>
+          <span className="t-small text-muted">{h.localNombre}</span>
         </span>
       ),
     },
-    { id: 'fecha', encabezado: 'Fecha', ordenar: (h) => h.ts, celda: (h) => <Fecha valor={h.ts} formato="fechaHora" /> },
+    { id: 'fecha', encabezado: 'Fecha', ordenar: (h) => h.ts, celda: (h) => <Fecha valor={h.ts} formato="fecha" /> },
     { id: 'que', encabezado: 'Qué compró', truncar: true, celda: (h) => h.resumen },
-    { id: 'local', encabezado: 'Local', ordenar: (h) => h.localNombre, celda: (h) => h.localNombre },
     { id: 'estado', encabezado: 'Estado', celda: (h) => <BadgeEstado estado={ESTADOS_VENTA[h.estado]} tamano="sm" /> },
     { id: 'total', encabezado: 'Total', numerica: true, ordenar: (h) => h.total, celda: (h) => <Dinero valor={h.total} /> },
   ];
@@ -540,9 +576,9 @@ function TarjetaDatos({ cliente, perfilCanal, alEditar }: { cliente: ClienteTipo
         <Fila etiqueta="Correo">{cliente.correo ?? <span className="text-subtle">Sin correo</span>}</Fila>
         <Fila etiqueta="Cumpleaños">
           {cliente.cumpleanos ? (
-            <span className="num">
-              {Number(cliente.cumpleanos.slice(3, 5))}/{Number(cliente.cumpleanos.slice(0, 2))}
-              {cliente.anioNacimiento ? ` · ${cliente.anioNacimiento}` : ''}
+            <span>
+              {diaDelMes(`2000-${cliente.cumpleanos}`)}
+              {cliente.anioNacimiento ? <span className="num">{` · ${cliente.anioNacimiento}`}</span> : null}
             </span>
           ) : (
             <span className="text-subtle">Sin registrar</span>

@@ -12,7 +12,6 @@ import { selEmpleadosActivos, selLocalesQueVenden } from '@/selectores';
 import {
   avisar,
   Avatar,
-  BotonAccionesFila,
   BotonEnlace,
   BotonExportar,
   BotonPildora,
@@ -22,7 +21,6 @@ import {
   EmptyState,
   EncabezadoPagina,
   Fecha,
-  FranjaResumen,
   ImportarExcelSimulado,
   ItemMenu,
   Menu,
@@ -36,6 +34,7 @@ import {
   type ChipActivo,
   type ColumnaTabla,
 } from '@/ui';
+import { BotonFila } from '../componentes/BotonFila';
 import { FormularioCliente } from '../componentes/FormularioCliente';
 import { LimiteError } from '../componentes/LimiteError';
 import { ModalMensaje } from '../componentes/ModalMensaje';
@@ -129,41 +128,65 @@ function ListaDeClientes() {
     {
       id: 'cliente',
       encabezado: 'Cliente',
-      ancho: '24%',
       ordenar: (f) => `${f.cliente.apellidos} ${f.cliente.nombres}`.toLowerCase(),
       celda: (f) => (
         <span className="flex items-center gap-3">
           <Avatar nombre={`${f.cliente.nombres} ${f.cliente.apellidos}`} tamano={32} />
           <span className="min-w-0">
-            <span className="block truncate font-semibold text-ink">
+            <span className="block max-w-[22ch] truncate font-semibold text-ink">
               {f.cliente.nombres} {f.cliente.apellidos}
             </span>
-            <span className="block t-small text-muted num">{celular(f.cliente.celular)}</span>
+            <span className="block t-small text-muted">
+              <span className="num">{celular(f.cliente.celular)}</span> · {f.cliente.tratamiento === 'usted' ? TEXTOS.trato.usted : TEXTOS.trato.tu}
+            </span>
           </span>
         </span>
       ),
     },
-    { id: 'segmento', encabezado: 'Segmento', ordenar: (f) => SEGMENTOS_ORDEN.indexOf(f.metricas.segmento), celda: (f) => <InsigniaSegmento segmento={f.metricas.segmento} tamano="sm" /> },
     {
-      id: 'porque',
-      encabezado: 'Por qué',
+      id: 'segmento',
+      encabezado: 'Segmento',
+      ordenar: (f) => SEGMENTOS_ORDEN.indexOf(f.metricas.segmento),
       celda: (f) => (
-        <span className="block max-w-[26ch] truncate t-small text-ink-2">
-          <Partes partes={f.explicacion.corta} />
+        <span className="flex flex-col items-start gap-0.5">
+          <InsigniaSegmento segmento={f.metricas.segmento} tamano="sm" />
+          <span className="block max-w-[22ch] truncate t-small text-muted">
+            <Partes partes={f.explicacion.corta} />
+          </span>
         </span>
       ),
     },
-    { id: 'compras', encabezado: 'Compras', numerica: true, ordenar: (f) => f.metricas.compras, celda: (f) => entero(f.metricas.compras) },
-    { id: 'valor', encabezado: 'Valor histórico', numerica: true, ordenar: (f) => f.metricas.valor, celda: (f) => <Dinero valor={f.metricas.valor} /> },
-    { id: 'ticket', encabezado: 'Ticket promedio', numerica: true, ordenar: (f) => f.metricas.ticket, celda: (f) => (f.metricas.compras ? <Dinero valor={f.metricas.ticket} /> : <span className="text-subtle">—</span>) },
+    {
+      id: 'valor',
+      encabezado: 'Valor histórico',
+      numerica: true,
+      ordenar: (f) => f.metricas.valor,
+      celda: (f) => (
+        <span className="flex flex-col items-end gap-0.5">
+          <Dinero valor={f.metricas.valor} />
+          <span className="t-small text-muted">
+            {plural(f.metricas.compras, 'compra')}
+            {f.metricas.compras > 0 && (
+              <>
+                {' · ticket '}
+                <Dinero valor={f.metricas.ticket} corta />
+              </>
+            )}
+          </span>
+        </span>
+      ),
+    },
     {
       id: 'ultima',
       encabezado: 'Última compra',
       ordenar: (f) => f.metricas.ultimaCompra,
-      celda: (f) => (f.metricas.ultimaCompra ? <Fecha valor={f.metricas.ultimaCompra} formato="relativaDias" /> : <span className="text-subtle">Sin compras</span>),
+      celda: (f) => (
+        <span className="flex flex-col items-start gap-0.5">
+          {f.metricas.ultimaCompra ? <Fecha valor={f.metricas.ultimaCompra} formato="relativaDias" /> : <span className="text-subtle">Sin compras</span>}
+          <span className="t-small text-muted">{nombreLocal(f.metricas.localHabitualId ?? f.cliente.localRegistroId)}</span>
+        </span>
+      ),
     },
-    { id: 'local', encabezado: 'Local habitual', ordenar: (f) => nombreLocal(f.metricas.localHabitualId ?? f.cliente.localRegistroId), celda: (f) => nombreLocal(f.metricas.localHabitualId ?? f.cliente.localRegistroId) },
-    { id: 'trato', encabezado: 'Trato', celda: (f) => <span className="t-small text-ink-2">{f.cliente.tratamiento === 'usted' ? TEXTOS.trato.usted : TEXTOS.trato.tu}</span> },
   ];
 
   const eliminar = () => {
@@ -199,8 +222,8 @@ function ListaDeClientes() {
         }
       />
 
-      <Pista id="clientes.segmentos" className="mt-8">
-        <div role="group" aria-label="Segmentos de clientes" className="grid grid-cols-3 border border-line bg-surface wide:grid-cols-6" data-testid="segmentos">
+      <Pista id="clientes.segmentos" className="mt-8 mb-4">
+        <div role="group" aria-label="Segmentos de clientes" className="grid grid-cols-3 border border-line bg-surface min-[1200px]:grid-cols-6" data-testid="segmentos">
           <ChipSegmento
             id="todos"
             etiqueta={TEXTOS.lista.todos}
@@ -223,18 +246,7 @@ function ListaDeClientes() {
         </div>
       </Pista>
 
-      <FranjaResumen
-        className="mt-4"
-        cifras={[
-          { etiqueta: 'Clientes', valor: entero(lista.totales.clientes) },
-          { etiqueta: 'Valor histórico', valor: <Dinero valor={lista.totales.valor} corta /> },
-          { etiqueta: 'Compras', valor: entero(lista.totales.compras) },
-          { etiqueta: 'Ticket promedio', valor: <Dinero valor={lista.totales.ticket} corta /> },
-        ]}
-      />
-
       <Table
-        className="mt-4"
         etiqueta="Clientes"
         data-testid="tabla-clientes"
         columnas={columnas}
@@ -245,7 +257,15 @@ function ListaDeClientes() {
         ordenInicial={{ id: 'valor', dir: 'desc' }}
         alAbrir={(f) => navegar(rutas.cliente(f.cliente.id, {}))}
         resaltada={(f) => f.cliente.id === p.resaltar}
-        totales={{ compras: entero(lista.totales.compras), valor: <Dinero valor={lista.totales.valor} />, ticket: lista.totales.compras ? <Dinero valor={lista.totales.ticket} /> : undefined }}
+        totales={{
+          cliente: `${plural(lista.totales.clientes, 'cliente')} · ${plural(lista.totales.compras, 'compra')}`,
+          valor: <Dinero valor={lista.totales.valor} />,
+          ultima: lista.totales.compras ? (
+            <span>
+              Ticket <Dinero valor={lista.totales.ticket} corta />
+            </span>
+          ) : undefined,
+        }}
         barra={
           <Toolbar
             buscar={{ valor: q, alCambiar: setQ, placeholder: TEXTOS.lista.buscar, etiqueta: 'Buscar clientes' }}
@@ -288,7 +308,7 @@ function ListaDeClientes() {
           />
         }
         accionesFila={(f) => (
-          <Menu etiqueta={`Acciones de ${f.cliente.nombres}`} disparador={<BotonAccionesFila aria-label={`Acciones de ${f.cliente.nombres} ${f.cliente.apellidos}`} />}>
+          <Menu etiqueta={`Acciones de ${f.cliente.nombres}`} disparador={<BotonFila aria-label={`Acciones de ${f.cliente.nombres} ${f.cliente.apellidos}`} />}>
             <ItemMenu icono={UserRound} onSelect={() => navegar(rutas.cliente(f.cliente.id, {}))}>
               Ver ficha
             </ItemMenu>
@@ -377,7 +397,7 @@ function ChipSegmento({
       aria-pressed={activo}
       onClick={alElegir}
       data-testid={`segmento-${id}`}
-      className={`flex min-h-28 flex-col items-start border-l border-line-soft px-5 py-4 text-left transition-colors duration-(--dur-instant) first:border-l-0 hover:bg-surface-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${activo ? 'bg-selected shadow-[inset_0_-2px_0_var(--c-ink)]' : ''}`}
+      className={`flex min-h-28 flex-col items-start border-l border-line-soft px-4 py-4 text-left transition-colors duration-(--dur-instant) first:border-l-0 hover:bg-surface-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${activo ? 'bg-selected shadow-[inset_0_-2px_0_var(--c-ink)]' : ''}`}
     >
       <span className="t-eyebrow text-ink-2">{etiqueta}</span>
       <span className="mt-1.5 t-kpi-sm text-ink num">{entero(conteo)}</span>
