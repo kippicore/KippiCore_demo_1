@@ -10,7 +10,8 @@ export function GraficosComparativo({ filas, hallazgos }: { filas: readonly Fila
     [...filas].filter((f) => clave(f) !== null).sort((a, b) => (clave(b) ?? 0) - (clave(a) ?? 0));
 
   const retraso = ordenado((f) => f.retrasoPromedio).map((f) => ({ fabrica: eje(f), retraso: f.retrasoPromedio }));
-  const defectos = ordenado((f) => f.defectos).map((f) => ({ fabrica: eje(f), defectos: f.defectos }));
+  // Los defectos van en puntos porcentuales (5,4 y no 0,054): la escala redonda de los gráficos no encoge por debajo de 1.
+  const defectos = ordenado((f) => f.defectos).map((f) => ({ fabrica: eje(f), defectos: (f.defectos ?? 0) * 100 }));
   const masCara = ordenado((f) => f.costoPromedioUnidad)[0];
   const costo = ordenado((f) => f.costoPromedioUnidad).map((f) => ({ fabrica: eje(f), costo: f.costoPromedioUnidad }));
 
@@ -29,7 +30,7 @@ export function GraficosComparativo({ filas, hallazgos }: { filas: readonly Fila
           x="fabrica"
           series={serie('retraso', 'Retraso (días)')}
           destacarX={masTarde ? eje(masTarde) : null}
-          formatoY={(n) => `${numero(n, 0)} d`}
+          formatoY={(n) => `${numero(n, Number.isInteger(n) ? 0 : 1)} d`}
           formatoValor={(n) => `${numero(n, 1)} días`}
           alto={240}
         />
@@ -43,8 +44,8 @@ export function GraficosComparativo({ filas, hallazgos }: { filas: readonly Fila
           x="fabrica"
           series={serie('defectos', 'Defectos')}
           destacarX={masDefectos ? eje(masDefectos) : null}
-          formatoY={(n) => porcentaje(n, 0)}
-          formatoValor={(n) => porcentaje(n, 1)}
+          formatoY={(n) => porcentaje(n / 100, Number.isInteger(n) ? 0 : 1)}
+          formatoValor={(n) => porcentaje(n / 100, 1)}
           alto={240}
         />
       </Card>

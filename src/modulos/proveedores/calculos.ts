@@ -168,6 +168,9 @@ export interface Hallazgos<F extends FabricaComparable> {
   apoyo: string[];
 }
 
+/** Hasta cuántos días de retraso (promedio o de un pedido) se sigue diciendo "a tiempo". */
+export const RETRASO_A_TIEMPO = 0.5;
+
 /** Redacta "14 días" o "1 día" con el redondeo que se lee bien en una frase. */
 export function diasEnFrase(dias: number): string {
   return plural(Math.max(1, Math.round(dias)), 'día');
@@ -217,15 +220,22 @@ export function hallazgosComparativo<F extends FabricaComparable>(filas: readonl
   } else {
     titular = 'Todavía no hay pedidos recibidos suficientes para comparar a las fábricas.';
   }
-  if (masTarde && masPuntual && masPuntual.proveedorId !== masTarde.proveedorId)
-    apoyo.push(`${masPuntual.nombre} es la más puntual, con ${diasEnFrase(Math.max(0, masPuntual.retrasoPromedio ?? 0))} de retraso en promedio.`);
+  if (masTarde && masPuntual && masPuntual.proveedorId !== masTarde.proveedorId) {
+    // Misma regla que `etiquetaRetraso` y la insignia de la tabla: hasta medio día de retraso promedio es "a tiempo".
+    const retraso = masPuntual.retrasoPromedio ?? 0;
+    apoyo.push(
+      retraso <= RETRASO_A_TIEMPO
+        ? `${masPuntual.nombre} es la más puntual: llega a tiempo en promedio.`
+        : `${masPuntual.nombre} es la más puntual, con ${diasEnFrase(retraso)} de retraso en promedio.`,
+    );
+  }
   return { masTarde, masDefectos, masPuntual, menosDefectos, razonDefectos, titular, apoyo };
 }
 
 /** "A tiempo" o "+14 días" (retraso promedio o de un pedido). */
 export function etiquetaRetraso(dias: number | null): string {
   if (dias === null) return '—';
-  if (dias <= 0.5) return dias < -0.5 ? `${plural(Math.round(-dias), 'día')} antes` : 'A tiempo';
+  if (dias <= RETRASO_A_TIEMPO) return dias < -0.5 ? `${plural(Math.round(-dias), 'día')} antes` : 'A tiempo';
   return `+${plural(Math.round(dias), 'día')}`;
 }
 

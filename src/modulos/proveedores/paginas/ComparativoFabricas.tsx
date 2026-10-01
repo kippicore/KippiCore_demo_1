@@ -94,7 +94,7 @@ export default function ComparativoFabricas() {
         f.entregaPromedio === null ? (
           <span className="text-muted">—</span>
         ) : (
-          <div className="whitespace-nowrap">
+          <div className="whitespace-nowrap py-3">
             <span>{numero(f.entregaPromedio, 0)} días</span>
             <p className="t-small text-muted">{f.pedidosRecibidos === 1 ? '1 pedido' : `${entero(f.pedidosRecibidos)} pedidos`}</p>
           </div>
@@ -106,7 +106,7 @@ export default function ComparativoFabricas() {
       ordenar: (f) => ['incumple', 'reservas', 'confiable', 'sin_datos'].indexOf(f.veredicto),
       ancho: 170,
       celda: (f) => (
-        <div className="flex flex-col items-start gap-1">
+        <div className="flex flex-col items-start gap-1.5 py-3">
           <BadgeEstado estado={VEREDICTOS[f.veredicto]} />
           {f.motivos[0] && <span className="max-w-[150px] whitespace-normal t-small text-muted">{f.motivos[0]}</span>}
         </div>

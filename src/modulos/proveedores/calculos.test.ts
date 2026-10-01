@@ -108,7 +108,7 @@ describe('hallazgosComparativo (P14)', () => {
     const h = hallazgosComparativo([huameng, weiye, tarde]);
     expect(h.titular).toBe('Hangzhou Lanxin es la que más tarde llega: 15 días de retraso en promedio.');
     expect(h.apoyo[0]).toContain('Ningbo Weiye tiene la mayor tasa de defectos');
-    expect(h.apoyo.some((x) => x.includes('Guangzhou Huameng es la más puntual'))).toBe(true);
+    expect(h.apoyo).toContain('Guangzhou Huameng es la más puntual: llega a tiempo en promedio.');
   });
 
   it('si nadie se sale de los márgenes, lo dice', () => {
