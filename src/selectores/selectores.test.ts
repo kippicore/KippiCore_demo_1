@@ -245,6 +245,20 @@ describe('inventario vs. movimientos (I1, I2)', () => {
     expect(Math.round(selDiasInventario(e, { hoy: HOY }).dias)).toBe(medidas.get('P5.tienda')?.valor);
     const quietos = selSinMovimiento(e, { dias: 60, hoy: HOY }).map((x) => x.productoId).sort();
     expect(quietos.join(', ')).toBe(medidas.get('P6')?.detalle);
+    // Con un local (compartidos C-D): existencias de ese local y sin ventas allí en 60 días (recálculo ingenuo).
+    const desde = sumarDias(HOY, -60);
+    const vendidosUsq = new Set(
+      Object.values(e.ventas)
+        .filter((v) => v.localId === 'usq' && !v.anulacion && v.separado?.cerrado?.resultado !== 'cancelado' && v.ts.slice(0, 10) >= desde)
+        .flatMap((v) => v.lineas.map((l) => l.productoId)),
+    );
+    const enUsq = selSinMovimiento(e, { dias: 60, hoy: HOY, localId: 'usq' });
+    expect(enUsq.length).toBeGreaterThan(0);
+    for (const x of enUsq) {
+      expect(vendidosUsq.has(x.productoId)).toBe(false);
+      const u = Object.entries(e.agregados.existencias).filter(([k, n]) => k.endsWith('@usq') && n > 0 && e.variantes[k.split('@')[0] ?? '']?.productoId === x.productoId).reduce((a, [, n]) => a + n, 0);
+      expect(x.unidades).toBe(u);
+    }
     expect(selStockBajo(e, { localId: 'usq' }).some((x) => x.varianteId === e.meta.narrativa.varianteOxfordM)).toBe(true);
   });
 });
@@ -272,6 +286,10 @@ describe('comisiones (P1) = recálculo de la liquidación', () => {
     const lunes = '2026-09-28';
     const rec = selRecargosTurnos(e, { localId: 'zr', lunes });
     expect(rec.total).toBe(rec.empleados.reduce((a, x) => a + x.valor, 0));
+    // Compartidos C-D: el valor por persona viene repartido entre el nocturno y el dominical, y suma exacto.
+    for (const x of rec.empleados) expect(x.valorNocturno + x.valorDominical).toBe(x.valor);
+    expect(rec.empleados.some((x) => x.valorNocturno > 0)).toBe(true);
+    expect(rec.empleados.some((x) => x.valorDominical > 0)).toBe(true);
     const sem = selTurnosSemana(e, { localId: 'zr', lunes });
     for (const x of sem.empleados) expect(x.horas).toBeCloseTo(selHorasSemana(e, { empleadoId: x.empleadoId, lunes }).horas, 5);
   });

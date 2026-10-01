@@ -343,6 +343,11 @@ export interface RecargoEmpleado {
   nombre: string;
   horasNocturnas: number;
   horasDominicalFestivo: number;
+  /** Recargo por cerrar tarde (horas nocturnas × valor hora × % nocturno; compartidos C-D, pedido de C2). */
+  valorNocturno: COP;
+  /** Recargo por trabajar domingo o festivo. */
+  valorDominical: COP;
+  /** valorNocturno + valorDominical. */
   valor: COP;
 }
 
@@ -362,10 +367,18 @@ export const selRecargosTurnos = crearSelector<{ localId: Id; lunes: FechaISO },
       const noct = horasNocturnasTurno(t, p.jornadaNocturna);
       const domFest = esDominicalOFestivo(t.fecha) ? horasNetasTurno(t) : 0;
       let x = m.get(t.empleadoId);
-      if (!x) m.set(t.empleadoId, (x = { empleadoId: t.empleadoId, nombre: nombreEmpleado(em), horasNocturnas: 0, horasDominicalFestivo: 0, valor: 0 }));
+      if (!x)
+        m.set(
+          t.empleadoId,
+          (x = { empleadoId: t.empleadoId, nombre: nombreEmpleado(em), horasNocturnas: 0, horasDominicalFestivo: 0, valorNocturno: 0, valorDominical: 0, valor: 0 }),
+        );
+      const vn = redondear(noct * vh * p.recargos.nocturno);
+      const vd = redondear(domFest * vh * p.recargos.dominicalFestivo);
       x.horasNocturnas += noct;
       x.horasDominicalFestivo += domFest;
-      x.valor += redondear(noct * vh * p.recargos.nocturno + domFest * vh * p.recargos.dominicalFestivo);
+      x.valorNocturno += vn;
+      x.valorDominical += vd;
+      x.valor += vn + vd;
     }
     const empleados = [...m.values()].sort((a, b) => b.valor - a.valor);
     return { empleados, total: empleados.reduce((a, x) => a + x.valor, 0) };

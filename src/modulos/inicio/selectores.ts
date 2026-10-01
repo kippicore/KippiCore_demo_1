@@ -3,8 +3,6 @@ import type { COP, EstadoDominio, FechaISO, Id, Local, MesISO, TipoPrenda } from
 import { sumarDias } from '@/dominio/reglas/fechas';
 import {
   crearSelector,
-  hechosEnFechas,
-  hechosEnRango,
   selComparativoLocales,
   selLocalesQueVenden,
   selSinMovimiento,
@@ -101,36 +99,12 @@ export interface DormidosInicio {
   aCosto: COP;
 }
 
-/**
- * Con "Todos los locales", el selector compartido `selSinMovimiento`. Con un local, las referencias con existencias
- * EN ESE LOCAL que no vendió en `dias` días (mismo criterio: ventas reconocidas desde hoy − dias).
- */
+/** Las referencias sin movimiento del selector compartido `selSinMovimiento`, del local elegido, con su prenda. */
 export const selDormidosInicio = crearSelector<{ dias: number; hoy: FechaISO; localId: Id | 'todos'; n: number }, DormidosInicio>(
   'selDormidosInicio',
-  unir(selSinMovimiento, hechosEnFechas, { tablas: ['agregados', 'productos', 'variantes', 'colores'] }),
+  unir(selSinMovimiento, { tablas: ['colores'] }),
   (e, { dias, hoy, localId, n }) => {
-    const global = selSinMovimiento(e, { dias, hoy });
-    let lista: Omit<DormidoInicio, 'prenda'>[];
-    if (localId === 'todos') lista = global;
-    else {
-      const desde = sumarDias(hoy, -dias);
-      const vendidos = new Set<Id>(hechosEnRango(hechosEnFechas(e, { desde, hasta: hoy }), desde, hoy, localId).map((h) => h.productoId));
-      const stock = new Map<Id, number>();
-      for (const [k, cant] of Object.entries(e.agregados.existencias)) {
-        const [varianteId = '', local] = k.split('@');
-        if (local !== localId || cant <= 0) continue;
-        const productoId = e.variantes[varianteId]?.productoId;
-        if (productoId) stock.set(productoId, (stock.get(productoId) ?? 0) + cant);
-      }
-      const ultima = new Map(global.map((g) => [g.productoId, g.ultimaVenta]));
-      lista = [...stock.entries()]
-        .filter(([id]) => !vendidos.has(id) && e.productos[id] && !e.productos[id]?.eliminadoEn)
-        .map(([id, unidades]) => {
-          const p = e.productos[id]!;
-          return { productoId: id, referencia: p.referencia, nombre: p.nombre, unidades, aCosto: unidades * p.costoVigente, ultimaVenta: ultima.get(id) ?? null };
-        })
-        .sort((a, b) => b.aCosto - a.aCosto || (a.referencia < b.referencia ? -1 : 1));
-    }
+    const lista = selSinMovimiento(e, { dias, hoy, localId });
     return {
       items: lista.slice(0, n).map((x) => ({ ...x, prenda: prendaDe(e, x.productoId) })),
       total: lista.length,

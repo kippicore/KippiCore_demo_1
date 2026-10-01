@@ -292,17 +292,19 @@ export interface SinMovimiento {
 
 /**
  * Referencias con existencias y sin ventas en los últimos `dias` días (definición de P6: ventas reconocidas con
- * fecha ≥ hoy − dias, incluido hoy).
+ * fecha ≥ hoy − dias, incluido hoy). Con `localId` (compartidos C-D, pedido de D1): existencias EN ESE LOCAL que no
+ * se vendieron allí, con la última venta de ese local.
  */
-export const selSinMovimiento = crearSelector<{ dias: number; hoy: FechaISO }, SinMovimiento[]>(
+export const selSinMovimiento = crearSelector<{ dias: number; hoy: FechaISO; localId?: Id | 'todos' }, SinMovimiento[]>(
   'selSinMovimiento',
   ['ventas', 'devoluciones', 'productos', 'variantes', 'agregados'],
-  (e, { dias, hoy }) => {
+  (e, { dias, hoy, localId = 'todos' }) => {
     const desde = sumarDias(hoy, -dias);
     const vendidos = new Set<Id>();
     const ultima = new Map<Id, FechaISO>();
     for (const v of Object.values(e.ventas)) {
       if (v.anulacion || v.separado?.cerrado?.resultado === 'cancelado') continue;
+      if (localId !== 'todos' && v.localId !== localId) continue;
       const f = v.ts.slice(0, 10);
       for (const l of v.lineas) {
         if (f >= desde) vendidos.add(l.productoId);
@@ -312,7 +314,9 @@ export const selSinMovimiento = crearSelector<{ dias: number; hoy: FechaISO }, S
     const stock = new Map<Id, { u: number; costo: number }>();
     for (const [k, n] of Object.entries(e.agregados.existencias)) {
       if (n <= 0) continue;
-      const va = e.variantes[k.split('@')[0] ?? ''];
+      const [varianteId = '', local] = k.split('@');
+      if (localId !== 'todos' && local !== localId) continue;
+      const va = e.variantes[varianteId];
       const p = va ? e.productos[va.productoId] : undefined;
       if (!p || p.eliminadoEn) continue;
       const a = stock.get(p.id) ?? { u: 0, costo: 0 };
