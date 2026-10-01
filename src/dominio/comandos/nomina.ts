@@ -195,10 +195,13 @@ export const nominaAprobar = manejador<'nomina.aprobar', PlanAprobacion>({
     const params = structuredClone(estado.parametros.nomina);
     const mes = mesDe(p.fin);
     // Las ventas del mes solo cuentan en el periodo que lo cierra (comisiones y bono de meta).
-    const ventas = cierraMes(p) ? ventasDelMes(estado, mes) : { basePorVendedor: new Map(), totalPorLocal: new Map() };
+    // Perezoso (rendimiento F2-B): con insumos explícitos para todos (meses sin marcaciones) no hace falta.
+    let ventasMes: ReturnType<typeof ventasDelMes> | null = null;
+    const ventas = () =>
+      (ventasMes ??= cierraMes(p) ? ventasDelMes(estado, mes) : { basePorVendedor: new Map(), totalPorLocal: new Map() });
     const lineas: LiquidacionEmpleado[] = empleados.map((e) => {
       const contrato = requerirExiste(estado.contratos, e.contratoVigenteId, 'el contrato', 'periodo');
-      const insumos = d.insumos?.[e.id] ?? calcularInsumos(estado, e, contrato, p, ventas, ctx.ts);
+      const insumos = d.insumos?.[e.id] ?? calcularInsumos(estado, e, contrato, p, ventas(), ctx.ts);
       const esquema = contrato.esquemaComisionId
         ? estado.esquemasComision[contrato.esquemaComisionId]
         : undefined;

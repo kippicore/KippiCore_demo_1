@@ -5,7 +5,8 @@ import { crearAcciones } from './acciones';
 import { almacenDatos } from './datos';
 import { almacenGuia } from './guia';
 import { almacenSesion } from './sesion';
-import { ahoraBogota, hoyBogota } from './reloj';
+import { ahoraBogota, hoyBogota, overrideHoy } from './reloj';
+import { codificarQr, urlAppConAcciones } from './qr';
 
 /**
  * `window.__kc` (PLAN 5.16, 9.2): puerta de pruebas y depuración. Se instala en desarrollo, con `?hoy=` (QA y
@@ -17,6 +18,7 @@ import { ahoraBogota, hoyBogota } from './reloj';
  *   __kc.acciones.registrarVenta({...}) acciones del dueño (o __kc.accionesDe('vendedor'))
  *   __kc.hashEstado()                   huella del estado (e2e de determinismo)
  *   __kc.listo()                        promesa que se resuelve con el estado construido
+ *   __kc.urlQr()                        URL de /app con las últimas acciones en el hash (la del QR)
  */
 export interface Kc {
   estado: () => EstadoDominio | null;
@@ -31,6 +33,7 @@ export interface Kc {
   listo: () => Promise<EstadoDominio>;
   ahora: () => string;
   hoy: () => string;
+  urlQr: () => Promise<string>;
 }
 
 export function instalarKc(): Kc {
@@ -68,6 +71,10 @@ export function instalarKc(): Kc {
     listo,
     ahora: ahoraBogota,
     hoy: hoyBogota,
+    urlQr: async () => {
+      const { ancla, registro } = almacenDatos.getState();
+      return urlAppConAcciones(location.origin, await codificarQr(ancla, registro), overrideHoy());
+    },
   };
   (globalThis as unknown as { __kc: Kc }).__kc = kc;
   return kc;

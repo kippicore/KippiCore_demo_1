@@ -133,10 +133,9 @@ export async function crearLibroExcel(o: OpcionesExcel): Promise<ArrayBuffer> {
         const tot = h.totales?.[c.clave];
         if (tot === 'suma') {
           const col = letraColumna(i + 1);
-          celda.value = {
-            formula: h.filas.length > 0 ? `SUM(${col}${primera}:${col}${ultima})` : '0',
-            result: sumaColumna(h.filas, c.clave),
-          };
+          const resultado = sumaColumna(h.filas, c.clave);
+          // ExcelJS no escribe un resultado 0 en caché: un total en cero va como valor (la vista previa lo muestra).
+          celda.value = resultado === 0 ? 0 : { formula: `SUM(${col}${primera}:${col}${ultima})`, result: resultado };
         } else if (tot !== undefined) celda.value = tot;
         else if (i === 0) celda.value = 'Total';
         const fmt = formatos[c.tipo];

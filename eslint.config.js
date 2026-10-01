@@ -133,7 +133,8 @@ export default tseslint.config(
     MODULOS,
     GENERADOR,
     IMMER,
-    r(['@/lib/formato', '@/lib/fechas', '@/lib/moneda', '@/lib/enlaces', '@/lib/descargar', '@/lib/codigos', '@/lib/codigos/*'], 'reportes solo importa lib/exportar (5.3).'),
+    // Ajuste F2-B: los reportes formatean celdas con lib/formato y lib/moneda (una sola regla de formato).
+    r(['@/lib/enlaces', '@/lib/descargar', '@/lib/codigos', '@/lib/codigos/*'], 'reportes solo importa lib/exportar, lib/formato, lib/fechas y lib/moneda (5.3).'),
   ]),
   capa(['src/lib/**'], [r(['react', 'react-dom', 'react-dom/*', 'zustand']), ESTADO, UI, LAYOUTS, MODULOS, GENERADOR, SELECTORES, REPORTES]),
   capa(['src/estado/**'], [UI, LAYOUTS, MODULOS]),

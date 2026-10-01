@@ -23,13 +23,16 @@ export default defineConfig({
     timeout: 180_000,
   },
   projects: [
-    { name: 'escritorio-1440', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } },
-    { name: 'escritorio-1366', use: { ...devices['Desktop Chrome'], viewport: { width: 1366, height: 657 } } },
-    { name: 'escritorio-1280', use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } } },
+    { name: 'escritorio-1440', grepInvert: /@rendimiento/, use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } },
+    { name: 'escritorio-1366', grepInvert: /@rendimiento/, use: { ...devices['Desktop Chrome'], viewport: { width: 1366, height: 657 } } },
+    { name: 'escritorio-1280', grepInvert: /@rendimiento/, use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } } },
     {
       name: 'celular-390',
+      grepInvert: /@rendimiento/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true },
     },
+    // Presupuesto de arranque con CPU ×4 (solo las pruebas @rendimiento; sin paralelismo para medir limpio).
+    { name: 'rendimiento', grep: /@rendimiento/, fullyParallel: false, use: { ...devices['Desktop Chrome'] } },
     // Determinismo entre motores (hash del estado): solo las pruebas marcadas @hash.
     { name: 'webkit-hash', grep: /@hash/, use: { ...devices['Desktop Safari'] } },
     { name: 'firefox-hash', grep: /@hash/, use: { ...devices['Desktop Firefox'] } },
