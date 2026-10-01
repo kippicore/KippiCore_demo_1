@@ -444,6 +444,26 @@ export class Plan {
         hasta: masDias(A, -15),
         remunerada: true,
       },
+      // Compartidos C-D (C2): una vigente y una próxima, para que "Fuera hoy" y "Próximos 30 días" no arranquen en 0.
+      // Julián (bodega, no vende) está incapacitado de ayer a mañana; Santiago sale a vacaciones el lunes de la
+      // semana siguiente (lunes a domingo, avisadas dos semanas antes): deja sus turnos de esa semana por cubrir.
+      {
+        id: idGenerado('nv', 'incapacidad', 'em_jtorres'),
+        empleadoId: 'em_jtorres',
+        tipo: 'incapacidad',
+        desde: masDias(A, -1),
+        hasta: masDias(A, 1),
+        remunerada: true,
+      },
+      {
+        id: idGenerado('nv', 'vacaciones', 'em_srojas'),
+        empleadoId: 'em_srojas',
+        tipo: 'vacaciones',
+        desde: masDias(lunesDe(A), 7),
+        hasta: masDias(lunesDe(A), 13),
+        remunerada: true,
+        registro: masDias(A, -14),
+      },
     ];
     // Compras guionadas: Andrés (frecuente de Usaquén, 6 compras en 6 meses, N12) y Ricardo (VIP de Parque 93, N8).
     const comprasGuion: PlanNarrativo['comprasGuion'] = [];

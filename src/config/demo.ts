@@ -5,7 +5,7 @@ export const DEMO = {
   /** Clave de almacenamiento: kc:<clave>:v1:* (5.6.5). */
   claveAlmacenamiento: 'halden',
   /** Se congela desde que Miguel envía el enlace al cliente (5.6.10). */
-  versionGenerador: 3,
+  versionGenerador: 4,
   /** Formato de las entradas del registro (5.6.10). */
   versionRegistro: 1,
   /** Meses de historia hacia atrás desde el ancla (7.3). */

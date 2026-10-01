@@ -50,9 +50,10 @@ const VOLUMEN_POR_UNIDAD: Record<Categoria, number> = {
 const OTROS_TRIBUTOS_SOBRE_FOB = 0.2;
 /**
  * Días del ritmo promedio del último año de calzado que deja el pedido grande al ancla. Con lo que sobra por las
- * ventas perdidas (agotados de tallas y colores) da ≈ 180 días de inventario y ≈ $ 50 M (P5, pista de calibración).
+ * ventas perdidas (agotados de tallas y colores) da ≈ 160–230 días de inventario y ≈ $ 52–60 M (P5; pista de
+ * calibración con 135, compartidos C-D con 160 para que el calzado sea la categoría más quieta).
  */
-const DIAS_CALZADO_DORMIDO = 135;
+const DIAS_CALZADO_DORMIDO = 160;
 
 function cadenciaDe(fab: ProveedorSeed): number {
   const c = fab.perfil?.cadencia ?? 120;
@@ -404,7 +405,10 @@ export function planImportaciones(e: EntradaPlanImportaciones): PlanImportacione
       for (const refId of referencias) {
         const p = e.productos.find((x) => x.id === refId);
         if (!p) continue;
-        const demanda = esperado(acum, p.id, desde, p.categoria === 'calzado' ? hasta : hastaNoCalzado) * HISTORIA_IMPORTACIONES.margenSeguridad;
+        const demanda =
+          esperado(acum, p.id, desde, p.categoria === 'calzado' ? hasta : hastaNoCalzado) *
+          HISTORIA_IMPORTACIONES.margenSeguridad *
+          (HISTORIA_IMPORTACIONES.factorCategoria[p.categoria] ?? 1);
         const curva = CURVA_PEDIDO[p.curva];
         const cantidades: Record<Id, number> = {};
         for (const talla of p.tallas) {

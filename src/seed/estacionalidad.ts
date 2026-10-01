@@ -191,7 +191,8 @@ export const VENDEDORA_ESTRELLA = {
   // Pista de calibración: con la asignación estratificada y la franja de la tarde en 1,4, 1,3 da ≈ 43 % (P2).
   pesoAsignacion: 1.25,
   factorTicket: 1.25,
-  accesorio: 0.46,
+  // Compartidos C-D: 0,48 (antes 0,46) deja el accesorio de enero dentro de P2 con el nuevo reparto de Zona Rosa.
+  accesorio: 0.48,
   accesorioResto: 0.17,
 } as const;
 

@@ -158,7 +158,7 @@ export function* materializarApertura(g: Gen, it: IntencionGen, estado: EstadoDo
   }
   // Novedades sembradas (N6, 7.8).
   for (const n of g.plan.narrativa.novedades) {
-    if (n.desde !== fecha || estado.novedades[n.id] || !estado.empleados[n.empleadoId]) continue;
+    if ((n.registro ?? n.desde) !== fecha || estado.novedades[n.id] || !estado.empleados[n.empleadoId]) continue;
     yield emitir('novedad.registrar', {
       novedadId: n.id,
       datos: {
@@ -172,8 +172,28 @@ export function* materializarApertura(g: Gen, it: IntencionGen, estado: EstadoDo
       },
     });
   }
+  // Compartidos C-D (C1): el sastre y quien hace el contenido entregan la planilla PILA del mes el día 12; Daniela y
+  // Juliana (P22) no la entregan, así la nómina mensual muestra los dos casos.
+  if (dm === DIA_PILA_CONTRATISTAS) {
+    for (const empleadoId of CONTRATISTAS_CON_PILA) {
+      const em = estado.empleados[empleadoId];
+      const contrato = em ? estado.contratos[em.contratoVigenteId] : undefined;
+      if (!em || em.fechaIngreso > fecha || em.fechaRetiro !== null || contrato?.tipo !== 'prestacion_servicios') continue;
+      if (contrato.verificacionesPila.some((v) => v.periodo === mes)) continue;
+      yield emitir('pila.verificar', {
+        contratoId: contrato.id,
+        periodo: mes,
+        verificada: true,
+        soporte: { nombreArchivo: `planilla_pila_${mes}.pdf`, estado: 'adjunto', fecha },
+      });
+    }
+  }
   if (g.idx.importacionesDiferidas.size) yield* materializarImportacionesDiferidas(g, it, estado);
 }
+
+/** Contratistas que entregan su planilla PILA cada mes (compartidos C-D, pedido de C1). */
+const CONTRATISTAS_CON_PILA = ['em_hbeltran', 'em_apinzon'] as const;
+const DIA_PILA_CONTRATISTAS = 12;
 
 const CATEGORIAS_VENCIDAS = new Set(['servicios', 'proveedor_local', 'otro', 'publicidad', 'agente_aduanas', 'transporte']);
 

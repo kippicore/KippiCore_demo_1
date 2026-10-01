@@ -94,13 +94,15 @@ export const PLANTILLA_TURNOS: TurnoPlantilla[] = [
     6: F.apertura,
     0: F.domingo,
   }),
-  // Zona Rosa: Mateo abre los miércoles (N6), Natalia cierra los martes (N14), Juliana de viernes a domingo (P22).
+  // Zona Rosa: Mateo abre los miércoles (N6), Natalia cierra los martes (N14), Juliana de jueves a domingo (P22).
+  // Compartidos C-D: Juliana cubre el jueves (Natalia lo atendía sola) y Mateo cierra el sábado; así las ventas de
+  // Zona Rosa se reparten entre tres y Valentina queda como la que más vende del equipo (P2).
   ...semana('em_mherrera', 'zr', {
     1: F.cierreZr,
     2: F.apertura,
     3: F.apertura,
     5: F.apertura,
-    6: F.apertura,
+    6: F.cierreZr,
     0: F.domingo,
   }),
   ...semana('em_nrios', 'zr', {
@@ -109,9 +111,9 @@ export const PLANTILLA_TURNOS: TurnoPlantilla[] = [
     3: F.cierreZr,
     4: F.intermedioZr,
     5: F.cierreZr,
-    6: F.cierreZr,
+    6: F.apertura,
   }),
-  ...semana('em_jvargas', 'zr', { 5: F.intermedioZr, 6: F.intermedioZr, 0: F.domingo }),
+  ...semana('em_jvargas', 'zr', { 4: F.intermedioZr, 5: F.intermedioZr, 6: F.intermedioZr, 0: F.domingo }),
   // Bodega.
   ...semana('em_wdiaz', 'bod', {
     1: F.bodega,

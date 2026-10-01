@@ -121,6 +121,18 @@ export function medirPatrones(estado: EstadoDominio, hoy: FechaISO, plan: Plan, 
   r.push(m('P2.ticket', 'P2 Valentina: ticket', Math.round(vg.valor / Math.max(1, vg.n)), 640_000));
   r.push(m('P2.accesorio', 'P2 Valentina: % de ventas con accesorio', Math.round((vg.acc / Math.max(1, vg.n)) * 100) / 100, 0.46));
   r.push(m('P2.accesorioResto', 'P2 resto: % de ventas con accesorio', Math.round((accResto / Math.max(1, nResto)) * 100) / 100, 0.17, 'relativa', { tolerancia: 0.3 }));
+  // Compartidos C-D: Valentina es la que más vende de todo el equipo (no solo de Parque 93), en 30 y en 90 días,
+  // con al menos 5 % sobre la segunda persona (la historia de Análisis, Inicio y Comisiones).
+  const desde90v = masDias(hoy, -90);
+  const porVendedor90 = new Map<Id, number>();
+  for (const v of ventas) if (fechaVenta(v) >= desde90v && fechaVenta(v) < hoy) porVendedor90.set(v.vendedorId, (porVendedor90.get(v.vendedorId) ?? 0) + v.total);
+  const lider = (mapa: Map<Id, number>) => {
+    const propia = mapa.get('em_vgomez') ?? 0;
+    const otra = Math.max(0, ...[...mapa.entries()].filter(([id]) => id !== 'em_vgomez').map(([, x]) => x));
+    return Math.round((propia / Math.max(1, otra)) * 100) / 100;
+  };
+  r.push(m('P2.lider30', 'P2 Valentina / la segunda que más vende (30 días)', lider(new Map([...porVendedor].map(([id, x]) => [id, x.valor]))), 1.05, 'minimo'));
+  r.push(m('P2.lider90', 'P2 Valentina / la segunda que más vende (90 días)', lider(porVendedor90), 1.05, 'minimo'));
 
   // P3 y P4: tallas (últimos 180 días, unidades).
   const desde180 = masDias(hoy, -180);
@@ -195,6 +207,13 @@ export function medirPatrones(estado: EstadoDominio, hoy: FechaISO, plan: Plan, 
   r.push(m('P5.tienda', 'P5 días de inventario de la tienda', Math.round(diasTienda), 105, 'relativa', { tolerancia: 0.25 }));
   r.push(m('P5.relacion', 'P5 calzado / tienda (días de inventario)', Math.round((diasCalzado / Math.max(1, diasTienda)) * 100) / 100, 1.5, 'minimo'));
   r.push(m('P5.costo', 'P5 calzado a costo', Math.round(stock.get('calzado')?.costo ?? 0), 50_000_000, 'relativa', { tolerancia: 0.2 }));
+  // Compartidos C-D: el calzado es la categoría con más días de inventario, al menos 5 % sobre la siguiente.
+  const otrasCategorias = [...stock.keys()].filter((c) => c !== '*' && c !== 'calzado').map((c) => ({ c, d: dias(c) })).sort((a, b) => b.d - a.d);
+  r.push(
+    m('P5.primera', 'P5 calzado / la siguiente categoría (días de inventario)', Math.round((diasCalzado / Math.max(1, otrasCategorias[0]?.d ?? 1)) * 100) / 100, 1.05, 'minimo', {
+      detalle: otrasCategorias[0] ? `siguiente: ${otrasCategorias[0].c} (${Math.round(otrasCategorias[0].d)} días)` : '',
+    }),
+  );
 
   // P6: sin movimiento en 60 días (con existencias).
   const desde60 = masDias(hoy, -60);

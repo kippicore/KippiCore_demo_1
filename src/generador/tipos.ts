@@ -144,6 +144,8 @@ export interface PlanNarrativo {
     desde: FechaISO;
     hasta: FechaISO;
     remunerada: boolean;
+    /** Día en que se registra (las vacaciones se avisan antes; por defecto, el primer día). */
+    registro?: FechaISO;
   }[];
   /** Compras guionadas de Andrés Gutiérrez (N12) y Ricardo Peñuela (N8). */
   comprasGuion: {

@@ -53,7 +53,9 @@ export const LOCALES: ConfigLocal[] = [
       orden: 1,
     },
     perfil: {
-      ventasDiaBase: 9,
+      // Compartidos C-D: 9,65 y 13,3 (antes 9 y 14) acercan P1 al plan (P93 41 %, ZR 39 %) y dejan a Valentina
+      // como la que más vende del equipo (P2).
+      ventasDiaBase: 9.65,
       indiceDomingo: 0.8,
       indiceFestivo: 0.85,
       unidadesPorVenta: 1.6,
@@ -113,8 +115,9 @@ export const LOCALES: ConfigLocal[] = [
       orden: 3,
     },
     perfil: {
-      ventasDiaBase: 14,
-      indiceDomingo: 1.45,
+      ventasDiaBase: 13.3,
+      // Compartidos C-D: 1,5 (antes 1,45) conserva P8 (domingo ZR / P93 ≈ 1,8) con el nuevo reparto de volumen.
+      indiceDomingo: 1.5,
       indiceFestivo: 1.15,
       unidadesPorVenta: 1.3,
       ticketObjetivo: 315_000,

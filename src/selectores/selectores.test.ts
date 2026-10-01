@@ -25,7 +25,7 @@ import { selEstadoResultados, selResumenGastos, selPuntoEquilibrio, selGastos } 
 import { selCierresDelDia, selResumenSesion, selBonos, selEfectivoEnCajas } from './caja';
 import { selSugerenciaPedido, selCostoAterrizado, selImportaciones, selAvisosEstado, selLlegadasProximas } from './importaciones';
 import { selComparativoFabricas, selFichaProveedor, selProveedores } from './proveedores';
-import { selPivote, selDesempenoVendedores, selMediosDePago, selMapaCalor, selVentasPorMes, selProyeccionMes, selTallasYColores } from './analisis';
+import { selPivote, selDesempenoVendedores, selMediosDePago, selMapaCalor, selVentasPorMes, selProyeccionMes, selRotacion, selTallasYColores } from './analisis';
 import { selHallazgos } from './hallazgos';
 import { selAlertas, selSolicitudesPendientes } from './alertas';
 import { selNarrativa } from './narrativa';
@@ -535,6 +535,32 @@ describe('análisis, pivote y hallazgos', () => {
     expect(mapa.maximo).toBeGreaterThan(0);
     expect(selVentasPorMes(e, { meses: 18, hoy: HOY }).length).toBe(18);
     expect(selTallasYColores(e, { categoria: 'camisas', desde: sumarDias(HOY, -180), hasta: HOY }).tallas[0]?.talla).toBe('M');
+  });
+
+  it('la misma historia en todas las pantallas: Valentina vende más que nadie y el calzado es lo más quieto', () => {
+    for (const dias of [30, 90]) {
+      const v = selDesempenoVendedores(e, { desde: sumarDias(HOY, -dias), hasta: sumarDias(HOY, -1) });
+      expect(v[0]?.empleadoId, `${dias} días`).toBe('em_vgomez');
+      expect((v[0]?.ventas ?? 0) / (v[1]?.ventas ?? 1), `${dias} días`).toBeGreaterThanOrEqual(1.05);
+      expect(v[0]?.vecesPromedio ?? 0).toBeGreaterThan(1.2);
+    }
+    const r = selRotacion(e, { hoy: HOY });
+    expect(r.categorias[0]?.categoria).toBe('calzado');
+    expect((r.categorias[0]?.dias ?? 0) / (r.categorias[1]?.dias ?? 1)).toBeGreaterThanOrEqual(1.05);
+    const h = selHallazgos(e, { hoy: HOY, maximo: 12 });
+    expect(h.find((x) => x.id === 'vendedora-estrella')?.frase).toContain('Valentina');
+    expect(h.find((x) => x.id === 'categoria-dormida')?.frase).toContain('calzado');
+    expect(medidas.get('P2.lider30')?.ok).toBe(true);
+    expect(medidas.get('P5.primera')?.ok).toBe(true);
+    // Novedades: una vigente hoy y otra en los próximos 30 días; contratistas con y sin PILA del mes.
+    const novedades = Object.values(e.novedades);
+    expect(novedades.some((n) => n.desde <= HOY && n.hasta >= HOY)).toBe(true);
+    expect(novedades.some((n) => n.desde > HOY && n.desde <= sumarDias(HOY, 30) && n.tipo === 'vacaciones')).toBe(true);
+    const pila = Object.values(e.contratos)
+      .filter((c) => c.tipo === 'prestacion_servicios' && e.empleados[c.empleadoId]?.contratoVigenteId === c.id)
+      .map((c) => c.verificacionesPila.some((v) => v.periodo === HOY.slice(0, 7) && v.verificada));
+    expect(pila).toContain(true);
+    expect(pila).toContain(false);
   });
 
   it('hallazgos: al menos 4 frases, con cifra y enlace', () => {

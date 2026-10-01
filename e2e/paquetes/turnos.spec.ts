@@ -188,8 +188,9 @@ test.describe('turnos', () => {
       return t ?? null;
     });
     expect(nuevo).toMatchObject({ tipo: 'cierre', inicio: '13:00', fin: '21:00', localId: 'zr' });
-    // Cierre de Zona Rosa: de 1:00 p. m. a 9:00 p. m. (8 h brutas, 7 netas): Juliana pasa de 22 h a 29 h.
-    await expect(page.getByTestId(`turnos-horas-em_jvargas`)).toContainText('29 h');
+    // Cierre de Zona Rosa: de 1:00 p. m. a 9:00 p. m. (8 h brutas, 7 netas): Juliana (de jueves a domingo)
+    // pasa de 29 h a 36 h.
+    await expect(page.getByTestId(`turnos-horas-em_jvargas`)).toContainText('36 h');
     await expect(page.getByTestId(`turnos-turno-${nuevo!.id}`)).toContainText('Cierre');
     const eventos = await conKc(page, (kc) => kc.eventosDominio().map((e) => e.tipo));
     expect(eventos).toContain('TurnoCambiado');

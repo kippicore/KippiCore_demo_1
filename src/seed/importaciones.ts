@@ -1,4 +1,4 @@
-import type { CargaImportacion, COP, EstadoImportacion, Id } from '@/dominio/tipos';
+import type { CargaImportacion, Categoria, COP, EstadoImportacion, Id } from '@/dominio/tipos';
 
 /**
  * Plan narrativo de importaciones (PLAN 4.7, 7.9, 7.11) relativo al ancla. El generador (F2-A2) lo convierte
@@ -122,10 +122,18 @@ export const HISTORIA_IMPORTACIONES = {
   },
   /** La Oxford azul cielo M se pide × 0,75 para que se agote ≈ 3 veces en 6 meses (P3). */
   oxfordM: { clave: 'pd_cam_0142|M|col_azc', factor: 0.75 },
-  /** Cobertura de cada pedido: hasta la siguiente llegada + 20 días, × 1,10 (7.9). */
-  // Pista de calibración (P5): 20 días y × 1,10 dejan la tienda en ≈ 4 meses de inventario (antes ≈ 5).
+  /** Cobertura de cada pedido: hasta la siguiente llegada + 20 días, × 1,15 (7.9). */
+  // Pista de calibración (P5): 20 días y × 1,10 dejaban la tienda en ≈ 4 meses de inventario (antes ≈ 5).
+  // Compartidos C-D: × 1,15 compensa los factores por categoría de abajo (la tienda sigue en ≈ 3–4 meses).
   coberturaExtraDias: 20,
-  margenSeguridad: 1.1,
+  margenSeguridad: 1.15,
+  /**
+   * Factor de pedido por categoría sobre la demanda esperada (compartidos C-D, P5). Abrigos y chaquetas se pedían
+   * con la demanda de la temporada fría y vendían ≈ 75 % de lo que llegaba (388 días de inventario al 30/09);
+   * suéteres y trajes llegaban a ≈ 190 días en temporada. Así el calzado queda como la categoría dormida evidente
+   * en las cuatro fechas de calibración.
+   */
+  factorCategoria: { abrigos_chaquetas: 0.4, trajes: 0.9, punto: 0.85 } as Partial<Record<Categoria, number>>,
   /** Blazers: la tasa sube ≈ 8 % entre el penúltimo y el último pedido (P13). */
   alzaTasaBlazers: 0.08,
   /** Aforo en ≈ 15 % de los pedidos (3–8 días más de nacionalización). */
