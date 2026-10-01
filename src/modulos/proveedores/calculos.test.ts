@@ -5,8 +5,9 @@ import {
   UMBRALES,
   diasEnFrase,
   entregaDe,
+  etiquetaRetraso,
+  saludoContacto,
   filtrarDirectorio,
-  filtrosActivos,
   hallazgosComparativo,
   nivelDefectos,
   nivelRetraso,
@@ -69,6 +70,22 @@ describe('redacción de frases', () => {
   it('nombreEje usa la última palabra del nombre corto', () => {
     expect(nombreEje('Ningbo Weiye')).toBe('Weiye');
     expect(nombreEje('Huameng')).toBe('Huameng');
+  });
+});
+
+describe('etiquetas y saludos', () => {
+  it('etiquetaRetraso', () => {
+    expect(etiquetaRetraso(null)).toBe('—');
+    expect(etiquetaRetraso(0)).toBe('A tiempo');
+    expect(etiquetaRetraso(0.4)).toBe('A tiempo');
+    expect(etiquetaRetraso(14.25)).toBe('+14 días');
+    expect(etiquetaRetraso(1)).toBe('+1 día');
+    expect(etiquetaRetraso(-3)).toBe('3 días antes');
+  });
+  it('saludoContacto: inglés para las fábricas, usted en Colombia', () => {
+    expect(saludoContacto({ nombre: 'Kevin Wang', idioma: 'en', tratamiento: 'tu' }, 'HALDEN')).toBe('Hello Kevin, this is HALDEN. I would like to follow up on our orders.');
+    expect(saludoContacto({ nombre: 'Carolina Mejía', idioma: 'es', tratamiento: 'usted' }, 'HALDEN')).toContain('le escribo de HALDEN');
+    expect(saludoContacto({ nombre: 'Carolina Mejía', idioma: 'es', tratamiento: 'tu' }, 'HALDEN')).toContain('te escribo de HALDEN');
   });
 });
 
@@ -191,8 +208,7 @@ describe('filtros del directorio', () => {
     expect(ids({ texto: 'VIGILANCIA' })).toEqual(['d']);
     expect(ids({ texto: 'ningbo' })).toEqual(['a']);
   });
-  it('cuenta los filtros activos y lista valores únicos', () => {
-    expect(filtrosActivos({ ...SIN_FILTROS, tipo: 'local', moneda: 'COP' })).toBe(2);
+  it('lista valores únicos', () => {
     expect(valoresUnicos(filas.map((x) => x.proveedor), 'pais')).toEqual(['China', 'Colombia']);
   });
 });

@@ -222,6 +222,22 @@ export function hallazgosComparativo<F extends FabricaComparable>(filas: readonl
   return { masTarde, masDefectos, masPuntual, menosDefectos, razonDefectos, titular, apoyo };
 }
 
+/** "A tiempo" o "+14 días" (retraso promedio o de un pedido). */
+export function etiquetaRetraso(dias: number | null): string {
+  if (dias === null) return '—';
+  if (dias <= 0.5) return dias < -0.5 ? `${plural(Math.round(-dias), 'día')} antes` : 'A tiempo';
+  return `+${plural(Math.round(dias), 'día')}`;
+}
+
+/** Saludo prellenado para un contacto de la cadena (en inglés para las fábricas; usted por defecto en Colombia). */
+export function saludoContacto(c: { nombre: string; idioma: 'es' | 'en'; tratamiento: 'tu' | 'usted' }, marca: string): string {
+  const primero = c.nombre.trim().split(/\s+/)[0] ?? c.nombre;
+  if (c.idioma === 'en') return `Hello ${primero}, this is ${marca}. I would like to follow up on our orders.`;
+  return c.tratamiento === 'usted'
+    ? `Hola ${primero}, le escribo de ${marca} para hacerle seguimiento a nuestros pedidos.`
+    : `Hola ${primero}, te escribo de ${marca} para hacerle seguimiento a nuestros pedidos.`;
+}
+
 /** Nombre corto para el eje de un gráfico: "Ningbo Weiye" → "Weiye". */
 export function nombreEje(nombreCorto: string): string {
   const partes = nombreCorto.trim().split(/\s+/);
@@ -255,11 +271,6 @@ export function filtrarDirectorio<F extends { proveedor: Proveedor; categoriaTex
     if (t && !normalizar(`${p.nombre} ${p.nombreCorto} ${p.ciudad} ${p.pais} ${categoriaTexto}`).includes(t)) return false;
     return true;
   });
-}
-
-/** Cuenta los filtros activos que distinguen la vista de la inicial (para el contador del botón). */
-export function filtrosActivos(f: FiltrosDirectorio): number {
-  return (f.tipo !== 'todos' ? 1 : 0) + (f.local !== 'todos' ? 1 : 0) + (f.pais !== 'todos' ? 1 : 0) + (f.moneda !== 'todos' ? 1 : 0);
 }
 
 /** Opciones únicas (ordenadas) de un campo de los proveedores para los filtros de país y moneda. */
