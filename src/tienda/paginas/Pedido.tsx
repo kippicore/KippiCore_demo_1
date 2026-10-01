@@ -9,10 +9,10 @@ import { overrideHoy, useSel } from '@/estado';
 import { plural } from '@/lib/formato';
 import { selEfectosVenta } from '@/selectores';
 import { Badge, BadgeEstado, BotonEnlace, clasesBoton, Dinero, EmptyState, Icono, ListaQueCambio, MiniaturaPrenda } from '@/ui/ligero';
-import type { FilaCambio } from '@/ui/primitivos/Piezas';
+import type { FilaCambio } from '@/ui/ligero';
 import { pedidoRecordado } from '../bolsa';
 import { primerNombre } from '../calculos';
-import { useContadorEnEncabezado, useEnlaces } from '../enlaces';
+import { useEnlaces } from '../enlaces';
 import { selPedidoTienda } from '../selectores';
 
 /**
@@ -21,7 +21,6 @@ import { selPedidoTienda } from '../selectores';
  * abre la ventana principal (`target="_top"`).
  */
 export default function Pedido() {
-  useContadorEnEncabezado();
   const { ventaId } = useParamsRuta('tiendaPedido');
   const { con, enMarco } = useEnlaces();
   const pedido = useSel(selPedidoTienda, { ventaId });

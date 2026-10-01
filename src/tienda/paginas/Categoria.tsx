@@ -19,7 +19,7 @@ import {
   tiposPresentes,
 } from '../calculos';
 import { TarjetaProducto } from '../componentes/TarjetaProducto';
-import { useContadorEnEncabezado, useEnlaces } from '../enlaces';
+import { useEnlaces } from '../enlaces';
 import { selCatalogoTienda } from '../selectores';
 import { NOMBRE_CATEGORIA, ORDENES, TEXTOS } from '../textos';
 import type { OrdenProductos, SlugSeccion } from '../tipos';
@@ -32,7 +32,6 @@ type Panel = 'filtrar' | 'ordenar' | 'talla' | 'color' | null;
  * y se reflejan en la URL.
  */
 export default function Categoria() {
-  useContadorEnEncabezado();
   const { categoria, talla: tallaUrl, color: colorUrl } = useParamsRuta('tiendaCategoria');
   const seccion = seccionPorSlug(categoria);
   if (!seccion) return <SeccionInexistente />;

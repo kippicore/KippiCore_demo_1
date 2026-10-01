@@ -3,7 +3,7 @@ import { rutas } from '@/app/rutas';
 import { plural } from '@/lib/formato';
 import { BotonEnlace, Dinero, EmptyState, Migas } from '@/ui/ligero';
 import { LineasBolsa } from '../componentes/LineasBolsa';
-import { useContadorEnEncabezado, useEnlaces } from '../enlaces';
+import { useEnlaces } from '../enlaces';
 import { useAjustarBolsaAExistencias, useBolsaDetalle } from '../hooks';
 import { TEXTOS } from '../textos';
 
@@ -12,7 +12,6 @@ import { TEXTOS } from '../textos';
  * a registrar (precios con IVA incluido; el envío es gratis en la vista previa).
  */
 export default function Bolsa() {
-  useContadorEnEncabezado();
   useAjustarBolsaAExistencias();
   const { con } = useEnlaces();
   const { catalogo, detalle, totales } = useBolsaDetalle();

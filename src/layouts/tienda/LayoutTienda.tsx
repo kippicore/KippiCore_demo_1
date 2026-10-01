@@ -1,10 +1,12 @@
-import { ArrowRight, Eye, Heart, MapPin, Menu as IconoMenu, Search, ShoppingBag, User, X } from 'lucide-react';
+import { ArrowRight, Eye, Menu as IconoMenu, ShoppingBag, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { rutaDeUrl, rutas } from '@/app/rutas';
 import { RequiereDatos } from '@/app/RequiereDatos';
+import { LOCALES } from '@/config/locales';
 import { TEXTOS_FIJOS } from '@/config/textos/notas';
 import { useMarca } from '@/estado';
+import { AccionesEncabezadoTienda, conMarco, useCantidadBolsa } from '@/tienda/publico';
 import { Marca } from '@/ui/conectados/Marca';
 import { cn } from '@/ui/cn';
 import { Icono } from '@/ui/primitivos/Icono';
@@ -35,7 +37,9 @@ export function LayoutTienda() {
   const { pathname, search } = useLocation();
   const enMarco = new URLSearchParams(search).get('marco') === '1';
   const [menu, setMenu] = useState(false);
-  const bolsa = 0;
+  const bolsa = useCantidadBolsa();
+  // Dentro del marco (vista web de Canales) toda la navegación conserva ?marco=1 (compartidos C-D).
+  const con = (url: string) => conMarco(url, enMarco);
   useEffect(() => {
     const raiz = document.documentElement;
     raiz.dataset.theme = 'light';
@@ -50,14 +54,14 @@ export function LayoutTienda() {
         <button type="button" className={cn(ICONO_TIENDA, 'inline-flex md:hidden')} aria-label="Abrir el menú" onClick={() => setMenu(true)}>
           <Icono icono={IconoMenu} tamano={20} />
         </button>
-        <Link to={rutas.tienda()} className="absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0" aria-label={`${marca.nombre}, inicio de la tienda`}>
+        <Link to={con(rutas.tienda())} className="absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0" aria-label={`${marca.nombre}, inicio de la tienda`}>
           <Marca tamano="tienda" />
         </Link>
         <nav aria-label="Categorías" className="mx-auto hidden items-center gap-8 lg:flex">
           {NAV_TIENDA.map((n) => (
             <NavLink
               key={n.categoria}
-              to={rutas.tiendaCategoria(n.categoria)}
+              to={con(rutas.tiendaCategoria(n.categoria))}
               className={({ isActive }) => cn('t-nav-tienda text-ink decoration-1 underline-offset-[6px] hover:underline', isActive && 'underline')}
             >
               {n.etiqueta}
@@ -65,21 +69,14 @@ export function LayoutTienda() {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-1 md:ml-0 md:gap-2">
-          <button type="button" className={cn(ICONO_TIENDA, 'hidden md:inline-flex')} aria-label="Buscar">
-            <Icono icono={Search} tamano={20} />
-          </button>
-          <button type="button" className={cn(ICONO_TIENDA, 'hidden md:inline-flex')} aria-label="Tiendas">
-            <Icono icono={MapPin} tamano={20} />
-          </button>
-          <button type="button" className={cn(ICONO_TIENDA, 'hidden md:inline-flex')} aria-label="Mi cuenta">
-            <Icono icono={User} tamano={20} />
-          </button>
-          <button type="button" className={cn(ICONO_TIENDA, 'hidden md:inline-flex')} aria-label="Favoritos">
-            <Icono icono={Heart} tamano={20} />
-          </button>
-          <Link to={rutas.tiendaBolsa()} className={cn(ICONO_TIENDA, 'relative inline-flex')} aria-label={`Bolsa${bolsa ? `: ${bolsa} artículos` : ''}`}>
+          <AccionesEncabezadoTienda />
+          <Link to={con(rutas.tiendaBolsa())} className={cn(ICONO_TIENDA, 'relative inline-flex')} aria-label={bolsa > 0 ? `Bolsa: ${bolsa} ${bolsa === 1 ? 'artículo' : 'artículos'}` : 'Bolsa'}>
             <Icono icono={ShoppingBag} tamano={20} />
-            {bolsa > 0 && <span className="absolute right-0.5 top-0.5 inline-flex size-4 items-center justify-center rounded-full bg-ink t-micro num text-inverse">{bolsa}</span>}
+            {bolsa > 0 && (
+              <span className="absolute right-0.5 top-0.5 inline-flex size-4 items-center justify-center rounded-full bg-ink t-micro num text-inverse" data-testid="tienda-contador-bolsa">
+                {bolsa}
+              </span>
+            )}
           </Link>
         </div>
       </header>
@@ -94,7 +91,7 @@ export function LayoutTienda() {
           </div>
           <nav aria-label="Categorías" className="mt-10 flex flex-col gap-5">
             {NAV_TIENDA.map((n) => (
-              <Link key={n.categoria} to={rutas.tiendaCategoria(n.categoria)} onClick={() => setMenu(false)} className="t-h2 text-ink">
+              <Link key={n.categoria} to={con(rutas.tiendaCategoria(n.categoria))} onClick={() => setMenu(false)} className="t-h2 text-ink">
                 {n.etiqueta}
               </Link>
             ))}
@@ -131,8 +128,10 @@ export function LayoutTienda() {
 const PIE = [
   { titulo: 'Comprar', enlaces: ['Novedades', 'Sastrería', 'Camisas', 'Zapatos y accesorios'] },
   { titulo: 'Ayuda', enlaces: ['Envíos', 'Cambios y devoluciones', 'Guía de tallas', 'Preguntas frecuentes'] },
-  { titulo: 'Tiendas', enlaces: ['Parque 93', 'Usaquén', 'Zona Rosa', 'Agenda una cita'] },
 ] as const;
+
+/** Tiendas físicas para el pie (destino del ícono "Tiendas" del encabezado). */
+const TIENDAS = LOCALES.filter((l) => l.datos.vende).map((l) => ({ id: l.id, nombre: l.datos.nombre, direccion: l.datos.direccion, zona: l.datos.zona }));
 
 function PieTienda({ nombre }: { nombre: string }) {
   const [correo, setCorreo] = useState('');
@@ -152,6 +151,17 @@ function PieTienda({ nombre }: { nombre: string }) {
             </ul>
           </div>
         ))}
+        <section id="tiendas" aria-label="Tiendas" className="scroll-mt-24" data-testid="tienda-pie-tiendas">
+          <p className="t-label font-bold text-ink">Tiendas</p>
+          <ul className="mt-4 flex flex-col gap-2.5">
+            {TIENDAS.map((t) => (
+              <li key={t.id} className="t-small text-ink-2">
+                <span className="font-bold text-ink">{t.nombre}</span> · {t.direccion}, {t.zona}
+              </li>
+            ))}
+            <li className="t-small text-ink-2">Lunes a sábado de 10 a. m. a 8 p. m.; domingos de 11 a. m. a 7 p. m.</li>
+          </ul>
+        </section>
         <form
           className="col-span-2 md:col-span-1"
           onSubmit={(e) => {

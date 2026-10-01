@@ -397,3 +397,37 @@ test('en celular (390 px) se compra con la barra fija y no hay desplazamiento ho
   await sinDesbordeHorizontal();
   expect(errores).toEqual([]);
 });
+
+test('los íconos del encabezado hacen algo: buscar, tiendas, cuenta y favoritos (y conservan ?marco=1)', async ({ page, irA }, info) => {
+  test.skip(info.project.name === 'celular-390', 'Los íconos de buscar, tiendas, cuenta y favoritos son de escritorio.');
+  const errores = vigilar(page);
+  await irA('/tienda');
+  await esperarDatos(page);
+  // Buscar: abre el buscador sobre el catálogo y lleva a la prenda.
+  await page.getByTestId('tienda-encabezado-buscar').click();
+  await expect(page.getByTestId('tienda-panel-buscar')).toBeVisible();
+  await page.getByTestId('tienda-buscar-campo').fill('popelina blanca');
+  await expect(page.getByTestId('tienda-panel-producto').first()).toBeVisible();
+  await page.getByTestId('tienda-buscar-campo').press('Enter');
+  await expect(page).toHaveURL(/\/tienda\/producto\//);
+  await expect(page.getByTestId('tienda-panel-buscar')).toHaveCount(0);
+  // Favoritos: vacío con su explicación; Escape lo cierra.
+  await page.getByTestId('tienda-encabezado-favoritos').click();
+  await expect(page.getByTestId('tienda-panel-favoritos')).toContainText('Toca el corazón');
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('tienda-panel-favoritos')).toHaveCount(0);
+  // Cuenta: sin cuentas ni contraseñas, con la bolsa.
+  await page.getByTestId('tienda-encabezado-cuenta').click();
+  await expect(page.getByTestId('tienda-panel-cuenta')).toContainText('no hay cuentas ni contraseñas');
+  await page.keyboard.press('Escape');
+  // Tiendas: lleva a la sección del pie con las direcciones.
+  await page.getByTestId('tienda-encabezado-tiendas').click();
+  await expect(page.getByTestId('tienda-pie-tiendas')).toBeInViewport();
+  await expect(page.getByTestId('tienda-pie-tiendas')).toContainText('Parque 93');
+  // En el marco, los enlaces del encabezado conservan ?marco=1.
+  await page.goto('/tienda?marco=1');
+  await esperarDatos(page);
+  await expect(page.getByRole('navigation', { name: 'Categorías' }).getByRole('link', { name: 'Camisas' })).toHaveAttribute('href', /marco=1/);
+  await expect(page.getByRole('link', { name: /^Bolsa/ })).toHaveAttribute('href', /marco=1/);
+  expect(errores).toEqual([]);
+});

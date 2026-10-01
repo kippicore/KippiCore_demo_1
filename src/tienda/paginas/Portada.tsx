@@ -6,7 +6,7 @@ import { BotonEnlace, Pista, Prenda } from '@/ui/ligero';
 import { prendaDestacada, ordenarProductos, productosDeSeccion } from '../calculos';
 import { Carrusel, CeldaCarrusel } from '../componentes/Carrusel';
 import { TarjetaProducto } from '../componentes/TarjetaProducto';
-import { useContadorEnEncabezado, useEnlaces } from '../enlaces';
+import { useEnlaces } from '../enlaces';
 import { selCatalogoTienda } from '../selectores';
 import { SECCIONES, TEXTOS } from '../textos';
 import type { SlugSeccion } from '../tipos';
@@ -23,7 +23,6 @@ const CATEGORIAS_PORTADA: readonly { slug: SlugSeccion; tipo: 'blazer' | 'camisa
 ];
 
 export default function Portada() {
-  useContadorEnEncabezado();
   const marca = useMarca();
   const { con } = useEnlaces();
   const { productos } = useSel(selCatalogoTienda);

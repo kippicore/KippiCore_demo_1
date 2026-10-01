@@ -8,7 +8,7 @@ import { BotonEnlace, Button, Dinero, EmptyState, Icono, Input, Migas } from '@/
 import { recordarPedido, useBolsa } from '../bolsa';
 import { armarVentaWeb, COMPRADOR_VACIO, normalizarCelular, validarComprador } from '../calculos';
 import { LineasBolsa } from '../componentes/LineasBolsa';
-import { useContadorEnEncabezado, useEnlaces } from '../enlaces';
+import { useEnlaces } from '../enlaces';
 import { useAjustarBolsaAExistencias, useBolsaDetalle } from '../hooks';
 import { selClientePorCelular, selVendedorWeb } from '../selectores';
 import { CIUDADES_ENVIO, COMPRADOR_EJEMPLO, METODOS_PAGO, TEXTOS } from '../textos';
@@ -22,7 +22,6 @@ import type { DatosComprador, MetodoPago } from '../tipos';
 const ESPERA_PASARELA_MS = 900;
 
 export default function Pago() {
-  useContadorEnEncabezado();
   useAjustarBolsaAExistencias();
   const { con, ir } = useEnlaces();
   const acciones = useAcciones({ actor: 'tienda' });

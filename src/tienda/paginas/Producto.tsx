@@ -11,7 +11,7 @@ import { colorInicial, notaExistencias, productosRelacionados, seccionDeProducto
 import { CajonBolsa } from '../componentes/CajonBolsa';
 import { DisponibilidadTiendas, TablaGuiaTallas } from '../componentes/InfoFicha';
 import { TarjetaProducto } from '../componentes/TarjetaProducto';
-import { useContadorEnEncabezado, useEnlaces } from '../enlaces';
+import { useEnlaces } from '../enlaces';
 import { selCatalogoTienda } from '../selectores';
 import { cuidadoDe, ENVIOS, SECCIONES, TEXTOS } from '../textos';
 import type { CatalogoTienda, ColorTienda, ProductoTienda, VarianteTienda } from '../tipos';
@@ -23,7 +23,6 @@ import type { VistaPrenda } from '@/ui/prenda/Prenda';
  * ancho completo y acordeones. En celular la galería es un carrusel y el CTA queda fijo abajo.
  */
 export default function Producto() {
-  useContadorEnEncabezado();
   const { slug, talla, color } = useParamsRuta('tiendaProducto');
   const catalogo = useSel(selCatalogoTienda);
   const producto = catalogo.productos.find((p) => p.slug === slug);

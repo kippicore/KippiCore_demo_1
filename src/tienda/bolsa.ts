@@ -86,3 +86,5 @@ export const recordarPedido = (p: UltimoPedido): void => {
   ultimo = p;
 };
 export const pedidoRecordado = (ventaId: Id): UltimoPedido | null => (ultimo?.ventaId === ventaId ? ultimo : null);
+/** Venta del último pedido hecho en esta pestaña (el panel "Tu cuenta" del encabezado la enlaza). */
+export const ultimoPedidoId = (): Id | null => ultimo?.ventaId ?? null;
