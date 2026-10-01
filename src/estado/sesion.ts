@@ -81,8 +81,14 @@ export const almacenSesion = createStore<EstadoSesion>()((set, get) => {
   return {
     ...cargarSesion(),
     moneda: cargarMoneda(),
-    cambiarRol: (rol, localFijo) =>
-      cambiar({ rol, localId: rol === 'dueno' ? 'todos' : (localFijo ?? get().localId) }),
+    cambiarRol: (rol, localFijo) => {
+      // El selector de moneda es del dueño: quien entra como vendedor o bodega ve pesos aunque el dueño estuviera en US$.
+      if (rol !== 'dueno' && get().moneda !== 'COP') {
+        escribirSesion(clave('sesion-moneda'), 'COP');
+        set({ moneda: 'COP' });
+      }
+      cambiar({ rol, localId: rol === 'dueno' ? 'todos' : (localFijo ?? get().localId) });
+    },
     cambiarLocal: (localId) => cambiar({ localId }),
     cambiarMoneda: (moneda) => {
       escribirSesion(clave('sesion-moneda'), moneda);
