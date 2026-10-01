@@ -6,7 +6,7 @@ import { rolPuedeVer, rutaDeUrl } from '@/app/rutas';
 import { INICIO_POR_ROL } from '@/config/navegacion';
 import type { Id, Moneda, Rol } from '@/dominio/tipos';
 import { PERSONAS_ROL } from '@/config/permisos';
-import { emitirUI, useEstadoDominio, useFiltroLocal, useMoneda, useRolActivo, useSel, useSesion, useTasasVigentes } from '@/estado';
+import { emitirUI, useEstadoDominio, useFiltroLocal, useMarca, useMoneda, useRolActivo, useSel, useSesion, useTasasVigentes } from '@/estado';
 import { textoTasas } from '@/lib/moneda';
 import { dinero } from '@/lib/formato';
 import { MONEDAS, TASA_EJEMPLO } from '@/config/monedas';
@@ -134,10 +134,12 @@ const ETIQUETA_ROL: Record<Rol, string> = { dueno: 'Dueño', vendedor: 'Vendedor
 /** Persona de cada rol con su local (para el menú, la franja y el pie de la barra lateral). */
 export function usePersonasRol(): Record<Rol, { nombre: string; rol: string; local: string | null; localId: Id | null }> {
   const e = useEstadoDominio();
+  // Si el visitante escribió su nombre al personalizar la marca, el dueño es él (saludo, pie de la barra y menú de rol).
+  const propio = useMarca().persona;
   const persona = (r: Rol) => {
     const u = e.usuarios[PERSONAS_ROL[r].usuarioId];
     const localId = u?.localFijoId ?? null;
-    return { nombre: u?.nombre ?? ETIQUETA_ROL[r], rol: ETIQUETA_ROL[r], local: localId ? (e.locales[localId]?.nombre ?? null) : null, localId };
+    return { nombre: (r === 'dueno' ? propio : null) ?? u?.nombre ?? ETIQUETA_ROL[r], rol: ETIQUETA_ROL[r], local: localId ? (e.locales[localId]?.nombre ?? null) : null, localId };
   };
   return { dueno: persona('dueno'), vendedor: persona('vendedor'), bodega: persona('bodega') };
 }
