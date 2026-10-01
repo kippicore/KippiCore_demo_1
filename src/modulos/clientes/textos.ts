@@ -1,0 +1,48 @@
+/** Copy de la interfaz de Clientes (A4). Español de Colombia; al dueño se le habla de tú. */
+export const TEXTOS = {
+  lista: {
+    titulo: 'Clientes',
+    subtitulo: 'Conoce a cada cliente y escríbele en el momento justo, con el trato que prefiere.',
+    buscar: 'Buscar por nombre, celular, documento o correo',
+    nuevo: 'Nuevo cliente',
+    cumpleanos: 'Cumpleaños',
+    sustantivo: ['cliente', 'clientes'] as const,
+    sinResultadosTitulo: 'Ningún cliente con estos filtros',
+    sinResultadosTexto: 'Prueba con otro nombre o quita algún filtro para ver a todos tus clientes otra vez.',
+    sinClientesTitulo: 'Aún no tienes clientes',
+    sinClientesTexto: 'Cada cliente que registres en el punto de venta o aquí queda con su historial y su forma de tratamiento.',
+    errorTitulo: 'No pudimos cargar tus clientes',
+    errorTexto: 'Recarga la página. Si sigue pasando, tus datos de la demo siguen a salvo en este navegador.',
+    segmentosAyuda: 'Los segmentos se calculan solos con las compras de cada cliente: nadie los etiqueta a mano.',
+    todos: 'Todos',
+  },
+  ficha: {
+    noExisteTitulo: 'Ese cliente ya no está en tu lista',
+    noExisteTexto: 'Pudo haberse eliminado o el enlace está incompleto. Busca al cliente en la lista de clientes.',
+    volver: 'Volver a clientes',
+    escribir: 'Escribir',
+    editar: 'Editar datos',
+    nota: 'Agregar nota',
+    seguimiento: 'Programar seguimiento',
+    eliminar: 'Eliminar cliente',
+    soloDueno: 'Solo el dueño puede hacerlo',
+    seguimientoSoloDueno: 'La agenda es del dueño: pídele que programe el seguimiento.',
+  },
+  vacios: {
+    compras: { titulo: 'Aún no tiene compras', texto: 'Cuando compre, cada venta aparecerá aquí con su detalle, la más reciente arriba.' },
+    mensajes: { titulo: 'Todavía no le has escrito', texto: 'Los mensajes que prepares desde aquí quedan registrados con su fecha, para que nadie le escriba dos veces lo mismo.' },
+    notas: { titulo: 'Sin notas todavía', texto: 'Anota lo que no se ve en las ventas: una preferencia, una talla que está cambiando, un encargo.' },
+    seguimientos: { titulo: 'Sin seguimientos programados', texto: 'Programa un recordatorio en la agenda para escribirle o llamarlo en el momento justo.' },
+    cumpleanos: { titulo: 'Nadie cumple años con estos filtros', texto: 'Cambia de mes o quita algún filtro para ver los cumpleaños de otros clientes.' },
+  },
+  trato: {
+    tu: 'Tú',
+    usted: 'Usted',
+    ejemploTu: 'Hola, Andrés. Te escribimos para contarte…',
+    ejemploUsted: 'Andrés, buenos días. Le escribimos para contarle…',
+  },
+  canales: { whatsapp: 'WhatsApp', instagram: 'Instagram', correo: 'Correo', llamada: 'Llamada' },
+  origenes: { pos: 'Punto de venta', whatsapp: 'WhatsApp', instagram: 'Instagram', web: 'Tienda web', importado: 'Archivo importado' },
+  autorizacion:
+    'El cliente autoriza el tratamiento de sus datos personales y que le escribamos (Ley 1581 de 2012).',
+} as const;
