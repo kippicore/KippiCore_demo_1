@@ -44,7 +44,7 @@ describe('barras táctiles', () => {
 });
 
 describe('agenda', () => {
-  const ev = (id: string, inicio: string, todoElDia = false): EventoVista => ({ id, tipo: 'cita', titulo: id, inicio, fin: null, todoElDia, localId: null, fuente: { tipo: 'evento', id }, movible: true, enlace: '' });
+  const ev = (id: string, inicio: string, todoElDia = false): EventoVista => ({ id, tipo: 'cita', titulo: id, inicio, fin: null, todoElDia, localId: null, fuente: { tipo: 'evento', id }, movible: true, enlace: '', monto: null, montoOrigen: null, detalle: null, ilustrativo: false, recordatorioMin: null });
   it('agrupa por día en orden y pone el título en palabras', () => {
     const dias = agruparPorDia([ev('c', '2026-10-03T15:00:00'), ev('a', '2026-09-30T09:00:00'), ev('b', '2026-10-03T11:00:00'), ev('d', '2026-10-01T00:00:00', true)], '2026-09-30');
     expect(dias.map((d) => d.fecha)).toEqual(['2026-09-30', '2026-10-01', '2026-10-03']);
