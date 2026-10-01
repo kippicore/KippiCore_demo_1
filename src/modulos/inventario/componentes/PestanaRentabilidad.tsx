@@ -54,11 +54,11 @@ export function PestanaRentabilidad({ producto }: { producto: Producto }) {
     { id: 'costo', encabezado: 'Costo por prenda', numerica: true, ordenar: (h) => h.costo, celda: (h) => <Dinero valor={h.costo} /> },
     {
       id: 'origen',
-      encabezado: 'Lo fijó',
+      encabezado: 'Importación',
       celda: (h) =>
         h.importacion ? (
-          <Link to={rutas.importacion(h.importacion)} className="font-semibold text-ink underline-offset-4 hover:underline">
-            Importación {h.importacion}
+          <Link to={rutas.importacion(h.importacion)} className="whitespace-nowrap font-semibold text-ink underline-offset-4 hover:underline">
+            {h.importacion}
           </Link>
         ) : (
           'Ajuste manual'

@@ -25,33 +25,51 @@ export interface PropsTablaKardex {
 
 export function TablaKardex({ filas, mostrarSaldo, mostrarProducto, verCostos, resaltarId, barra, totales, vacio }: PropsTablaKardex) {
   const columnas: ColumnaTabla<FilaKardexVista>[] = [
-    { id: 'fecha', encabezado: 'Fecha y hora', ordenar: (f) => f.movimiento.ts, celda: (f) => <Fecha valor={f.movimiento.ts} formato="fechaHora" />, ancho: 170 },
     {
-      id: 'tipo',
-      encabezado: 'Movimiento',
-      ordenar: (f) => f.movimiento.tipo,
+      id: 'fecha',
+      encabezado: 'Fecha y hora',
+      ancho: 150,
+      ordenar: (f) => f.movimiento.ts,
       celda: (f) => (
-        <span className="inline-flex items-center gap-2">
-          {f.movimiento.cantidad >= 0 ? <ArrowDownToLine size={14} aria-hidden className="text-success" /> : <ArrowUpFromLine size={14} aria-hidden className="text-ink-2" />}
-          {TIPOS_MOVIMIENTO[f.movimiento.tipo]}
+        <span className="whitespace-nowrap">
+          <Fecha valor={f.movimiento.ts} formato="fechaHora" />
         </span>
       ),
     },
-    { id: 'documento', encabezado: 'Documento', celda: (f) => <EnlaceDocumento documento={f.documento} /> },
-    mostrarProducto
-      ? {
-          id: 'prenda',
-          encabezado: 'Prenda',
-          truncar: true,
-          ordenar: (f) => f.producto,
-          celda: (f) => `${f.producto} · ${f.color} · ${f.talla}`,
-        }
-      : { id: 'prenda', encabezado: 'Color y talla', ordenar: (f) => `${f.color}${f.talla}`, celda: (f) => `${f.color} · ${f.talla}` },
-    { id: 'local', encabezado: 'Local', ordenar: (f) => f.local, celda: (f) => f.local },
+    {
+      id: 'tipo',
+      encabezado: 'Movimiento',
+      ancho: 190,
+      ordenar: (f) => f.movimiento.tipo,
+      celda: (f) => (
+        <span className="flex items-center gap-2 whitespace-nowrap">
+          {f.movimiento.cantidad >= 0 ? <ArrowDownToLine size={14} aria-hidden className="shrink-0 text-success" /> : <ArrowUpFromLine size={14} aria-hidden className="shrink-0 text-ink-2" />}
+          <span>
+            {TIPOS_MOVIMIENTO[f.movimiento.tipo]}
+            <span className="block t-small">
+              <EnlaceDocumento documento={f.documento} />
+            </span>
+          </span>
+        </span>
+      ),
+    },
+    {
+      id: 'prenda',
+      encabezado: mostrarProducto ? 'Prenda' : 'Variante',
+      truncar: true,
+      ordenar: (f) => (mostrarProducto ? f.producto : `${f.color}${f.talla}`),
+      celda: (f) => (
+        <span className="block min-w-0">
+          <span className="block truncate">{mostrarProducto ? `${f.producto} · ${f.color} · ${f.talla}` : `${f.color} · ${f.talla}`}</span>
+          <span className="block truncate t-small text-muted">{f.local}</span>
+        </span>
+      ),
+    },
     {
       id: 'entrada',
       encabezado: 'Entra',
       numerica: true,
+      ancho: 70,
       ordenar: (f) => f.movimiento.cantidad,
       celda: (f) => (f.movimiento.cantidad > 0 ? <span className="font-semibold">{entero(f.movimiento.cantidad)}</span> : <span className="text-disabled">—</span>),
     },
@@ -59,17 +77,17 @@ export function TablaKardex({ filas, mostrarSaldo, mostrarProducto, verCostos, r
       id: 'salida',
       encabezado: 'Sale',
       numerica: true,
+      ancho: 70,
       ordenar: (f) => -f.movimiento.cantidad,
       celda: (f) => (f.movimiento.cantidad < 0 ? <span className="font-semibold">{entero(-f.movimiento.cantidad)}</span> : <span className="text-disabled">—</span>),
     },
     ...(mostrarSaldo ? [{ id: 'saldo', encabezado: 'Saldo', numerica: true, ordenar: (f: FilaKardexVista) => f.orden, celda: (f: FilaKardexVista) => <strong className="font-bold">{entero(f.saldo)}</strong> } satisfies ColumnaTabla<FilaKardexVista>] : []),
-    ...(verCostos ? [{ id: 'costo', encabezado: 'Costo unitario', numerica: true, celda: (f: FilaKardexVista) => <Dinero valor={f.movimiento.costoUnitario} /> } satisfies ColumnaTabla<FilaKardexVista>] : []),
-    { id: 'usuario', encabezado: 'Registró', ordenar: (f) => f.usuario, celda: (f) => f.usuario },
+    ...(verCostos ? [{ id: 'costo', encabezado: 'Costo', numerica: true, ancho: 110, celda: (f: FilaKardexVista) => <Dinero valor={f.movimiento.costoUnitario} /> } satisfies ColumnaTabla<FilaKardexVista>] : []),
     {
       id: 'nota',
-      encabezado: 'Motivo y nota',
+      encabezado: 'Nota',
       truncar: true,
-      celda: (f) => [f.movimiento.motivo ? MOTIVOS_AJUSTE[f.movimiento.motivo] : null, f.movimiento.nota ?? null].filter(Boolean).join(' · ') || '',
+      celda: (f) => [f.movimiento.motivo ? MOTIVOS_AJUSTE[f.movimiento.motivo] : null, f.movimiento.nota ?? null, f.usuario !== 'Sistema' ? `Registró ${f.usuario}` : null].filter(Boolean).join(' · ') || '',
     },
   ];
   return (

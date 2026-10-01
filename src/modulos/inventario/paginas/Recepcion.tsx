@@ -187,7 +187,7 @@ function Formulario({ d }: { d: DetalleRecepcion }) {
     {
       id: 'prenda',
       encabezado: 'Prenda',
-      truncar: true,
+      ancho: 220,
       celda: (l) => (
         <span>
           <span className="font-semibold text-ink">{l.producto.nombre}</span>
@@ -269,7 +269,7 @@ function Formulario({ d }: { d: DetalleRecepcion }) {
         </div>
       </div>
       <div className="mt-4">
-        <Table columnas={columnas} filas={d.lineas} clave={(l) => l.varianteId} sustantivo={['variante', 'variantes']} etiqueta="Líneas de la recepción" porPagina={50} densidad="compacta" data-testid="tabla-recepcion" />
+        <Table columnas={columnas} filas={d.lineas} clave={(l) => l.varianteId} sustantivo={['variante', 'variantes']} etiqueta="Líneas de la recepción" porPagina={50} data-testid="tabla-recepcion" />
       </div>
       <Textarea className="mt-6 max-w-[640px]" etiqueta="Nota de la recepción" opcional value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Estado de las cajas, faltantes, novedades con el transportador" rows={2} />
       {error && <p className="mt-3 t-small text-danger">{error}</p>}

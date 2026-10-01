@@ -35,10 +35,9 @@ export default function Conteos() {
 
   const columnas: ColumnaTabla<FilaConteo>[] = [
     { id: 'numero', encabezado: 'Conteo', ordenar: (f) => f.conteo.numero, celda: (f) => <span className="t-ref font-bold">{f.conteo.numero}</span> },
-    { id: 'local', encabezado: 'Local', ordenar: (f) => f.local, celda: (f) => f.local },
+    { id: 'local', encabezado: 'Local', ancho: 140, ordenar: (f) => f.local, celda: (f) => <span className="whitespace-nowrap">{f.local}</span> },
     { id: 'alcance', encabezado: 'Alcance', truncar: true, celda: (f) => (f.conteo.categorias ? f.conteo.categorias.map((c) => NOMBRES_CATEGORIA[c]).join(', ') : 'Todo el local') },
-    { id: 'inicio', encabezado: 'Iniciado', ordenar: (f) => f.conteo.iniciado, celda: (f) => <Fecha valor={f.conteo.iniciado} formato="fechaHora" /> },
-    { id: 'responsable', encabezado: 'Responsable', ordenar: (f) => f.responsable, celda: (f) => f.responsable },
+    { id: 'inicio', encabezado: 'Iniciado', ancho: 170, ordenar: (f) => f.conteo.iniciado, celda: (f) => <span className="whitespace-nowrap"><Fecha valor={f.conteo.iniciado} formato="fechaHora" /></span> },
     {
       id: 'avance',
       encabezado: 'Contadas',

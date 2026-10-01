@@ -85,7 +85,6 @@ export default function Traslados() {
     },
     { id: 'prendas', encabezado: 'Prendas', truncar: true, celda: (f) => f.resumen },
     { id: 'unidades', encabezado: 'Unidades', numerica: true, ancho: 90, ordenar: (f) => f.unidades, celda: (f) => entero(f.unidades) },
-    { id: 'solicito', encabezado: 'Solicitó', ancho: 110, ordenar: (f) => f.solicitante, celda: (f) => f.solicitante },
     {
       id: 'estado',
       encabezado: 'Estado',

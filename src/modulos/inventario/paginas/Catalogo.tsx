@@ -137,23 +137,13 @@ export default function Catalogo() {
             <MiniaturaPrenda tipo={f.producto.tipoPrenda} color={c?.hex ?? '#C9C9C7'} patron={c?.patron} tamano="tabla" />
             <span className="min-w-0">
               <span className="block truncate t-body font-semibold text-ink">{f.producto.nombre}</span>
-              <span className="block t-ref text-muted">{f.producto.referencia}</span>
+              <span className="block truncate t-small text-muted">
+                <span className="t-ref">{f.producto.referencia}</span> · {NOMBRES_CATEGORIA[f.producto.categoria]} · {NOMBRES_LINEA[f.producto.linea]}
+              </span>
             </span>
           </span>
         );
       },
-    },
-    {
-      id: 'categoria',
-      encabezado: 'Categoría',
-      ancho: 150,
-      ordenar: (f) => NOMBRES_CATEGORIA[f.producto.categoria],
-      celda: (f) => (
-        <span className="whitespace-nowrap">
-          {NOMBRES_CATEGORIA[f.producto.categoria]}
-          <span className="block t-small text-muted">{NOMBRES_LINEA[f.producto.linea]}</span>
-        </span>
-      ),
     },
     {
       id: 'existencias',

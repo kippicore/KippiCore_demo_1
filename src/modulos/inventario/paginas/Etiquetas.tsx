@@ -158,16 +158,14 @@ export default function Etiquetas() {
               <div key={v.variante.id} className="border border-line bg-white p-3 text-black">
                 <p className="truncate t-small font-bold">{v.producto.nombre}</p>
                 <p className="t-ref">{v.variante.sku}</p>
-                <div className="mt-1 flex items-center justify-between t-small">
-                  <span>
-                    {v.color?.nombre} · talla <strong>{v.variante.talla}</strong>
-                  </span>
-                  <strong className="num">
-                    <Dinero valor={v.producto.precioVenta} />
-                  </strong>
-                </div>
+                <p className="t-small">
+                  {v.color?.nombre} · talla <strong>{v.variante.talla}</strong>
+                </p>
+                <p className="t-body font-bold num">
+                  <Dinero valor={v.producto.precioVenta} />
+                </p>
                 <div className="-mx-1 mt-1">
-                  <CodigoBarras ean={v.variante.ean13} alto={36} ancho={1.0} />
+                  <CodigoBarras ean={v.variante.ean13} alto={36} ancho={1.2} />
                 </div>
               </div>
             ))}
