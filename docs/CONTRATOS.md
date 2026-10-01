@@ -4,7 +4,7 @@ Este documento es para los constructores (Sonnet) de las oleadas A–E. Dice **c
 
 Regla de oro: **todo lo que no está en tu carpeta es de solo lectura** (sección 11). Si te falta algo compartido, lo pides (sección 12) y mientras tanto resuelves con lo que existe sin romper ninguna regla.
 
-> **Sistema de diseño (F2-C).** La fase siguiente a F2-B crea `src/ui/**` (Button, Input, Table, Modal, Drawer, Toast, Badge, KPI, `<Dinero>`, `<Fecha>`, `<Cifra>`, `<GraficoBase>`, `<GraficoDinero>`, `<Prenda>`, `<Pista>`, `<ResaltarFila>`, `<NotaLegal>`, `<Termino>`, `<MatrizExistencias>`, `<BuscadorProducto>`, `<BuscadorCliente>`, `<ImportarExcelSimulado>`, `<RequiereRol>`, `<SoloRol>`, `<CodigoBarras>`, `<CodigoQR>`…) y `src/layouts/**` definitivos (PLAN 8.7 y 9.2 F2-C). **Los constructores usan esos componentes**: no crean botones, tablas, modales, toasts ni gráficos propios, no escriben colores fuera de los tokens y no formatean cifras a mano. Si cuando empieces F2-C ya cerró, lee su página `/panel/_sistema` (solo en desarrollo) y su sección en este documento. Lo que este documento describe de `src/estado`, `src/selectores`, `src/reportes`, `src/lib` y `src/app` no cambia con F2-C.
+> **Sistema de diseño (F2-C, entregado).** `src/ui/**` y `src/layouts/**` son definitivos: catálogo, props, recetas y reglas en la **sección 14** y, en vivo, en `/panel/_sistema` (`npm run dev`). **Los constructores usan esos componentes**: no crean botones, tablas, modales, toasts ni gráficos propios, no escriben colores fuera de los tokens y no formatean cifras a mano. En `/app` importa de `@/ui/ligero` (presupuesto de arranque). Lo que este documento describe de `src/estado`, `src/selectores`, `src/reportes`, `src/lib` y `src/app` no cambió con F2-C.
 
 ---
 
@@ -18,7 +18,7 @@ Regla de oro: **todo lo que no está en tu carpeta es de solo lectura** (secció
 | Escribir | `useAcciones().registrarVenta({...})` → `ResultadoComando` | `@/estado` |
 | Reaccionar a algo que pasó | `useEvento('VentaRegistrada', fn)` | `@/estado` |
 | Avisar a la guía | `emitirUI('flujo_caja_visto')` | `@/estado` |
-| Mostrar dinero | `<Dinero cop>` (F2-C) o `useDinero()(cop)` | `@/ui` · `@/estado` |
+| Mostrar dinero | `<Dinero valor={cop}>` o `useDinero()(cop)` | `@/ui` (`@/ui/ligero` en /app) · `@/estado` |
 | Mostrar fechas, horas, números | `<Fecha>` (F2-C) o `fecha()`, `hora()`, `numero()`… | `@/ui` · `@/lib/formato` |
 | Armar un enlace | `rutas.producto('HL-CAM-0142', { trasladar })` | `@/app/rutas` |
 | Leer los parámetros de mi ruta | `useParamsRuta('producto')` | `@/app/useParamsRuta` |
@@ -158,9 +158,9 @@ useEntradaRemota((r) => toast(r.texto));                                        
 
 | Qué | Con F2-C | Hasta F2-C / fuera de JSX |
 |---|---|---|
-| Dinero en la moneda activa (desde COP) | `<Dinero cop={v} />`, `<Dinero cop={v} corta />` | `const d = useDinero(); d(v)`, `d.corta(v)` |
+| Dinero en la moneda activa (desde COP) | `<Dinero valor={v} />`, `<Dinero valor={v} corta />` | `const d = useDinero(); d(v)`, `d.corta(v)` |
 | Gráficos con dinero | `<GraficoDinero series={…} />` (convierte series, ejes y tooltips) | `d.convertir(v)` + `cifraCorta` |
-| Monto de origen en USD/CNY (FOB, pagos a fábricas) | el componente de cifra de origen de F2-C | `dineroOrigen(centavos, 'USD')` (`@/lib/moneda`) |
+| Monto de origen en USD/CNY (FOB, pagos a fábricas) | `dineroOrigen(centavos, 'USD')` (`@/lib/moneda`) junto a `<Dinero>` | `dineroOrigen(centavos, 'USD')` (`@/lib/moneda`) |
 | Fecha `30/09/2026`, corta, larga | `<Fecha valor={f} formato="larga" />` | `fecha(f)`, `fechaCorta(f)`, `fechaLarga(f)`, `mesAnio('2026-09')` (`@/lib/formato`) |
 | Hora `3:45 p. m.`, fecha y hora | `<Fecha valor={ts} formato="hora" />` | `hora(ts)`, `fechaHora(ts)`, `relativa(ts, ahora)`, `relativaDias(f, hoy)` |
 | Números, enteros, unidades, % y variación | `<Cifra>` | `numero(v, dec)`, `entero(v)`, `unidades(n)`, `porcentaje(fraccion)`, `variacion(fraccion)` |
@@ -345,7 +345,7 @@ Todo lo de las columnas **Honra**, **Emite** y **Pistas** es criterio de aceptac
 
 Otros puertos: `4173` servidor compartido (fundaciones, flujos de fase 4, rendimiento; `npm run test:e2e`), `4180` `npm run medir:arranque`, `5173` `npm run dev`.
 
-Puntos de extensión que reemplaza su dueño sin tocar el layout (9.1.6): `src/modulos/guia/publico.ts` (`GuiaFlotante`, `MenuAyuda`, E2), `src/movil/publico.ts` (`ModalAppDueno`, `BotonAppDueno`, E1), `src/modulos/entrada/paginas/Entrada.tsx` (E2) y **una página esqueleto por ruta** en `src/<carpeta>/paginas/*.tsx`: reemplázala conservando el nombre del archivo y el `export default` (el router la importa por ese nombre; ver `PAGINAS` en `src/app/router.tsx`). Las páginas esqueleto usan `<EsqueletoPagina>` (`data-testid="pagina-esqueleto"`): tu página ya no.
+Puntos de extensión que reemplaza su dueño sin tocar el layout (9.1.6): `src/modulos/guia/publico.ts` (`GuiaFlotante`, `MenuAyuda`, E2), `src/movil/publico.ts` (`ModalAppDueno`, `BotonAppDueno`, E1), `src/modulos/entrada/paginas/Entrada.tsx` (E2) y **una página esqueleto por ruta** en `src/<carpeta>/paginas/*.tsx`: reemplázala conservando el nombre del archivo y el `export default` (el router la importa por ese nombre; ver `PAGINAS` en `src/app/router.tsx`). Las páginas esqueleto usan `<EsqueletoPagina>` (`data-testid="pagina-esqueleto"`): tu página ya no. El marcador común de página es `data-testid="pagina"`, que pone el layout (F2-C) en el contenedor de toda página; la prueba de rutas de las fundaciones lo usa. `ModalAppDueno`/`BotonAppDueno` (con `abrirAppDueno()`) y `MenuAyuda` ya están diseñados y funcionan (F2-C); E1 y E2 los afinan sin cambiar sus exportaciones.
 
 Lo que un paquete puede crear dentro de su carpeta (9.1.3): páginas, componentes internos, hooks de interfaz, `selectores.ts` locales (componiendo selectores compartidos), `textos.ts` con el copy de su interfaz, pruebas y `publico.ts` (lo que otros módulos de oleadas posteriores podrán importar).
 
@@ -368,6 +368,113 @@ Si te falta un selector, un comando, un campo, un parámetro de ruta, un `Evento
 ## 13. Verde antes de entregar (DoD, 9.1.9)
 
 En tu worktree: `npx tsc -p tsconfig.json --noEmit` sin errores en tus archivos; `npx eslint src/modulos/<m>` (o tu carpeta); `npx vitest run src/modulos/<m>`; tu e2e en 1440 × 900, 1366 × 657 y 1280 × 800 con tu `PORT`; sin errores en consola; crear/editar/eliminar con confirmación; estados vacío, carga y error; español de Colombia; local, moneda y rol respetados; ninguna cifra formateada a mano; ningún color fuera de los tokens; ningún texto por debajo de 12 px; parámetros, eventos y pistas de tu fila cumplidos.
+
+---
+
+## 14. Componentes de interfaz (F2-C)
+
+El sistema de diseño vive en `src/ui/**` (PLAN 8) y se ve completo, con datos reales, en **`/panel/_sistema`** (`npm run dev`; solo en desarrollo). Ábrelo antes de construir: es la referencia visual. Lenguaje: el de `docs/REFERENCIA_VISUAL.md` (negro y blanco, fondo `canvas` #F9F9F9, títulos en MAYÚSCULAS 900, botones negros rectangulares, líneas de 1 px, cero sombras salvo lo que flota).
+
+### 14.1 De dónde importar
+
+| Import | Qué trae | Cuándo |
+|---|---|---|
+| `@/ui` | todo el catálogo (incluye Radix, cmdk, Recharts, dnd-kit, qrcode) | escritorio, tienda, portal |
+| `@/ui/ligero` | solo piezas sin dependencias pesadas: `Button`, `BotonEnlace`, `Icono`, `Badge`, `PuntoEstado`, `EmptyState`, `Skeleton`, `Retrasado`, `Avatar`, `MuestraColor`, `CajaTalla`, `BarraProgreso`, `Stepper`, `ListaQueCambio`, `Segmentado`, `Timeline`, `TimelineCompacta`, `Toaster`/`avisar`, `Input`, `InputNumero`, `Textarea`, `Cifra`, `NotaLegal`, `Sparkline`, `Prenda`, `Dinero`, `Fecha`, `Marca`, `Pista`, `RequiereRol`, `SoloRol`, `ResaltarFila`, `EncabezadoPagina`… | **`/app` (E1)** y todo lo que se pinta en el arranque |
+| `@/ui/movil/Movil` | `EncabezadoMovil`, `ChipDatosEjemplo`, `HojaLigera`, `VolverMovil`, `LocalEncabezado` | app del dueño (sin Radix) |
+
+**Presupuesto de arranque.** `/app` (Hoy con cifras) debe pintarse en < 2,5 s con CPU ×4; hoy va en ≈ 2,31 s (margen ≈ 190 ms). En `/app` no importes `@/ui` (barril completo) ni Radix: usa `@/ui/ligero`, `HojaLigera` en vez de `HojaInferior`, y carga diferido (`lazy`) todo lo pesado (gráficos, QR). Corre `npm run test:e2e:rendimiento` antes de entregar.
+
+### 14.2 Catálogo (props clave)
+
+| Componente | Props clave | Notas |
+|---|---|---|
+| `Button` | `variante` primary · secondary · ghost · destructive · link · inverse; `tamano` sm 32 · md 40 · lg 48; `icono`, `iconoDerecha`, `cargando`, `anchoCompleto`, `tienda`, `motivo` (deshabilitado) | Un solo primario por zona. MAYÚSCULAS por CSS: escribe "Registrar venta". `BotonEnlace` = mismo aspecto con `to`. `clasesBoton()` para otros elementos |
+| `BotonIcono` | `icono`, `etiqueta` (aria-label y tooltip), `variante`, `tamano` | Solo ícono, siempre con etiqueta |
+| `Icono` | `icono` (lucide), `tamano` 12–40 | Trazo 1,5 (1,25 desde 24). Íconos de acciones comunes: PLAN 8.13 |
+| `Input`, `InputNumero`, `Textarea` | `etiqueta`, `opcional`, `ayuda`, `error`, `tamano`, `prefijo`/`sufijo`, `buscar`, `numerico`; `InputNumero`: `valor`, `alCambiar`, `decimales` | `InputNumero` formatea al perder el foco (1.250.000). Error junto al campo, nunca en un toast |
+| `Select` | `valor`, `alCambiar`, `opciones` (`{ valor, etiqueta, grupo? }`), `placeholder`, `variante` campo · ghost, `enModal` | |
+| `Combobox` | `texto`, `alCambiarTexto`, `grupos`, `vacio(q)`, `fijo`, `atajo`, `alEnter` | El filtrado lo haces tú con un selector. `Resaltado` marca la coincidencia en 700 |
+| `Checkbox`, `Switch`, `GrupoRadio` | `marcado`/`activo`/`valor` + `alCambiar`; `GrupoRadio tarjetas columnas` | Tarjetas de radio para medios de pago y modalidad |
+| `SelectorFecha`, `SelectorRango` | `hoy` (de `useHoy()`), `valor`, `alCambiar`; `SelectorRango soloPanel` dentro de un `BotonPildora` | Atajos: Hoy · Ayer · Últimos 7 días · Este mes · Mes anterior · Últimos 90 días · Este año. `textoRango(r, hoy)` |
+| `Tabs` + `PanelTab` | `valor`, `alCambiar`, `pestanas` (`{ valor, etiqueta, contador? }`) | Subrayado de 2 px que se desliza |
+| `PestanasEnlace` | `pestanas` (`{ a: rutas.x(...), etiqueta, fin? }`) | Pestañas que son subrutas (fichas) |
+| `Segmentado` | `valor`, `alCambiar`, `opciones`, `etiqueta`, `tamano` | Tabla/Tarjetas, Mes/Semana/Día |
+| `Badge`, `BadgeEstado`, `PuntoEstado` | `tono` (de `config/estados.ts`), `tamano`; `BadgeEstado estado={ESTADOS_VENTA.pagada}` | **Nunca** elijas el color: usa el mapa canónico |
+| `Card`, `Kpi`, `EncabezadoSeccion`, `EnlaceVerTodo` | `Card`: `titulo`, `accion`, `a` (clicable), `padding`; `Kpi`: `etiqueta`, `valor`, `formatear`, `completo`, `variacion { valor, comparado, buenoCuando }`, `serie`, `nota`, `destacada`, `a` | Sin sombras. Una sola `destacada` por pantalla |
+| `EncabezadoPagina` | `migas`, `titulo`, `subtitulo`, `insignia`, `eyebrow`, `acciones`, `pestanas` | Encabezado de TODA página del escritorio (8.4.5) |
+| `Table` | `columnas` (`{ id, encabezado, celda, ordenar?, numerica?, alinear?, ancho?, truncar? }`), `filas`, `clave`, `sustantivo`, `alAbrir`, `resaltada`, `totales`, `barra`, `seleccion`/`alSeleccionar`/`accionesLote`, `accionesFila`, `densidad`, `porPagina`, `ordenInicial`, `vacio`, `cargando` | Cabecera fija bajo la barra superior, totales fijos, paginación 25/50/100, barra de lote negra. `useDensidadTabla(id)`, `FranjaResumen`, `BotonAccionesFila` |
+| `Toolbar` | `buscar { valor, alCambiar, placeholder }`, `filtros`, `derecha`, `chips`, `alLimpiar` | El grupo píldora negro con `BotonFiltros`, `BotonPildora etiqueta valor` (abre su panel), `SelectorDensidad` |
+| `Dialog` | `abierto`, `alCambiar`, `titulo`, `eyebrow`, `descripcion`, `pie`, `ancho` sm · md · lg · xl, `confirmarAlCerrar` | Nunca anidados |
+| `Drawer`, `ParesDatos` | `eyebrow`, `titulo`, `insignia`, `acciones`, `pestanas`, `pie`, `ancho` md 520 · lg 720, `alAnterior`/`alSiguiente` | Detalle de un registro; la URL cambia (lo hace tu página) |
+| `ConfirmarEliminacion` | `pregunta`, `consecuencias` (con cifras), `accion` ("Anular venta"), `alConfirmar`, `palabraClave` | Sin "Aceptar", sin "Deshacer" |
+| `Popover`, `Menu`, `ItemMenu`, `SeparadorMenu` | `disparador`, `titulo`, `ancho`, `alinear`, `enModal`; `ItemMenu icono atajo peligro onSelect` | |
+| `Tooltip` | `texto`, `lado`, `envolver` (para botones deshabilitados) | Nunca información imprescindible |
+| `avisar()` | `{ texto, tipo exito · alerta · error · info, detalle, accion { texto, a } }` | Toast abajo al centro (el `Toaster` lo pone el layout) |
+| `EmptyState` | `icono`, `titulo`, `texto`, `accion`, `tamano` pagina · tabla · compacto | Nunca "No hay datos" ni "Próximamente" |
+| `Skeleton`, `FilasEsqueleto`, `Retrasado` | | Solo si la espera pasa de 300 ms |
+| `Timeline`, `pasosImportacion()`, `TimelineCompacta` | `pasos` / `estado` | 13 estados en 5 fases |
+| `Kanban`, `TarjetaTablero` | `columnas`, `tarjetas` (`{ id, columna, titulo }`), `pintar`, `alMover`, `permitido` | En la interfaz se llama "Tablero por estado" |
+| `Stepper`, `BarraProgreso`, `ListaQueCambio`, `MarcaAguaDocumento` | | "Qué cambió" escalonado 80 ms (W1) |
+| `Avatar`, `GrupoAvatares`, `MuestraColor`, `CajaTalla`, `ChipFiltro` | | Muestras y tallas: hex del PRODUCTO (`e.colores`) |
+| `Prenda`, `MiniaturaPrenda` | `tipo` (13 `TipoPrenda`), `color` (hex de la variante), `patron`, `vista` frente · detalle · tejido, `tamano`, `nombre` | La "foto" de catálogo. Miniaturas: tabla 30 × 40, buscador 32 × 43, bolsa 72 × 96 |
+| `GraficoBase` / `GraficoBarras` / `GraficoLineas` / `GraficoArea` | `datos`, `x`, `series` (`{ clave, nombre, color 1–4 · 'acento', tipo?, punteada? }`), `apiladas`, `titulo`, `lectura`, `formatoX`, `destacarX`, `referencia`, `referenciaX`, `alto`, `movil` | Presentacional. Etiquetas directas por serie, "Ver como tabla" |
+| `GraficoDinero` | igual que `GraficoBase`, con series **en COP** | Convierte a la moneda activa ejes, tooltips y tabla |
+| `colorDeLocal(local.orden)` | | Parque 93 → 1, Usaquén → 2, Zona Rosa → 3, Bodega → 4 |
+| `MapaCalor`, `GraficoCascada` | `valores` 7 × 12, `formatoValor`, `hallazgo`; `pasos`, `formato` | |
+| `CodigoBarras`, `CodigoQR` | `ean`, `copiable`; `valor`, `tamano` 72 · 96 · 120 · 160, `mostrarUrl` | Siempre negro sobre blanco. `CodigoQR` carga `qrcode`: diferido |
+| `MarcoTelefono`, `MarcoNavegador` | `src` (`/app?marco=1`, `/tienda?marco=1`), `escala`, `titulo`; `direccion`, `alto` | El marco adopta el estado de la pestaña |
+| `Termino`, `NotaLegal` | `id` del glosario o `comun`/`tecnico`; `tipo` nomina · tributario · aduanero · contrato_realidad | |
+| `Cifra` | `valor`, `formatear`, `contarDesdeCero`, `claveSesion`, `incremento`, `estatica` | Contador de 900 ms con subrayado camel |
+
+**Conectados** (leen el contexto; `@/ui`):
+
+| Componente | Uso |
+|---|---|
+| `Dinero` | `<Dinero valor={cop} />` · `corta` · `animar` (+ `incremento`) · `contarDesdeCero claveSesion` · `conMoneda` |
+| `Fecha` | `<Fecha valor={f} formato="fecha · corta · larga · hora · fechaHora · relativa · relativaDias" />` |
+| `Marca` | wordmark de la marca activa: `tamano` lateral · tienda · entrada, `descriptor` |
+| `SelectorLocal`, `SelectorMoneda`, `SelectorRol`, `FranjaMoneda` | ya están en el layout; `useCambiarRol()`, `useCambiarMoneda()` si necesitas cambiarlos desde tu pantalla (emiten `rol_cambiado` / `moneda_cambiada`) |
+| `Pista` | `<Pista id="inicio.alertas">ancla</Pista>`: la colocas tú (tabla 10); una por pantalla, primera visita |
+| `RequiereRol`, `SoloRol` | `<RequiereRol permiso="ver.costos" alternativa={…}>` · `<SoloRol roles={['dueno']}>` |
+| `ResaltarFila`, `useResaltar()` | `?resaltar=`: envuelve el destino, o en tablas `resaltada={(f) => f.id === resaltar}` |
+| `MatrizExistencias` | `productoId`, `alElegir(varianteId)` (POS), `seleccionada`, `localInicial`; incluye "En camino" |
+| `BuscadorProducto` | `alElegir(resultado)`, `localId`, `enfocarAlMontar`; Enter con un EAN-13 completo elige la variante |
+| `BuscadorCliente` | `alElegir(cliente \| null)` (null = Consumidor final), `alCrear(texto)` |
+| `ImportarExcelSimulado` | `que="tus referencias y existencias"`: el ÚNICO "Importar desde Excel" |
+| `BotonExportar` | `reporte`, `filtros`, `formatos`, `menu` (un solo "Exportar" con menú, para barras), `variante`, `tamano` |
+| `BotonDocumentoPdf` | `documento`, `etiqueta`, `variante`, `tamano` |
+| `AvisoNavegadorInterno` | franja de WhatsApp/Instagram/Facebook (`esNavegadorInterno()`, `esIos()`) |
+
+### 14.3 Recetas
+
+**Página de lista (tabla + filtros):**
+
+```tsx
+<EncabezadoPagina migas={[{ texto: 'Inicio', a: rutas.inicio() }, { texto: 'Ventas' }]} titulo="Ventas"
+  subtitulo="Todo lo que han vendido los tres locales, con su detalle"
+  acciones={<BotonEnlace to={rutas.pos()} icono={Plus}>Registrar venta</BotonEnlace>} />
+<FranjaResumen className="mt-8" cifras={[{ etiqueta: 'Ventas', valor: <Dinero valor={t.netas} corta /> }, …]} />
+<Table className="mt-4" columnas={columnas} filas={filas} clave={(v) => v.id} sustantivo={['venta', 'ventas']}
+  alAbrir={(v) => navegar(rutas.venta(v.id))} resaltada={(v) => v.id === resaltar}
+  totales={{ total: <Dinero valor={t.netas} /> }}
+  vacio={<EmptyState tamano="tabla" icono={ReceiptText} titulo="Ningún resultado con estos filtros" texto="…" accion={<Button variante="secondary" onClick={limpiar}>Limpiar filtros</Button>} />}
+  barra={<Toolbar buscar={{ valor: q, alCambiar: setQ, placeholder: 'Buscar por número, cliente o referencia' }}
+    filtros={<><BotonFiltros contador={n}>…</BotonFiltros><BotonPildora etiqueta="Fechas" valor={textoRango(r, hoy)} anchoPanel={720}><SelectorRango soloPanel hoy={hoy} valor={r} alCambiar={setR} /></BotonPildora></>}
+    derecha={<BotonExportar reporte="ventas" filtros={r} menu />} chips={chips} alLimpiar={limpiar} />} />
+```
+
+**Estado vacío** (`EmptyState`, 8.7.19), **carga** (`<Retrasado><FilasEsqueleto /></Retrasado>` o `Table cargando`), **modal** (`Dialog` con `pie` de dos botones: secundario "Cancelar" y el primario con el verbo), **cajón** (`Drawer` + `ParesDatos` + `ListaQueCambio`), **confirmación** (`ConfirmarEliminacion`), **formularios** (rejilla de 2 columnas `grid grid-cols-2 gap-x-6 gap-y-4` con `Input`/`Select`/`SelectorFecha`/`InputNumero`; validación al perder el foco y al enviar; errores con `error` en cada campo), **éxito de una acción** (`avisar({ tipo: 'exito', texto, accion })`).
+
+**Layouts (ya están, no los toques):** el escritorio pone la barra lateral filtrada por rol, la barra superior (buscador ⌘K, local, moneda, rol, "Ver app del dueño", "?", notificaciones), la franja de rol, la franja de moneda, el `Toaster` y el contenedor `data-testid="pagina"` con `max-w-[1600px]`. Tu página empieza con `EncabezadoPagina` y usa `mt-8`/`mt-10` entre secciones (`gap-10`), `gap-4` en filas de KPI (`grid-cols-3 wide:grid-cols-6`) y `gap-6` entre bloques. En `/app` tu pantalla empieza con `EncabezadoMovil` (márgenes `px-4`, tarjetas `border border-line bg-surface p-4`, separación `gap-3`). En `/tienda` el encabezado es fijo: tu página deja `pt-24` (o va a sangre, como la portada).
+
+### 14.4 Reglas del sistema (las verifica la revisión visual)
+
+- Colores **solo** de tokens: `bg-canvas`, `bg-surface`, `bg-surface-2`, `bg-selected`, `bg-product`, `text-ink`, `text-ink-2`, `text-muted`, `text-subtle`, `border-line`, `border-line-soft`, `border-line-strong`, `accent`, `success`, `warning`, `danger` (+ `-soft`), `chart-1…4`, `heat-0…5`. La paleta por defecto de Tailwind **no existe** (`bg-blue-500`, `rounded-xl`, `shadow-lg` no compilan a nada). Los únicos hex fuera de tokens son los colores de PRODUCTO de los datos.
+- Tipografía con las utilidades `t-*` (`t-h1`, `t-h2`, `t-h3`, `t-eyebrow`, `t-body`, `t-small`, `t-label`, `t-micro`, `t-kpi*`, `t-button`, `t-nav`) y `num` en toda cifra. Nada por debajo de 12 px; `text-muted`/`text-subtle` solo desde 13 px.
+- Radio 0 en todo (salvo lo de 8.0.2); bordes de 1 px; sin sombras salvo menús y popovers (`shadow-float`).
+- Capas: `z-(--z-popover)`, `z-(--z-modal)`… nunca números. Curvas y duraciones: `ease-standard`, `duration-(--dur-fast)`…
+- `data-testid`: el layout pone `pagina`; usa los tuyos con prefijo de tu módulo.
 
 ---
 
@@ -611,3 +718,4 @@ Comando del catálogo 6.21 → nombre de la acción. Datos: `MapaComandos['<coma
 | Fecha | Cambio | Pedido por |
 |---|---|---|
 | 01/10/2026 | Versión inicial (F2-B): API de estado, 106 rutas, 15 `EventoUI`, 23 pistas, 13 reportes y 5 plantillas PDF, puertos por paquete | F2-B |
+| 01/10/2026 | Sección 14 (componentes de interfaz), marcador común `data-testid="pagina"`, `@/ui/ligero`, selectores del layout como menús (`selector-rol` → `rol-<rol>`, `selector-moneda` → `moneda-<código>`, `selector-local` → `local-<id>`) | F2-C |

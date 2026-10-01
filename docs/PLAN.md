@@ -5238,6 +5238,10 @@ Decisiones tomadas al implementar F2-B; cada una tiene su línea en `DECISIONES.
 | Pruebas | `window.__kc.eventosUI()` y `eventosDominio()`; Playwright con `vite build` + `vite preview` sin `tsc`, puertos por paquete y proyecto `rendimiento` al final | 5.16, 9.1.9 |
 | QR | Formato compacto (tipo en una letra, claves abreviadas, sin nulos, `deflate-raw` + base64url) para que una venta quepa en 300 caracteres | 5.6.8 |
 
+### 11.8 Ajustes de F2-C (sistema de diseño y layouts, 01/10/2026)
+
+Detalle y justificación en `DECISIONES.md` (entradas "F2-C") e `informes/F2-C.md`. En resumen: Figtree se mantiene (trae `tnum`); toasts y hoja inferior ligeros (sin Radix) y layouts diferidos para cuidar el arranque de `/app`; barril `@/ui/ligero`; EAN-13 con la implementación vectorial de `lib`; proporciones de las prendas superiores corregidas por transformación (`PROPORCION`) y cuellos y zapato redibujados; iniciales del avatar ≥ 12 px; etiquetas directas en un carril derecho sin encimarse con escala Y propia; selectores del layout como menús con `data-testid` por opción y marcador común `data-testid="pagina"`; sin aviso de la guarda al cambiar de rol a propósito; `/panel` < 1024 px = aviso de pantalla pequeña (medición de `/panel/inicio` a 1440 × 900); navegación en los grupos de 8.4.2; tokens agregados (`--monedastrip-h` en `--sticky-top`, `--z-modal-popover`, marco de teléfono, tamaños de botón y wordmark); íconos y Open Graph generados con contornos de Figtree (`npm run iconos`); `og:image` debe pasar a URL absoluta al desplegar.
+
 ### 11.4 Lo descartado y su porqué
 
 | Propuesta | Origen | Por qué no |

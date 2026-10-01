@@ -1,5 +1,5 @@
 import { ChevronsLeft, ChevronsRight } from 'lucide-react';
-import { Link, NavLink } from 'react-router';
+import { Link, NavLink, useLocation } from 'react-router';
 import { GRUPOS_MENU, MENU_ESCRITORIO } from '@/config/navegacion';
 import { MARCA } from '@/config/marca';
 import { rutas } from '@/app/rutas';
@@ -23,6 +23,7 @@ export function BarraLateral({ riel, alternarRiel }: { riel: boolean; alternarRi
   const personas = usePersonasRol();
   const persona = personas[rol];
   const items = MENU_ESCRITORIO.filter((i) => i.roles.includes(rol));
+  const { pathname } = useLocation();
   return (
     <aside
       data-testid="barra-lateral"
@@ -49,11 +50,14 @@ export function BarraLateral({ riel, alternarRiel }: { riel: boolean; alternarRi
               )}
               <ul className="flex flex-col gap-0.5">
                 {del.map((i) => {
+                  // className estático (no función): el Tooltip del riel (Slot de Radix) no sabe combinar funciones.
+                  const isActive = pathname === i.ruta || pathname.startsWith(`${i.ruta}/`);
                   const enlace = (
                     <NavLink
                       to={i.ruta}
                       data-testid={`menu-${i.id}`}
-                      className={({ isActive }) =>
+                      aria-current={isActive ? 'page' : undefined}
+                      className={
                         cn(
                           'mx-3 flex h-9 items-center gap-3 rounded-none t-nav outline-offset-[-2px] transition-colors duration-(--dur-instant) focus-visible:outline-2 focus-visible:outline-focus',
                           riel ? 'justify-center px-0' : 'px-3',
@@ -108,5 +112,5 @@ export function BarraLateral({ riel, alternarRiel }: { riel: boolean; alternarRi
 /** Inicial de la marca para el riel (la marca es solo tipografía, 8.15.5). */
 function MarcaCorta() {
   const m = useMarca();
-  return <span className="t-wordmark text-[1.25rem] tracking-normal">{m.nombre.slice(0, 1)}</span>;
+  return <span className="t-wordmark-tienda tracking-normal">{m.nombre.slice(0, 1)}</span>;
 }
