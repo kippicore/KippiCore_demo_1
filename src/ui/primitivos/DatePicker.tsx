@@ -65,7 +65,7 @@ function Disparador({ id, texto, vacio, error, ...resto }: { id: string; texto: 
     <button
       id={id}
       type="button"
-      aria-invalid={error || undefined}
+      data-error={error || undefined}
       className={cn(CLASE_CAMPO, 'inline-flex h-10 items-center gap-2 px-3 text-left', !texto && 'text-placeholder')}
       {...resto}
     >

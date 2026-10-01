@@ -107,7 +107,6 @@ export const Button = forwardRef<HTMLButtonElement, PropsButton>(function Button
       disabled={disabled}
       aria-busy={cargando || undefined}
       title={disabled && motivo ? motivo : title}
-      aria-description={disabled && motivo ? motivo : undefined}
       className={cn(clasesBoton({ variante, tamano, anchoCompleto, tienda, soloIcono }), className)}
       style={minimo ? { ...style, minWidth: minimo } : style}
       {...resto}

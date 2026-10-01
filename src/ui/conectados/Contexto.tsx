@@ -47,11 +47,11 @@ export function SelectorLocal() {
   if (rol === 'vendedor')
     return (
       <Tooltip texto="Tu local está fijo en este rol">
-        <span data-testid="selector-local" data-valor={local} aria-label={`Local: ${nombre} (fijo en este rol)`} tabIndex={0} className={cn(DISPARADOR, 'cursor-default hover:bg-transparent')}>
+        <button type="button" aria-disabled="true" data-testid="selector-local" data-valor={local} aria-label={`Local: ${nombre} (fijo en este rol)`} className={cn(DISPARADOR, 'cursor-default hover:bg-transparent')}>
           <Icono icono={MapPin} tamano={16} className="text-ink-2" />
           {nombre}
           <Icono icono={Lock} tamano={14} className="text-ink-2" />
-        </span>
+        </button>
       </Tooltip>
     );
   const opciones: { id: Id | 'todos'; nombre: string; bodega?: boolean }[] = [{ id: 'todos', nombre: 'Todos los locales' }, ...locales.map((l) => ({ id: l.id, nombre: l.nombre, bodega: !l.vende }))];
@@ -177,7 +177,7 @@ export function SelectorRol({ resaltar }: { resaltar?: boolean }) {
   return (
     <RM.Root open={abierto} onOpenChange={setAbierto} modal={false}>
       <RM.Trigger className={cn(DISPARADOR, 'relative')} data-testid="selector-rol" data-valor={rol} aria-label={`Rol: ${actual.rol}`}>
-        <Avatar nombre={actual.nombre} tamano={24} />
+        <Avatar nombre={actual.nombre} tamano={24} fondo="surface" />
         {actual.rol}
         <Icono icono={ChevronDown} tamano={14} className="text-ink-2" />
         {resaltar && !abierto && <PuntoPulsante />}

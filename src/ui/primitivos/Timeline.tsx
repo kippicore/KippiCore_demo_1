@@ -45,12 +45,11 @@ function Nodo({ estado }: { estado: EstadoPaso }) {
 }
 
 export function Timeline({ pasos, className }: { pasos: readonly PasoTimeline[]; className?: string }) {
-  let faseAnterior: string | undefined;
+  const conFase = pasos.map((p, i) => !!p.fase && p.fase !== pasos.slice(0, i).reverse().find((x) => x.fase)?.fase);
   return (
     <ol className={cn('relative', className)}>
       {pasos.map((p, i) => {
-        const mostrarFase = p.fase && p.fase !== faseAnterior;
-        faseAnterior = p.fase ?? faseAnterior;
+        const mostrarFase = conFase[i];
         const siguiente = pasos[i + 1];
         const tramoHecho = p.estado === 'hecho' && siguiente && siguiente.estado !== 'pendiente';
         return (

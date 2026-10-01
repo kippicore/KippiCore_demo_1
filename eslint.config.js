@@ -139,7 +139,8 @@ export default tseslint.config(
   capa(['src/lib/**'], [r(['react', 'react-dom', 'react-dom/*', 'zustand']), ESTADO, UI, LAYOUTS, MODULOS, GENERADOR, SELECTORES, REPORTES]),
   capa(['src/estado/**'], [UI, LAYOUTS, MODULOS]),
   capa(['src/ui/**'], [ESTADO, SELECTORES, MODULOS, LAYOUTS, GENERADOR, REPORTES]),
-  capa(['src/ui/conectados/**'], [MODULOS, LAYOUTS_SALVO_CONTRATOS, GENERADOR]),
+  // Los conectados y la página interna del sistema de diseño (solo desarrollo) leen el estado y los selectores.
+  capa(['src/ui/conectados/**', 'src/ui/sistema/**'], [MODULOS, LAYOUTS_SALVO_CONTRATOS, GENERADOR]),
   capa(['src/layouts/**', 'src/app/**'], [GENERADOR, INTERNOS_MODULO]),
   capa(['src/modulos/**', 'src/movil/**', 'src/tienda/**', 'src/seguimiento/**'], [GENERADOR, LAYOUTS_SALVO_CONTRATOS, INTERNOS_MODULO]),
 

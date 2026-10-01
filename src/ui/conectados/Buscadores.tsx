@@ -1,5 +1,5 @@
 import { UserPlus } from 'lucide-react';
-import { useDeferredValue, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import type { Cliente, Id } from '@/dominio/tipos';
 import { useDinero, useEstadoDominio, useFiltroLocal, useHoy, useSel } from '@/estado';
 import { selBuscarProducto, selClientes, selExistencia, selVariantePorEan, selVariantesPorProducto, type ResultadoBusqueda } from '@/selectores';
@@ -13,7 +13,7 @@ import { MiniaturaPrenda } from '../prenda/Prenda';
  * Buscadores conectados (PLAN 8.7.4). Filtran con los selectores (sin tildes, por nombre, referencia, SKU o EAN) y
  * muestran el ítem rico de 8.7.4.
  *
- *   <BuscadorProducto alElegir={(r) => agregar(r.variante ?? null, r.producto)} autoFocus />   // POS: Enter con un EAN-13 elige la variante
+ *   <BuscadorProducto alElegir={(r) => agregar(r.variante ?? null, r.producto)} enfocarAlMontar />   // POS: Enter con un EAN-13 elige la variante
  *   <BuscadorCliente alElegir={(c) => setCliente(c)} alCrear={(texto) => abrirCrear(texto)} />   // primera opción fija: Consumidor final
  */
 export interface PropsBuscadorProducto {
@@ -21,12 +21,17 @@ export interface PropsBuscadorProducto {
   placeholder?: string;
   /** Local para "14 en este local" (por defecto, el del contexto). */
   localId?: Id | 'todos';
-  autoFocus?: boolean;
+  /** Enfoca el campo al montar (POS: listo para escanear). */
+  enfocarAlMontar?: boolean;
   enModal?: boolean;
   className?: string;
 }
 
-export function BuscadorProducto({ alElegir, placeholder = 'Buscar por nombre, referencia o código', localId, autoFocus, enModal, className }: PropsBuscadorProducto) {
+export function BuscadorProducto({ alElegir, placeholder = 'Buscar por nombre, referencia o código', localId, enfocarAlMontar, enModal, className }: PropsBuscadorProducto) {
+  const campo = useRef<HTMLInputElement | null>(null);
+  useEffect(() => {
+    if (enfocarAlMontar) campo.current?.focus();
+  }, [enfocarAlMontar]);
   const [texto, setTexto] = useState('');
   const diferido = useDeferredValue(texto);
   const e = useEstadoDominio();
@@ -86,7 +91,7 @@ export function BuscadorProducto({ alElegir, placeholder = 'Buscar por nombre, r
           setTexto('');
         }
       }}
-      autoFocus={autoFocus}
+      ref={campo}
       enModal={enModal}
       className={className}
       data-testid="buscador-producto"

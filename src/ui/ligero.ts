@@ -14,6 +14,7 @@ export { Timeline, TimelineCompacta, pasosImportacion } from './primitivos/Timel
 export { Toaster, avisar, quitarAviso, type TipoAviso } from './primitivos/Toast';
 export { Input, InputNumero, Textarea, Campo } from './primitivos/Input';
 export { Cifra } from './texto/Cifra';
+export { EncabezadoPagina, Migas, type Miga } from './primitivos/EncabezadoPagina';
 export { NotaLegal } from './texto/NotaLegal';
 export { Sparkline } from './graficos/Sparkline';
 export { Prenda, MiniaturaPrenda } from './prenda/Prenda';

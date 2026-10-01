@@ -1,56 +1,59 @@
-import { useEffect, useState } from 'react';
-import { codificarQr, emitirUI, overrideHoy, urlAppConAcciones, useDatos } from '@/estado';
+import { Smartphone } from 'lucide-react';
+import { lazy, Suspense } from 'react';
+import { createStore, useStore } from 'zustand';
+import { emitirUI } from '@/estado';
+import { Button } from '@/ui/primitivos/Button';
+import { Dialog } from '@/ui/primitivos/Dialog';
+import { Skeleton } from '@/ui/primitivos/Estados';
 
 /**
- * Punto de extensión (PLAN 9.1.6) con implementación mínima: E1 lo reemplaza con el modal del QR de 160 px y la
- * vista previa enmarcada (`<iframe src="/app?marco=1">`). Aquí solo arma el enlace con las últimas acciones.
+ * "Ver app del dueño" (PLAN 8.4.3, 2.4 ítem 8, punto de extensión de E1). Modal `lg` con dos columnas: el QR de
+ * 160 px hacia `/app` (con las últimas 1–3 acciones en el hash, 5.6.8) y la vista previa de `/app` en el marco de
+ * teléfono (que adopta el estado de esta pestaña). Emite `qr_abierto`. Se abre desde la barra superior, el menú "?"
+ * y "Prueba esto" con `abrirAppDueno()`. El contenido (QR y marco) se carga diferido.
+ * Conserva `data-testid`: `ver-app-dueno`, `modal-app-dueno`, `url-app`.
  */
-export function ModalAppDueno({ abierto, alCerrar }: { abierto: boolean; alCerrar: () => void }) {
-  const [url, setUrl] = useState<string | null>(null);
-  const ancla = useDatos((s) => s.ancla);
-  const registro = useDatos((s) => s.registro);
-  useEffect(() => {
-    if (!abierto) return;
-    let vigente = true;
-    void codificarQr(ancla, registro).then((d) => {
-      if (vigente) setUrl(urlAppConAcciones(window.location.origin, d, overrideHoy()));
-    });
-    return () => {
-      vigente = false;
-    };
-  }, [abierto, ancla, registro]);
-  if (!abierto) return null;
+const almacen = createStore<{ abierto: boolean }>()(() => ({ abierto: false }));
+
+export function abrirAppDueno(): void {
+  almacen.setState({ abierto: true });
+  emitirUI('qr_abierto');
+}
+
+const Contenido = lazy(() => import('./ContenidoModalApp'));
+
+export function ModalAppDueno({ abierto, alCerrar }: { abierto?: boolean; alCerrar?: () => void } = {}) {
+  const abiertoGlobal = useStore(almacen, (s) => s.abierto);
+  const visible = abierto ?? abiertoGlobal;
+  const cerrar = () => {
+    almacen.setState({ abierto: false });
+    alCerrar?.();
+  };
   return (
-    <div role="dialog" aria-label="App del dueño" data-testid="modal-app-dueno" style={{ position: 'fixed', inset: 0, background: '#0008', display: 'grid', placeItems: 'center', zIndex: 60 }}>
-      <div style={{ background: '#fff', padding: 24, maxWidth: 420 }}>
-        <p>Abre la app del dueño en tu celular:</p>
-        <p data-testid="url-app" style={{ wordBreak: 'break-all', fontSize: 12 }}>
-          {url ?? 'Preparando el enlace…'}
-        </p>
-        <button type="button" onClick={alCerrar}>
-          Cerrar
-        </button>
-      </div>
-    </div>
+    <Dialog abierto={visible} alCambiar={(v) => !v && cerrar()} ancho="lg" eyebrow="App del dueño" titulo="Tu negocio en el bolsillo" data-testid="modal-app-dueno">
+      <Suspense
+        fallback={
+          <div className="grid grid-cols-[1fr_auto] gap-8">
+            <Skeleton className="size-40" />
+            <Skeleton className="h-[460px] w-[230px]" />
+          </div>
+        }
+      >
+        <Contenido />
+      </Suspense>
+    </Dialog>
   );
 }
 
-/** Botón "Ver app del dueño" de la barra superior. */
+/** Botón "Ver app del dueño" de la barra superior (secundario sm con `Smartphone`). */
 export function BotonAppDueno() {
-  const [abierto, setAbierto] = useState(false);
   return (
     <>
-      <button
-        type="button"
-        data-testid="ver-app-dueno"
-        onClick={() => {
-          setAbierto(true);
-          emitirUI('qr_abierto');
-        }}
-      >
-        Ver app del dueño
-      </button>
-      <ModalAppDueno abierto={abierto} alCerrar={() => setAbierto(false)} />
+      <Button variante="secondary" tamano="sm" icono={Smartphone} data-testid="ver-app-dueno" onClick={abrirAppDueno}>
+        <span className="max-wide:hidden">Ver app del dueño</span>
+        <span className="wide:hidden">App del dueño</span>
+      </Button>
+      <ModalAppDueno />
     </>
   );
 }

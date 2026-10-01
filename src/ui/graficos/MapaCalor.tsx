@@ -127,13 +127,14 @@ export interface PasoCascada {
 }
 
 export function GraficoCascada({ pasos, formato, alto = 240, className }: { pasos: readonly PasoCascada[]; formato: (n: number) => string; alto?: number; className?: string }) {
-  let acumulado = 0;
-  const barras = pasos.map((p) => {
+  const barras: (PasoCascada & { bajo: number; alto: number })[] = [];
+  for (let i = 0, acumulado = 0; i < pasos.length; i++) {
+    const p = pasos[i]!;
     const inicio = p.total ? 0 : acumulado;
     const fin = p.total ? p.valor : acumulado + p.valor;
     acumulado = p.total ? p.valor : fin;
-    return { ...p, bajo: Math.min(inicio, fin), alto: Math.max(inicio, fin) };
-  });
+    barras.push({ ...p, bajo: Math.min(inicio, fin), alto: Math.max(inicio, fin) });
+  }
   const max = Math.max(...barras.map((b) => b.alto), 1);
   const min = Math.min(0, ...barras.map((b) => b.bajo));
   const rango = max - min;

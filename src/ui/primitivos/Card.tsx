@@ -137,13 +137,14 @@ export function Variacion({ v, sobreInk }: { v: VariacionKpi; sobreInk?: boolean
 
 export function Kpi({ etiqueta, valor, formatear, completo, variacion, serie, nota, a, destacada, ayuda, animar = true, className, ...resto }: PropsKpi) {
   return (
-    <Card a={a} padding="compacta" destacada={destacada} className={cn('flex min-h-[132px] flex-col', className)} data-testid={resto['data-testid']}>
+    <Card a={a} padding="compacta" destacada={destacada} className={cn('@container flex min-h-[132px] flex-col', className)} data-testid={resto['data-testid']}>
       <div data-kpi={resto['data-kpi']} className="flex h-full flex-col">
         <p className={cn('flex items-center gap-1.5 t-eyebrow', destacada ? 'text-inverse' : 'text-ink-2')}>
           {etiqueta}
           {ayuda}
         </p>
-        <Cifra valor={valor} formatear={formatear} estatica={!animar} title={completo} className="mt-3 t-kpi" />
+        {/* En tarjetas angostas (6 por fila a 1440) la cifra baja a t-kpi-sm para no partirse en dos líneas. */}
+        <Cifra valor={valor} formatear={formatear} estatica={!animar} title={completo} className="mt-3 whitespace-nowrap t-kpi-sm @[200px]:t-kpi" />
         <div className="mt-2 min-h-[18px]">{variacion ? <Variacion v={variacion} sobreInk={destacada} /> : nota ? <span className={cn('t-small', destacada ? 'text-inverse/80' : 'text-muted')}>{nota}</span> : null}</div>
         {serie && serie.length > 1 && (
           <div className="mt-auto pt-3">

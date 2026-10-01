@@ -72,23 +72,22 @@ export function Cifra({ valor, formatear, contarDesdeCero, claveSesion, incremen
     primera.current = false;
     if (desde === valor) return;
     anterior.current = valor;
-    if (estatica) {
-      setMostrado(valor);
-      return;
-    }
+    if (estatica) return;
     if (esPrimera && desdeCero) marcarContada(claveSesion);
     const reducido = prefiereMenosMovimiento();
-    if (!esPrimera) setEfecto((e) => ({ n: (e?.n ?? 0) + 1, delta: valor - desde, reducido }));
-    if (reducido) {
-      setMostrado(valor);
-      return;
-    }
     const inicio = performance.now();
+    // Todas las actualizaciones van en el cuadro de animación (nunca sincrónicas dentro del efecto).
     const paso = (t: number) => {
+      if (t === -1 || reducido) {
+        setMostrado(valor);
+        return;
+      }
       const p = Math.min(1, (t - inicio) / DURACION);
       setMostrado(desde + (valor - desde) * curva(p));
       if (p < 1) raf.current = requestAnimationFrame(paso);
     };
+    if (!esPrimera)
+      requestAnimationFrame(() => setEfecto((e) => ({ n: (e?.n ?? 0) + 1, delta: valor - desde, reducido })));
     if (raf.current) cancelAnimationFrame(raf.current);
     raf.current = requestAnimationFrame(paso);
     return () => {
@@ -97,7 +96,8 @@ export function Cifra({ valor, formatear, contarDesdeCero, claveSesion, incremen
   }, [valor, estatica, desdeCero, claveSesion]);
 
   // Redondeo al formatear cada cuadro: las cifras enteras no muestran decimales intermedios.
-  const texto = formatear(Number.isInteger(valor) ? Math.round(mostrado) : mostrado);
+  const actual = estatica ? valor : mostrado;
+  const texto = formatear(Number.isInteger(valor) ? Math.round(actual) : actual);
   return (
     <Como
       className={cn('relative inline-block num', efecto?.reducido && 'animate-flash', className)}
@@ -106,8 +106,8 @@ export function Cifra({ valor, formatear, contarDesdeCero, claveSesion, incremen
       data-testid={resto['data-testid']}
       data-valor={valor}
     >
-      <span aria-hidden={mostrado !== valor || undefined}>{texto}</span>
-      {mostrado !== valor && <span className="sr-only">{formatear(valor)}</span>}
+      <span aria-hidden={actual !== valor || undefined}>{texto}</span>
+      {actual !== valor && <span className="sr-only">{formatear(valor)}</span>}
       {efecto && !efecto.reducido && (
         <span
           key={`s${efecto.n}`}

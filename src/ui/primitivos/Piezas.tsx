@@ -33,9 +33,9 @@ export function iniciales(nombre: string): string {
  *   <Avatar nombre="Sebastián Cárdenas" tamano={32} indicador="presente" />
  * Iniciales en 600 al ≈ 40 % del tamaño, nunca por debajo de 12 px (a 24 y 32 px, 12 y 13 px: regla de 8.0.6).
  */
-export function Avatar({ nombre, tamano = 32, indicador, className }: { nombre: string; tamano?: TamanoAvatar; indicador?: 'presente' | 'ausente'; className?: string }) {
+export function Avatar({ nombre, tamano = 32, indicador, fondo = 'selected', className }: { nombre: string; tamano?: TamanoAvatar; indicador?: 'presente' | 'ausente'; fondo?: 'selected' | 'surface'; className?: string }) {
   return (
-    <span role="img" aria-label={nombre} className={cn('relative inline-flex shrink-0 items-center justify-center rounded-full bg-selected font-semibold text-ink', TAM_AVATAR[tamano], className)}>
+    <span role="img" aria-label={nombre} className={cn('relative inline-flex shrink-0 items-center justify-center rounded-full font-semibold text-ink', fondo === 'surface' ? 'bg-surface' : 'bg-selected', TAM_AVATAR[tamano], className)}>
       <span aria-hidden>{iniciales(nombre)}</span>
       {indicador && (
         <span

@@ -93,7 +93,8 @@ for (let g = 0; g < GRUPOS; g++) {
     const p = await parametros(page);
     for (const n of grupo) {
       const url = urlDe(n, p);
-      const esperado = n === 'entrada' ? 'entrada' : n === 'app' ? 'app-hoy' : 'pagina-esqueleto';
+      // Marcador común de página (F2-C): cada layout pone data-testid="pagina" en el contenedor de la página.
+      const esperado = n === 'entrada' ? 'entrada' : 'pagina';
       for (const fase of ['carga', 'recarga'] as const) {
         if (fase === 'carga') await page.goto(conHoy(url));
         else await page.reload();
@@ -128,7 +129,8 @@ test('la carga inicial no trae jsPDF ni ExcelJS (solo al exportar, 5.15)', async
 test('la guarda de rol lleva al vendedor a su inicio', async ({ page, irA }) => {
   await irA('/panel/inicio');
   await esperarDatos(page);
-  await page.getByTestId('selector-rol').selectOption('vendedor');
+  await page.getByTestId('selector-rol').click();
+  await page.getByTestId('rol-vendedor').click();
   await expect(page).toHaveURL(/\/panel\/mi-dia/);
   await page.goto(conHoy('/panel/pagos/flujo'));
   await expect(page).toHaveURL(/\/panel\/mi-dia/);

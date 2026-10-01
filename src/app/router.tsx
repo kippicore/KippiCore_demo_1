@@ -1,10 +1,6 @@
 import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
 import { INICIO_POR_ROL } from '@/config/navegacion';
 import { useRolActivo } from '@/estado';
-import { LayoutEscritorio } from '@/layouts/escritorio/LayoutEscritorio';
-import { LayoutMovil } from '@/layouts/movil/LayoutMovil';
-import { LayoutTienda } from '@/layouts/tienda/LayoutTienda';
-import { LayoutPortal } from '@/layouts/portal/LayoutPortal';
 import ErrorRuta from './ErrorRuta';
 import NoEncontrada from './NoEncontrada';
 import { GuardaRol } from './Guardas';
@@ -169,11 +165,22 @@ function SinContenido() {
 }
 const base = { errorElement: <ErrorRuta />, HydrateFallback: SinContenido } as const;
 
+/**
+ * Los layouts también van diferidos (F2-C): el del escritorio trae Radix, cmdk y el buscador; el de /app no debe
+ * cargarlos (presupuesto de arranque de 2,5 s con CPU ×4). El router los pide en paralelo con la página.
+ */
+const layout = {
+  escritorio: lazyConReintento(() => import('@/layouts/escritorio/LayoutEscritorio').then((m) => ({ default: m.LayoutEscritorio }))),
+  movil: lazyConReintento(() => import('@/layouts/movil/LayoutMovil').then((m) => ({ default: m.LayoutMovil }))),
+  tienda: lazyConReintento(() => import('@/layouts/tienda/LayoutTienda').then((m) => ({ default: m.LayoutTienda }))),
+  portal: lazyConReintento(() => import('@/layouts/portal/LayoutPortal').then((m) => ({ default: m.LayoutPortal }))),
+};
+
 export const RUTAS_ROUTER: RouteObject[] = [
   { ...hija('entrada', false), ...base },
   {
     path: '/panel',
-    element: <LayoutEscritorio />,
+    lazy: layout.escritorio,
     ...base,
     children: [
       { index: true, element: <InicioDelRol /> },
@@ -184,18 +191,18 @@ export const RUTAS_ROUTER: RouteObject[] = [
   },
   {
     path: '/app',
-    element: <LayoutMovil />,
+    lazy: layout.movil,
     ...base,
     children: [...app.map((n) => hija(n, false, n === 'app')), { path: '*', element: <NoEncontrada /> }],
   },
   {
     path: '/tienda',
-    element: <LayoutTienda />,
+    lazy: layout.tienda,
     ...base,
     children: tienda.map((n) => hija(n, false, n === 'tienda')),
   },
   {
-    element: <LayoutPortal />,
+    lazy: layout.portal,
     ...base,
     children: [hija('seguimiento', false)],
   },

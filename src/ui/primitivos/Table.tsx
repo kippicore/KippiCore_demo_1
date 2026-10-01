@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { entero } from '@/lib/formato';
 import { cn } from '../cn';
 import { Checkbox } from './Controles';
@@ -118,7 +118,8 @@ export function Table<F>({
   ...resto
 }: PropsTable<F>) {
   const [orden, setOrden] = useState(ordenInicial ?? null);
-  const [pagina, setPagina] = useState(0);
+  // Página elegida a mano; sin elegir, la de la fila resaltada (enlace profundo) o la primera.
+  const [paginaManual, setPagina] = useState<number | null>(null);
   const [tamPagina, setTamPagina] = useState<number>(porPagina);
   const contenedor = useRef<HTMLDivElement | null>(null);
   const [desborda, setDesborda] = useState(false);
@@ -140,19 +141,13 @@ export function Table<F>({
   }, [filas, orden, columnas]);
 
   const paginas = tamPagina ? Math.max(1, Math.ceil(ordenadas.length / tamPagina)) : 1;
-  const paginaReal = Math.min(pagina, paginas - 1);
-  const visibles = tamPagina ? ordenadas.slice(paginaReal * tamPagina, (paginaReal + 1) * tamPagina) : ordenadas;
-
-  // Lleva a la página de la fila resaltada (enlace profundo) una vez.
-  const yaResalto = useRef(false);
-  useEffect(() => {
-    if (!resaltada || yaResalto.current || !tamPagina) return;
+  const paginaResaltada = useMemo(() => {
+    if (!resaltada || !tamPagina) return 0;
     const i = ordenadas.findIndex(resaltada);
-    if (i >= 0) {
-      yaResalto.current = true;
-      setPagina(Math.floor(i / tamPagina));
-    }
+    return i >= 0 ? Math.floor(i / tamPagina) : 0;
   }, [ordenadas, resaltada, tamPagina]);
+  const paginaReal = Math.min(paginaManual ?? paginaResaltada, paginas - 1);
+  const visibles = tamPagina ? ordenadas.slice(paginaReal * tamPagina, (paginaReal + 1) * tamPagina) : ordenadas;
 
   // Sticky de la cabecera: el contenedor solo desplaza en horizontal si la tabla no cabe (si no, `clip`).
   useLayoutEffect(() => {
@@ -294,7 +289,6 @@ export function Table<F>({
                     )}
                   >
                     {conSeleccion && (
-                      // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
                       <td className="w-10 pl-4" onClick={(e) => e.stopPropagation()}>
                         <Checkbox
                           aria-label="Seleccionar fila"
@@ -327,7 +321,6 @@ export function Table<F>({
                       );
                     })}
                     {accionesFila && (
-                      // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
                       <td className="w-12 pr-2 text-right" onClick={(e) => e.stopPropagation()}>
                         <span className="inline-flex opacity-40 transition-opacity group-hover/fila:opacity-100 group-focus-within/fila:opacity-100 focus-within:opacity-100">
                           {accionesFila(f)}

@@ -1,125 +1,111 @@
-import { useEffect } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router';
-import type { Moneda, Rol } from '@/dominio/tipos';
-import { MENU_ESCRITORIO } from '@/config/navegacion';
-import { PERSONAS_ROL } from '@/config/permisos';
-import { emitirUI, useDatos, useMarca, useRolActivo, useSesion } from '@/estado';
+import { useEffect, useState } from 'react';
+import { Outlet, useLocation } from 'react-router';
+import { RUTAS, rutaDeUrl } from '@/app/rutas';
+import { useMarca, useRolActivo, useSesion } from '@/estado';
 import { RequiereDatos } from '@/app/RequiereDatos';
-import { GuiaFlotante, MenuAyuda } from '@/modulos/guia/publico';
-import { BotonAppDueno } from '@/movil/publico';
+import { GuiaFlotante } from '@/modulos/guia/publico';
+import { FranjaMoneda } from '@/ui/conectados/Contexto';
+import { useResaltar } from '@/ui/conectados/Guia';
+import { ProveedorTooltips } from '@/ui/primitivos/Tooltip';
 import { AvisosGlobales } from '../AvisosGlobales';
+import { AvisoPantallaPequena } from './AvisoPantallaPequena';
+import { BarraLateral } from './BarraLateral';
+import { BarraSuperior } from './BarraSuperior';
+import { FranjaRol } from './FranjaRol';
 
 /**
- * Layout mínimo y funcional del escritorio (F2-B). F2-C lo reemplaza con el diseño final (8.4): barra lateral
- * filtrada por rol, barra superior con los selectores de local, moneda y rol, franja de rol y de moneda.
+ * Layout del escritorio `/panel` (PLAN 8.4): franja de rol (36 px, solo si el rol no es dueño) · barra lateral de
+ * 248 px (riel de 72 px entre 1024 y 1279 o a mano) · barra superior flotante + franja de moneda · contenido con
+ * scroll de documento (las cabeceras fijas de tabla usan `--sticky-top`). Honra `?resaltar=rol|moneda`. Pone
+ * `data-rol` y `data-moneda` en <html> (alturas de franjas) y un marcador común `data-testid="pagina"` en el
+ * contenedor de cada página. Por debajo de 1024 px muestra el aviso de pantalla pequeña.
  */
+const CLAVE_RIEL = 'kc:lateral:riel';
+
+function useRiel(): [boolean, () => void] {
+  const [manual, setManual] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(CLAVE_RIEL) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const [estrecho, setEstrecho] = useState(() => typeof matchMedia === 'function' && matchMedia('(max-width: 1279px)').matches);
+  useEffect(() => {
+    if (typeof matchMedia !== 'function') return;
+    const mq = matchMedia('(max-width: 1279px)');
+    const f = () => setEstrecho(mq.matches);
+    mq.addEventListener('change', f);
+    return () => mq.removeEventListener('change', f);
+  }, []);
+  return [
+    manual || estrecho,
+    () => {
+      const v = !(manual || estrecho);
+      setManual(v);
+      try {
+        localStorage.setItem(CLAVE_RIEL, v ? '1' : '0');
+      } catch {
+        /* modo memoria */
+      }
+    },
+  ];
+}
+
 export function LayoutEscritorio() {
   const rol = useRolActivo();
+  const moneda = useSesion((s) => s.moneda);
   const { pathname } = useLocation();
   const marca = useMarca();
-  const local = useSesion((s) => s.localId);
-  const moneda = useSesion((s) => s.moneda);
-  const cambiarRol = useSesion((s) => s.cambiarRol);
-  const cambiarLocal = useSesion((s) => s.cambiarLocal);
-  const cambiarMoneda = useSesion((s) => s.cambiarMoneda);
   const recordarRuta = useSesion((s) => s.recordarRuta);
-  const locales = useDatos((s) => s.estado?.locales);
-  const usuarios = useDatos((s) => s.estado?.usuarios);
-  const reconstruyendo = useDatos((s) => s.reconstruyendo);
+  const resaltar = useResaltar();
+  const [riel, alternarRiel] = useRiel();
+  const nombre = rutaDeUrl(pathname);
+
   useEffect(() => {
-    document.documentElement.dataset.rol = rol;
-  }, [rol]);
+    const raiz = document.documentElement;
+    raiz.dataset.rol = rol;
+    raiz.dataset.moneda = moneda;
+    raiz.dataset.theme = 'light';
+    return () => {
+      delete raiz.dataset.rol;
+      delete raiz.dataset.moneda;
+    };
+  }, [rol, moneda]);
   useEffect(() => {
     recordarRuta(pathname);
   }, [pathname, recordarRuta]);
-  const menu = MENU_ESCRITORIO.filter((i) => i.roles.includes(rol));
-  const usuarioRol = usuarios?.[PERSONAS_ROL[rol].usuarioId];
+  useEffect(() => {
+    document.title = `${nombre ? RUTAS[nombre].titulo : 'KippiCore'} · ${marca.nombre} · KippiCore CRM`;
+  }, [nombre, marca.nombre]);
+
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', minHeight: '100vh' }}>
-      <nav aria-label="Menú principal" style={{ borderRight: '1px solid #e6e6e6', padding: 16 }}>
-        <p style={{ fontWeight: 900, letterSpacing: '0.18em' }}>{marca.nombre.toUpperCase()}</p>
-        <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gap: 6 }}>
-          {menu.map((i) => (
-            <li key={i.id}>
-              <NavLink to={i.ruta}>{i.etiqueta}</NavLink>
-            </li>
-          ))}
-        </ul>
-        <p style={{ fontSize: 12, color: '#6e6e6e' }}>Desarrollado por KippiCore</p>
-      </nav>
-      <div>
-        <header style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '8px 16px', borderBottom: '1px solid #e6e6e6' }}>
-          <label>
-            Local{' '}
-            <select
-              data-testid="selector-local"
-              value={rol === 'vendedor' ? (usuarioRol?.localFijoId ?? local) : local}
-              disabled={rol === 'vendedor'}
-              onChange={(e) => cambiarLocal(e.target.value)}
-            >
-              <option value="todos">Todos los locales</option>
-              {Object.values(locales ?? {})
-                .filter((l) => !l.eliminadoEn)
-                .sort((a, b) => a.orden - b.orden)
-                .map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.nombre}
-                  </option>
-                ))}
-            </select>
-          </label>
-          <label>
-            Moneda{' '}
-            <select
-              data-testid="selector-moneda"
-              value={moneda}
-              onChange={(e) => {
-                cambiarMoneda(e.target.value as Moneda);
-                emitirUI('moneda_cambiada', { a: e.target.value });
-              }}
-            >
-              <option value="COP">COP</option>
-              <option value="USD">USD</option>
-              <option value="CNY">CNY</option>
-            </select>
-          </label>
-          <label>
-            Rol{' '}
-            <select
-              data-testid="selector-rol"
-              value={rol}
-              onChange={(e) => {
-                const r = e.target.value as Rol;
-                cambiarRol(r, usuarios?.[PERSONAS_ROL[r].usuarioId]?.localFijoId ?? null);
-                emitirUI('rol_cambiado', { a: r });
-              }}
-            >
-              <option value="dueno">Dueño</option>
-              <option value="vendedor">Vendedor · Usaquén</option>
-              <option value="bodega">Bodega</option>
-            </select>
-          </label>
-          <BotonAppDueno />
-          <MenuAyuda />
-          {reconstruyendo && <span style={{ fontSize: 12, color: '#6e6e6e' }}>Actualizando datos…</span>}
-        </header>
-        {rol !== 'dueno' && (
-          <p data-testid="franja-rol" style={{ background: '#f3ece4', margin: 0, padding: '6px 16px', fontSize: 13 }}>
-            Estás viendo KippiCore como: {PERSONAS_ROL[rol].etiqueta}
-            {usuarioRol ? ` (${usuarioRol.nombre})` : ''} ·{' '}
-            <button type="button" onClick={() => cambiarRol('dueno')}>
-              Volver a la vista del dueño
-            </button>
-          </p>
-        )}
-        <main id="contenido">
-          <RequiereDatos>
-            <Outlet />
-          </RequiereDatos>
-        </main>
+    <ProveedorTooltips>
+      <AvisoPantallaPequena />
+      <div data-testid="layout-escritorio" className="hidden min-h-dvh bg-canvas lg:block">
+        <a href="#contenido" className="sr-only z-(--z-tooltip) bg-ink px-4 py-2 text-inverse focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
+          Saltar al contenido
+        </a>
+        <FranjaRol />
+        <div className="grid min-h-[calc(100dvh-var(--rolestrip-h))] transition-[grid-template-columns] duration-(--dur-slow) ease-standard" style={{ gridTemplateColumns: `${riel ? 'var(--sidebar-w-rail)' : 'var(--sidebar-w)'} minmax(0, 1fr)` }}>
+          <BarraLateral riel={riel} alternarRiel={alternarRiel} />
+          <div className="min-w-0">
+            <div className="sticky top-(--rolestrip-h) z-(--z-topbar) px-6 pt-(--topbar-gap)">
+              <BarraSuperior resaltar={resaltar} />
+              <FranjaMoneda className="mt-2" />
+            </div>
+            <main id="contenido" tabIndex={-1} className="px-6 pb-20 outline-none wide:px-8">
+              <RequiereDatos>
+                <div key={pathname} data-testid="pagina" data-ruta={nombre ?? ''} className="mx-auto max-w-[1600px] animate-page-in">
+                  <Outlet />
+                </div>
+              </RequiereDatos>
+            </main>
+          </div>
+        </div>
+        <GuiaFlotante />
       </div>
-      <GuiaFlotante />
       <AvisosGlobales />
-    </div>
+    </ProveedorTooltips>
   );
 }
