@@ -37,26 +37,26 @@ export default function Portada() {
   return (
     <div data-testid="tienda-portada">
       <section aria-label="Portada" className="relative isolate h-[100svh] min-h-[560px] overflow-hidden bg-tienda-hero text-sobre-hero">
-        <div className="absolute inset-x-0 bottom-[36%] top-[84px] flex items-center justify-center md:bottom-[34%]">
+        <div className="absolute inset-x-0 bottom-[40%] top-[96px] flex items-center justify-center">
           {sueter && (
-            <Link to={enlaceProducto(sueter)} tabIndex={-1} aria-label={sueter.producto.nombre} className="relative -mr-[3%] w-[min(34vw,32svh)] translate-y-[8%] -rotate-3 self-end">
+            <Link to={enlaceProducto(sueter)} tabIndex={-1} aria-label={sueter.producto.nombre} className="relative -mr-[3%] w-[min(34vw,25svh)] translate-y-[8%] -rotate-3 self-end">
               <Prenda tipo={sueter.producto.tipoPrenda} color={sueter.color.hex} patron={sueter.color.patron} tamano="hero" />
             </Link>
           )}
           {abrigo && (
-            <Link to={enlaceProducto(abrigo)} tabIndex={-1} aria-label={abrigo.producto.nombre} className="relative z-10 w-[min(54vw,42svh)]">
+            <Link to={enlaceProducto(abrigo)} tabIndex={-1} aria-label={abrigo.producto.nombre} className="relative z-10 w-[min(52vw,32svh)]">
               <Prenda tipo={abrigo.producto.tipoPrenda} color={abrigo.color.hex} patron={abrigo.color.patron} tamano="hero" />
             </Link>
           )}
           {pantalon && (
-            <Link to={enlaceProducto(pantalon)} tabIndex={-1} aria-label={pantalon.producto.nombre} className="relative -ml-[3%] w-[min(34vw,32svh)] translate-y-[8%] rotate-3 self-end">
+            <Link to={enlaceProducto(pantalon)} tabIndex={-1} aria-label={pantalon.producto.nombre} className="relative -ml-[3%] w-[min(34vw,25svh)] translate-y-[8%] rotate-3 self-end">
               <Prenda tipo={pantalon.producto.tipoPrenda} color={pantalon.color.hex} patron={pantalon.color.patron} tamano="hero" />
             </Link>
           )}
         </div>
         <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-16 text-center md:pb-20">
           <p className="t-eyebrow uppercase text-sobre-hero/70">{TEXTOS.portada.eyebrow}</p>
-          <h1 className="mt-3 max-w-[16ch] t-display-sm uppercase md:t-display">{TEXTOS.portada.titular}</h1>
+          <h1 className="mt-3 max-w-[16ch] t-display-sm uppercase md:max-w-none md:t-display">{TEXTOS.portada.titular}</h1>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
             <Link to={con(rutas.tiendaCategoria('novedades'))} className="t-body-lg font-bold underline decoration-1 underline-offset-4">
               {TEXTOS.portada.comprar}
