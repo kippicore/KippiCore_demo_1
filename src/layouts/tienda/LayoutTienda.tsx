@@ -27,7 +27,7 @@ export const NAV_TIENDA = [
   { etiqueta: 'Zapatos y accesorios', categoria: 'zapatos-y-accesorios' },
 ] as const;
 
-const ICONO_TIENDA = 'inline-flex size-10 items-center justify-center text-ink transition-opacity hover:opacity-60';
+const ICONO_TIENDA = 'size-10 items-center justify-center text-ink transition-opacity hover:opacity-60';
 
 export function LayoutTienda() {
   const marca = useMarca();
@@ -46,7 +46,7 @@ export function LayoutTienda() {
   return (
     <div data-testid="layout-tienda" data-theme="light" className="min-h-dvh bg-canvas t-body-lg text-ink">
       <header className="glass fixed inset-x-2 top-2 z-(--z-topbar) flex h-14 items-center rounded-chrome px-3 md:inset-x-3 md:top-3 md:h-16 md:px-6">
-        <button type="button" className={cn(ICONO_TIENDA, 'md:hidden')} aria-label="Abrir el menú" onClick={() => setMenu(true)}>
+        <button type="button" className={cn(ICONO_TIENDA, 'inline-flex md:hidden')} aria-label="Abrir el menú" onClick={() => setMenu(true)}>
           <Icono icono={IconoMenu} tamano={20} />
         </button>
         <Link to={rutas.tienda()} className="absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0" aria-label={`${marca.nombre}, inicio de la tienda`}>
@@ -76,7 +76,7 @@ export function LayoutTienda() {
           <button type="button" className={cn(ICONO_TIENDA, 'hidden md:inline-flex')} aria-label="Favoritos">
             <Icono icono={Heart} tamano={20} />
           </button>
-          <Link to={rutas.tiendaBolsa()} className={cn(ICONO_TIENDA, 'relative')} aria-label={`Bolsa${bolsa ? `: ${bolsa} artículos` : ''}`}>
+          <Link to={rutas.tiendaBolsa()} className={cn(ICONO_TIENDA, 'relative inline-flex')} aria-label={`Bolsa${bolsa ? `: ${bolsa} artículos` : ''}`}>
             <Icono icono={ShoppingBag} tamano={20} />
             {bolsa > 0 && <span className="absolute right-0.5 top-0.5 inline-flex size-4 items-center justify-center rounded-full bg-ink t-micro num text-inverse">{bolsa}</span>}
           </Link>
@@ -87,7 +87,7 @@ export function LayoutTienda() {
         <div role="dialog" aria-modal="true" aria-label="Menú" className="fixed inset-0 z-(--z-modal) flex flex-col bg-canvas px-6 pb-10 pt-6 animate-fade-in">
           <div className="flex items-center justify-between">
             <Marca tamano="tienda" />
-            <button type="button" className={ICONO_TIENDA} aria-label="Cerrar el menú" onClick={() => setMenu(false)}>
+            <button type="button" className={cn(ICONO_TIENDA, 'inline-flex')} aria-label="Cerrar el menú" onClick={() => setMenu(false)}>
               <Icono icono={X} tamano={20} />
             </button>
           </div>

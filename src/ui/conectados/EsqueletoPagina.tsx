@@ -51,9 +51,9 @@ export function EsqueletoPagina({ titulo, paquete }: { titulo: string; paquete: 
           className={superficie === 'panel' ? '' : 'pt-0'}
         />
       )}
-      <dl className={cn('grid gap-px border border-line bg-line', superficie === 'app' ? 'mt-6 grid-cols-2' : 'mt-8 grid-cols-2 md:grid-cols-4')}>
+      <dl className={cn('grid border-l border-t border-line', superficie === 'app' ? 'mt-6 grid-cols-2' : 'mt-8 grid-cols-2 md:grid-cols-4')}>
         {pares.map(([k, v]) => (
-          <div key={k} className="min-w-0 bg-surface px-5 py-4">
+          <div key={k} className="min-w-0 border-b border-r border-line bg-surface px-5 py-4">
             <dt className="t-eyebrow text-ink-2">{k}</dt>
             <dd className="mt-2 truncate t-body num text-ink" title={v}>
               {v}

@@ -33,11 +33,13 @@ export function LayoutPortal() {
           </div>
         </RequiereDatos>
       </main>
-      <footer className="mx-auto flex max-w-[720px] items-center justify-between border-t border-line px-6 py-6 t-small text-muted">
-        <span>Enlace privado para la agencia de aduanas · datos de ejemplo</span>
-        <Link to={rutas.entrada()} className="text-ink-2 hover:underline hover:underline-offset-4">
-          {MARCA.firmaKippicore}
-        </Link>
+      <footer className="mx-auto max-w-[720px] px-6">
+        <div className="flex items-center justify-between border-t border-line py-6 t-small text-muted">
+          <span>Enlace privado para la agencia de aduanas · datos de ejemplo</span>
+          <Link to={rutas.entrada()} className="text-ink-2 hover:underline hover:underline-offset-4">
+            {MARCA.firmaKippicore}
+          </Link>
+        </div>
       </footer>
       <AvisosGlobales />
     </div>

@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router';
 import { INICIO_POR_ROL } from '@/config/navegacion';
 import { useRolActivo } from '@/estado';
@@ -15,6 +15,8 @@ export function GuardaRol({ ruta, children }: { ruta: NombreRuta; children: Reac
   const rol = useRolActivo();
   const { pathname } = useLocation();
   const permitido = rolPuedeVer(ruta, rol);
+  // Si la pantalla se veía con el rol anterior, el cambio de rol fue a propósito: va a su inicio sin el aviso (8.10.1).
+  const [rolAlMontar] = useState(rol);
   useEffect(() => {
     if (!permitido) console.info(`Ruta ${RUTAS[ruta].patron} no disponible para el rol ${rol}: ${pathname}`);
   }, [permitido, ruta, rol, pathname]);
@@ -24,7 +26,7 @@ export function GuardaRol({ ruta, children }: { ruta: NombreRuta; children: Reac
       <Navigate
         to={INICIO_POR_ROL[rol]}
         replace
-        state={{ aviso: solo ? AVISO_SOLO_DUENO : 'Esta sección no está disponible para tu rol.' }}
+        state={rolAlMontar !== rol && rolPuedeVer(ruta, rolAlMontar) ? null : { aviso: solo ? AVISO_SOLO_DUENO : 'Esta sección no está disponible para tu rol.' }}
       />
     );
   }
