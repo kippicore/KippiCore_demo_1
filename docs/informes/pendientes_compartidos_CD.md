@@ -34,3 +34,7 @@
 4. Unificar barra de pestañas de Personal (C1) y Turnos (C2) al fusionar.
 5. Vista previa de nómina ≈ 1 s (recalcula ventas del mes): optimizar si molesta.
 6. Liquidación final (`selLiquidacionFinal`) sin pantalla (complemento).
+
+## D5 (worktree-agent-a78270023939d8f26, 5ea88e3)
+1. `rutas.ts` `canalInstagram`: query `{ escenario: texto }` (precio-comentario, catalogo-dm); luego conectar la selección de Instagram a la URL.
+2. Instagram: no hay campo para escribir comentarios (solo guion).
