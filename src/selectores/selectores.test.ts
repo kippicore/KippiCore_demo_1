@@ -393,6 +393,28 @@ describe('importaciones y proveedores', () => {
     expect(selProveedores(e, { hoy: HOY, tipo: 'fabrica' }).length).toBe(5);
     expect(selLlegadasProximas(e, { hoy: HOY, dias: 30 }).length).toBeGreaterThan(0);
   });
+
+  it('ficha del proveedor: entregas por pedido = promedios; las importaciones eliminadas no cuentan', () => {
+    const f = selFichaProveedor(e, { proveedorId: 'pr_weiye', hoy: HOY });
+    const ent = f?.entregas ?? [];
+    expect(ent.length).toBeGreaterThan(0);
+    const prom = ent.reduce((a, x) => a + x.retraso, 0) / ent.length;
+    expect(f?.retrasoPromedio).toBeCloseTo(prom, 9);
+    expect(f?.cumplimiento).toBeCloseTo(ent.filter((x) => x.aTiempo).length / ent.length, 9);
+    const rec = ent.reduce((a, x) => a + x.recibidas, 0);
+    expect(f?.defectos).toBeCloseTo(ent.reduce((a, x) => a + x.defectuosas, 0) / rec, 9);
+    expect(selComparativoFabricas(e, { hoy: HOY }).find((x) => x.proveedorId === 'pr_weiye')?.pedidosRecibidos).toBe(ent.length);
+    // Eliminar la primera importación recibida la saca del desempeño.
+    const primera = ent[0];
+    if (!primera) return;
+    const imp = e.importaciones[primera.importacionId];
+    if (!imp) return;
+    const e2: EstadoDominio = { ...e, importaciones: { ...e.importaciones, [imp.id]: { ...imp, eliminadoEn: AHORA } } };
+    const f2 = selFichaProveedor(e2, { proveedorId: 'pr_weiye', hoy: HOY });
+    expect(f2?.entregas.map((x) => x.importacionId)).not.toContain(imp.id);
+    expect(f2?.entregas.length).toBe(ent.length - 1);
+    expect(selComparativoFabricas(e2, { hoy: HOY }).find((x) => x.proveedorId === 'pr_weiye')?.pedidosRecibidos).toBe(ent.length - 1);
+  });
 });
 
 describe('análisis, pivote y hallazgos', () => {

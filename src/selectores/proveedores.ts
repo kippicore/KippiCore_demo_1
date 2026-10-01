@@ -49,6 +49,25 @@ export interface FichaProveedor {
   cumplimiento: number | null;
   retrasoPromedio: number | null;
   defectos: number | null;
+  /** Detalle por pedido recibido (P14), del más antiguo al más reciente: de aquí salen los promedios de arriba. */
+  entregas: EntregaProveedor[];
+}
+
+/** Un pedido ya recibido de una fábrica, con la definición de P14 (retraso contra la estimada ORIGINAL). */
+export interface EntregaProveedor {
+  importacionId: Id;
+  numero: string;
+  fechaPedido: FechaISO;
+  /** Llegada a bodega estimada al hacer el pedido (sin reprogramaciones). */
+  estimadaOriginal: FechaISO;
+  recibida: FechaISO;
+  /** Días de retraso (negativo: llegó antes). */
+  retraso: number;
+  aTiempo: boolean;
+  /** Días del pedido a la recepción. */
+  diasEntrega: number;
+  recibidas: number;
+  defectuosas: number;
 }
 
 interface Desempeno {
@@ -58,11 +77,14 @@ interface Desempeno {
   defectos: number | null;
   costoPromedioUnidad: COP | null;
   recibidas: number;
+  entregas: EntregaProveedor[];
 }
 
-/** Desempeño de una fábrica con la definición de P14: retraso contra la estimada ORIGINAL de llegada a bodega. */
+/**
+ * Desempeño de una fábrica con la definición de P14: retraso contra la estimada ORIGINAL de llegada a bodega. Solo
+ * pedidos recibidos y no eliminados (la carga inicial de existencias no es un pedido).
+ */
 function desempeno(e: Parameters<typeof selProveedores>[0], proveedorId: Id, hoy: FechaISO): Desempeno {
-  let n = 0;
   let entrega = 0;
   let retraso = 0;
   let aTiempo = 0;
@@ -70,22 +92,41 @@ function desempeno(e: Parameters<typeof selProveedores>[0], proveedorId: Id, hoy
   let defectuosas = 0;
   let costo = 0;
   let unidades = 0;
+  const entregas: EntregaProveedor[] = [];
   for (const imp of Object.values(e.importaciones)) {
-    if (imp.proveedorId !== proveedorId || !imp.recepcion || imp.nota === 'Carga inicial de existencias') continue;
+    if (imp.proveedorId !== proveedorId || !imp.recepcion || imp.eliminadoEn || imp.nota === 'Carga inicial de existencias') continue;
     const original = hitosIniciales(imp.fechaPedido, e.parametros.aduanas.diasEstimadosEntreEstados).recibido_bodega.estimada;
     const r = diferenciaDias(original, imp.recepcion.fecha);
+    const dias = diferenciaDias(imp.fechaPedido, imp.recepcion.fecha);
     retraso += r;
     if (r <= 0) aTiempo += 1;
-    entrega += diferenciaDias(imp.fechaPedido, imp.recepcion.fecha);
-    n += 1;
+    entrega += dias;
+    let rec = 0;
+    let def = 0;
     for (const l of Object.values(imp.recepcion.lineas)) {
-      recibidas += l.recibidas;
-      defectuosas += l.defectuosas;
+      rec += l.recibidas;
+      def += l.defectuosas;
     }
+    recibidas += rec;
+    defectuosas += def;
+    entregas.push({
+      importacionId: imp.id,
+      numero: imp.numero,
+      fechaPedido: imp.fechaPedido,
+      estimadaOriginal: original,
+      recibida: imp.recepcion.fecha,
+      retraso: r,
+      aTiempo: r <= 0,
+      diasEntrega: dias,
+      recibidas: rec,
+      defectuosas: def,
+    });
     const tasa = imp.costosAplicados?.tasaCosteo ?? selTasaVigente(e, { moneda: imp.moneda, fecha: hoy });
     costo += copDeCentavos(fobImportacion(imp.lineas), tasa);
     unidades += imp.lineas.reduce((a, l) => a + unidadesLinea(l), 0);
   }
+  const n = entregas.length;
+  entregas.sort((a, b) => (a.fechaPedido < b.fechaPedido ? -1 : a.fechaPedido > b.fechaPedido ? 1 : a.numero < b.numero ? -1 : 1));
   return {
     entrega: n ? entrega / n : null,
     cumplimiento: n ? aTiempo / n : null,
@@ -93,6 +134,7 @@ function desempeno(e: Parameters<typeof selProveedores>[0], proveedorId: Id, hoy
     defectos: recibidas ? defectuosas / recibidas : null,
     costoPromedioUnidad: unidades ? Math.round(costo / unidades) : null,
     recibidas,
+    entregas,
   };
 }
 
@@ -123,6 +165,7 @@ export const selFichaProveedor = crearSelector<{ proveedorId: Id; hoy: FechaISO 
       cumplimiento: d.cumplimiento,
       retrasoPromedio: d.retraso,
       defectos: d.defectos,
+      entregas: d.entregas,
     };
   },
 );
@@ -147,7 +190,6 @@ export const selComparativoFabricas = crearSelector<{ hoy: FechaISO }, FilaCompa
       .filter((p) => p.tipo === 'fabrica' && !p.eliminadoEn)
       .map((p) => {
         const d = desempeno(e, p.id, hoy);
-        const recibidos = Object.values(e.importaciones).filter((i) => i.proveedorId === p.id && i.recepcion && i.nota !== 'Carga inicial de existencias').length;
         return {
           proveedorId: p.id,
           nombre: p.nombreCorto,
@@ -155,7 +197,7 @@ export const selComparativoFabricas = crearSelector<{ hoy: FechaISO }, FilaCompa
           aTiempo: d.cumplimiento,
           retrasoPromedio: d.retraso,
           defectos: d.defectos,
-          pedidosRecibidos: recibidos,
+          pedidosRecibidos: d.entregas.length,
         };
       })
       .sort((a, b) => (a.nombre < b.nombre ? -1 : 1)),
