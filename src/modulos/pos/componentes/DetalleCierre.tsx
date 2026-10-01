@@ -5,7 +5,7 @@ import { rutas } from '@/app/rutas';
 import { ESTADOS_CAJA } from '@/config/estados';
 import { DENOMINACIONES, MEDIOS_PAGO } from '@/config/negocio';
 import type { Id } from '@/dominio/tipos';
-import { useAcciones, useEstadoDominio, useSel } from '@/estado';
+import { useAcciones, useDinero, useEstadoDominio, useSel } from '@/estado';
 import { selResumenSesion } from '@/selectores';
 import { dinero as formatoDinero, entero, fecha, fechaHora, hora } from '@/lib/formato';
 import { Badge, BadgeEstado, Button, Dinero, Drawer, EmptyState, Textarea, avisar } from '@/ui';
@@ -37,6 +37,7 @@ function Titulo({ sesionId }: { sesionId: Id | null }) {
 
 function Cuerpo({ sesionId, alCerrar }: { sesionId: Id; alCerrar: () => void }) {
   const e = useEstadoDominio();
+  const d = useDinero();
   const acciones = useAcciones();
   const r = useSel(selResumenSesion, { sesionId });
   const [nota, setNota] = useState('');
@@ -62,8 +63,8 @@ function Cuerpo({ sesionId, alCerrar }: { sesionId: Id; alCerrar: () => void }) 
     <>
       <div className="flex flex-wrap items-center gap-3">
         <BadgeEstado estado={estado} />
-        {lectura === 'faltante' && c && <Badge tono="danger">Faltan {formatoDinero(Math.abs(c.diferencia), 'COP')}</Badge>}
-        {lectura === 'sobrante' && c && <Badge tono="warning">Sobran {formatoDinero(c.diferencia, 'COP')}</Badge>}
+        {lectura === 'faltante' && c && <Badge tono="danger">Faltan {d(Math.abs(c.diferencia))}</Badge>}
+        {lectura === 'sobrante' && c && <Badge tono="warning">Sobran {d(c.diferencia)}</Badge>}
         {r.estado === 'revisada' && <Badge tono="neutral">Revisado</Badge>}
       </div>
 

@@ -50,7 +50,7 @@ export function ClienteVendedor({ cliente, alCliente, errorCliente, vendedorId, 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3" data-testid="pos-cliente-vendedor">
       <div className="min-w-0">
-        <p className="mb-1 t-eyebrow text-ink-2">Cliente</p>
+        <p className="mb-0.5 t-eyebrow text-ink-2">Cliente</p>
         {buscando ? (
           <div ref={contenedor} className="flex items-center gap-1">
             <BuscadorCliente
@@ -71,13 +71,10 @@ export function ClienteVendedor({ cliente, alCliente, errorCliente, vendedorId, 
         ) : (
           <div className="flex h-10 items-center gap-2 border border-line-strong bg-surface px-2" data-testid="pos-cliente-actual">
             <Avatar nombre={cliente.tipo === 'consumidor' ? 'Consumidor final' : nombre || 'Cliente'} tamano={24} />
-            <span className="min-w-0 flex-1 truncate t-label text-ink">
+            <span className="min-w-0 flex-1 truncate t-label text-ink" title={`${nombre} · ${detalle}`} data-testid="pos-cliente-nombre">
               {nombre}
-              <span className="ml-1.5 font-normal text-muted">{detalle}</span>
             </span>
-            <Button variante="ghost" tamano="sm" icono={Pencil} onClick={() => setBuscando(true)} data-testid="pos-cambiar-cliente">
-              Cambiar
-            </Button>
+            <BotonIcono icono={Pencil} etiqueta="Cambiar de cliente" variante="ghost" tamano="sm" onClick={() => setBuscando(true)} data-testid="pos-cambiar-cliente" />
             <BotonIcono icono={UserPlus} etiqueta="Crear cliente nuevo" variante="ghost" tamano="sm" onClick={() => setCreando('')} data-testid="pos-crear-cliente" />
           </div>
         )}
@@ -87,8 +84,8 @@ export function ClienteVendedor({ cliente, alCliente, errorCliente, vendedorId, 
           </p>
         )}
       </div>
-      <div className="w-[168px]">
-        <p className="mb-1 t-eyebrow text-ink-2">Vendedor</p>
+      <div className="w-[188px]">
+        <p className="mb-0.5 t-eyebrow text-ink-2">Vendedor</p>
         {vendedorFijo ? (
           <p className="flex h-10 items-center truncate border border-line bg-surface-2 px-3 t-label text-ink" title="La venta queda a tu nombre" data-testid="pos-vendedor-fijo">
             {nombreVendedor || '—'}
@@ -103,12 +100,8 @@ export function ClienteVendedor({ cliente, alCliente, errorCliente, vendedorId, 
             data-testid="pos-vendedor"
             opciones={vendedores.vendedores.map((v) => ({
               valor: v.empleadoId,
-              etiqueta: (
-                <span>
-                  {v.nombre}
-                  <span className="ml-1.5 text-muted">{v.turno ? `${v.enTurno ? 'en turno' : 'turno'} ${hora(v.turno.inicio)}–${hora(v.turno.fin)}` : 'sin turno hoy'}</span>
-                </span>
-              ),
+              etiqueta: v.nombre,
+              grupo: v.enTurno ? 'En turno ahora' : v.turno ? `Turno de hoy · ${hora(v.turno.inicio)}–${hora(v.turno.fin)}` : 'Sin turno hoy',
             }))}
           />
         )}

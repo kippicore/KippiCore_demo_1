@@ -10,6 +10,7 @@ import { dinero as formatoDinero, entero, hora } from '@/lib/formato';
 import { BadgeEstado, BotonEnlace, BotonIcono, Button, Dialog, Dinero, EmptyState, FranjaResumen, Icono, Input, InputNumero, Pista, Segmentado, Select, Textarea, avisar, cn } from '@/ui';
 import { denominacionesParaCierre, lecturaDiferencia, totalArqueo, valorDenominacion } from '../calculos';
 import { DialogoAbrirCaja } from './DialogoAbrirCaja';
+import { seleccionarTodo } from './campos';
 
 /**
  * Caja de un local (PRD 7.2, W11): apertura con base, egresos, ventas por medio de pago y cierre con ARQUEO CIEGO:
@@ -210,7 +211,8 @@ function ArqueoCierre({ resumen: r, veEsperado }: { resumen: ResumenSesion; veEs
               <li key={k} className="flex items-center gap-3 py-1.5">
                 <span className="w-24 shrink-0 t-label num text-ink">{v === null ? 'Monedas' : formatoDinero(v, 'COP')}</span>
                 {v === null ? (
-                  <InputNumero tamano="sm" etiqueta="Total en monedas" etiquetaOculta prefijo="$" valor={n || null} alCambiar={(x) => setCantidades((c) => ({ ...c, [k]: x ?? 0 }))} className="min-w-0 flex-1" data-testid={`caja-den-${k}`} />
+                  <InputNumero tamano="sm" etiqueta="Total en monedas" etiquetaOculta prefijo="$" valor={n || null} alCambiar={(x) => setCantidades((c) => ({ ...c, [k]: x ?? 0 }))} className="min-w-0 flex-1" onFocus={seleccionarTodo}
+                      data-testid={`caja-den-${k}`} />
                 ) : (
                   <div className="flex items-center gap-1">
                     <BotonIcono icono={Minus} etiqueta={`Una menos de ${formatoDinero(v, 'COP')}`} tamano="sm" disabled={n <= 0} onClick={() => setCantidades((c) => ({ ...c, [k]: Math.max(0, n - 1) }))} />
@@ -224,6 +226,7 @@ function ArqueoCierre({ resumen: r, veEsperado }: { resumen: ResumenSesion; veEs
                       placeholder="0"
                       onChange={(ev) => setCantidades((c) => ({ ...c, [k]: Math.max(0, Math.min(9999, Number(ev.target.value.replace(/\D/g, '')) || 0)) }))}
                       className="w-16"
+                      onFocus={seleccionarTodo}
                       data-testid={`caja-den-${k}`}
                     />
                     <BotonIcono icono={Plus} etiqueta={`Una más de ${formatoDinero(v, 'COP')}`} tamano="sm" onClick={() => setCantidades((c) => ({ ...c, [k]: n + 1 }))} />
@@ -242,6 +245,7 @@ function ArqueoCierre({ resumen: r, veEsperado }: { resumen: ResumenSesion; veEs
           sufijo="COP"
           valor={modo === 'denominacion' ? (hayConteo ? contado : null) : manual}
           alCambiar={setManual}
+          onFocus={seleccionarTodo}
           readOnly={modo === 'denominacion'}
           placeholder={modo === 'denominacion' ? 'Suma de lo que contaste' : 'Escribe el total contado'}
           ayuda={modo === 'denominacion' ? 'Se suma solo con las denominaciones.' : undefined}
@@ -366,7 +370,7 @@ function DialogoEgreso({ abierto, alCambiar, resumen: r, veEsperado }: { abierto
         }}
       >
         <Input etiqueta="Concepto" placeholder="Ej. Domicilio a Chapinero" value={concepto} onChange={(ev) => setConcepto(ev.target.value)} error={errores.concepto} data-testid="caja-egreso-concepto" />
-        <InputNumero etiqueta="Valor" prefijo="$" sufijo="COP" valor={valor} alCambiar={setValor} error={errores.valor} data-testid="caja-egreso-valor" />
+        <InputNumero etiqueta="Valor" prefijo="$" sufijo="COP" valor={valor} alCambiar={setValor} error={errores.valor} onFocus={seleccionarTodo} data-testid="caja-egreso-valor" />
         <Select etiqueta="Categoría" valor={categoria} alCambiar={(v) => setCategoria(v as CategoriaGasto)} opciones={CATEGORIAS} enModal />
       </form>
     </Dialog>

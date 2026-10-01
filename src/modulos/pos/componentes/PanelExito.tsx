@@ -74,25 +74,29 @@ export function PanelExito({ ventaId, efectos, alNueva }: PropsPanelExito) {
   };
 
   return (
-    <div className="grid min-h-0 flex-1 grid-cols-[minmax(320px,380px)_minmax(0,1fr)] gap-4" data-testid="pos-exito">
-      <section className="flex min-h-0 flex-col gap-4 border border-line bg-surface p-5" aria-label="Venta registrada">
-        <svg viewBox="0 0 40 40" className="size-10 text-success" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <circle cx="20" cy="20" r="18" pathLength="1" className="animate-draw [stroke-dasharray:1]" />
-          <path d="M12 20.5l5.5 5.5L28.5 14.5" pathLength="1" className="animate-draw [stroke-dasharray:1] [animation-delay:200ms]" />
-        </svg>
+    <div className="grid min-h-0 flex-1 grid-cols-[minmax(360px,404px)_minmax(0,1fr)] gap-4" data-testid="pos-exito">
+      <section className="flex min-h-0 flex-col gap-3 overflow-y-auto border border-line bg-surface p-4" aria-label="Venta registrada">
+        <div className="flex items-center gap-3">
+          <svg viewBox="0 0 40 40" className="size-10 shrink-0 text-success" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <circle cx="20" cy="20" r="18" pathLength="1" className="animate-draw [stroke-dasharray:1]" />
+            <path d="M12 20.5l5.5 5.5L28.5 14.5" pathLength="1" className="animate-draw [stroke-dasharray:1] [animation-delay:200ms]" />
+          </svg>
+          <div className="min-w-0">
+            <p className="t-eyebrow text-ink-2">Venta registrada</p>
+            <h2 className="t-h1 num text-ink" data-testid="pos-venta-numero">
+              {venta.numero}
+            </h2>
+          </div>
+        </div>
         <div>
-          <p className="t-eyebrow text-ink-2">Venta registrada</p>
-          <h2 className="mt-1 t-h1 num text-ink" data-testid="pos-venta-numero">
-            {venta.numero}
-          </h2>
-          <p className="mt-2 t-kpi-xl num text-ink" data-testid="pos-exito-total">
+          <p className="t-kpi-xl num text-ink" data-testid="pos-exito-total">
             <Dinero valor={venta.total} contarDesdeCero />
           </p>
-          <p className="mt-1 t-small text-muted">
+          <p className="t-small text-muted">
             IVA incluido <Dinero valor={venta.iva} />
           </p>
         </div>
-        <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 t-small">
+        <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 t-small">
           <dt className="text-muted">Cliente</dt>
           <dd className="truncate text-ink">{cliente ? `${cliente.nombres} ${cliente.apellidos}` : 'Consumidor final'}</dd>
           <dt className="text-muted">Vendedor</dt>
@@ -117,7 +121,7 @@ export function PanelExito({ ventaId, efectos, alNueva }: PropsPanelExito) {
             </>
           )}
         </dl>
-        <div className="mt-auto flex flex-col gap-2">
+        <div className="mt-auto flex flex-col gap-1.5">
           {factura ? (
             <div className="flex flex-col gap-2 border border-line bg-surface-2 p-3" data-testid="pos-documento-emitido">
               <p className="t-label text-ink">
@@ -137,7 +141,7 @@ export function PanelExito({ ventaId, efectos, alNueva }: PropsPanelExito) {
               <Button tamano="lg" anchoCompleto icono={FilePlus2} cargando={emitiendo === 'factura_electronica'} onClick={() => emitir('factura_electronica')} data-testid="pos-emitir-factura">
                 Emitir factura electrónica
               </Button>
-              <Button variante="secondary" tamano="lg" anchoCompleto icono={ReceiptText} cargando={emitiendo === 'documento_equivalente_pos'} onClick={() => emitir('documento_equivalente_pos')} data-testid="pos-emitir-pos">
+              <Button variante="secondary" tamano="md" anchoCompleto icono={ReceiptText} cargando={emitiendo === 'documento_equivalente_pos'} onClick={() => emitir('documento_equivalente_pos')} data-testid="pos-emitir-pos">
                 Documento POS electrónico (simulado)
               </Button>
             </>
@@ -195,7 +199,7 @@ function FilaEfecto({ efecto: x, indice, baseVenta }: { efecto: EfectoPos; indic
     );
   const mostrarAntesDespues = x.mostrarAntesDespues !== false;
   return (
-    <li className="grid grid-cols-[20px_minmax(0,1fr)_auto_auto] items-center gap-x-3 py-2.5 animate-row-in" style={{ animationDelay: `${indice * 80}ms` }} data-testid={`pos-efecto-${x.clave}`}>
+    <li className="grid grid-cols-[20px_minmax(0,1fr)_auto_auto] items-center gap-x-3 py-2.5 animate-row-in [@media(min-height:800px)]:py-4" style={{ animationDelay: `${indice * 80}ms` }} data-testid={`pos-efecto-${x.clave}`}>
       <Icono icono={x.clave === 'caja' ? Banknote : ICONOS[x.clave]} tamano={16} className="text-ink-2" />
       <div className="min-w-0">
         <p className="truncate t-body text-ink" title={x.etiqueta}>

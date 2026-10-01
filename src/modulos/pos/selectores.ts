@@ -43,7 +43,9 @@ export const selVendedoresPos = crearSelector<{ localId: Id; fecha: FechaISO; hh
       .filter((x) => e.empleados[x.empleadoId]?.cargo === 'vendedor')
       .map((x) => {
         const t = (x.porDia[fecha] ?? [])[0];
-        return { empleadoId: x.empleadoId, nombre: x.nombre || nombreEmpleado(e.empleados[x.empleadoId]), inicio: t?.inicio ?? null, fin: t?.fin ?? null };
+        const em = e.empleados[x.empleadoId];
+        const corto = em ? `${em.nombres.split(' ')[0]} ${em.apellidos.split(' ')[0]}` : nombreEmpleado(em);
+        return { empleadoId: x.empleadoId, nombre: corto, inicio: t?.inicio ?? null, fin: t?.fin ?? null };
       });
     const conTurno = ordenarPorCercania(
       lista.filter((x): x is typeof x & { inicio: string; fin: string } => !!x.inicio && !!x.fin),

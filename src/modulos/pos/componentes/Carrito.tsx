@@ -4,7 +4,7 @@ import type { TotalesVenta } from '@/dominio/reglas/ventas';
 import { useDinero, useEstadoDominio } from '@/estado';
 import { existencia } from '@/selectores';
 import { entero, porcentaje } from '@/lib/formato';
-import { BotonIcono, EmptyState, MiniaturaPrenda, cn } from '@/ui';
+import { BotonIcono, Icono, MiniaturaPrenda, cn } from '@/ui';
 import type { LineaCarrito } from '../calculos';
 import { TEXTOS } from '../textos';
 import { PopoverDescuento } from './Descuento';
@@ -28,8 +28,12 @@ export function Carrito({ lineas, totales, localId, ultima, alCantidad, alQuitar
   const d = useDinero();
   if (!lineas.length)
     return (
-      <div className="flex h-full items-center justify-center" data-testid="pos-carrito-vacio">
-        <EmptyState tamano="compacto" icono={ShoppingBag} titulo={TEXTOS.carritoVacio.titulo} texto={TEXTOS.carritoVacio.texto} />
+      <div className="flex h-full min-h-[72px] flex-col items-center justify-center gap-1 px-6 text-center" data-testid="pos-carrito-vacio">
+        <p className="inline-flex items-center gap-2 t-h3 text-ink">
+          <Icono icono={ShoppingBag} tamano={18} className="text-subtle" />
+          {TEXTOS.carritoVacio.titulo}
+        </p>
+        <p className="t-small text-muted">{TEXTOS.carritoVacio.texto}</p>
       </div>
     );
   return (

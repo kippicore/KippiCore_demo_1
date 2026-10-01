@@ -2,7 +2,7 @@ import { Banknote, Tag } from 'lucide-react';
 import type { Descuento } from '@/dominio/tipos';
 import type { TotalesVenta } from '@/dominio/reglas/ventas';
 import { dinero as formatoDinero, porcentaje } from '@/lib/formato';
-import { Button, Dinero, Icono } from '@/ui';
+import { Dinero, Icono } from '@/ui';
 import { PopoverDescuento } from './Descuento';
 
 /**
@@ -24,45 +24,53 @@ export interface PropsTotales {
 
 export function Totales({ totales, tarifaIva, descuentoGlobal, alDescuentoGlobal, separado, cambio, hayLineas }: PropsTotales) {
   return (
-    <div className="flex flex-col gap-1" data-testid="pos-totales">
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 t-small text-ink-2">
-        <p className="num" data-testid="pos-subtotal">
-          Subtotal <Dinero valor={totales.subtotal} />
-          {totales.descuentos > 0 && (
-            <>
-              {' · '}Descuento <span className="text-accent-ink">−<Dinero valor={totales.descuentos} /></span>
-            </>
-          )}
-          {' · '}IVA{tarifaIva !== null ? ` ${porcentaje(tarifaIva, 0)}` : ''} incluido <Dinero valor={totales.iva} />
-        </p>
+    <div className="flex flex-col" data-testid="pos-totales">
+      <div className="flex items-center justify-between gap-3">
+        <p className="t-eyebrow text-ink-2">{separado ? 'Total de la venta' : 'Total a cobrar'}</p>
+        {!separado && cambio > 0 && (
+          <p className="inline-flex items-center gap-1.5 t-small num text-ink-2" data-testid="pos-cambio">
+            <Icono icono={Banknote} tamano={14} />
+            Cambio a devolver <strong className="font-bold text-ink">{formatoDinero(cambio, 'COP')}</strong>
+          </p>
+        )}
         <PopoverDescuento
           titulo="Descuento de toda la venta"
           valor={descuentoGlobal}
           alAplicar={alDescuentoGlobal}
           ayuda={totales.subtotal ? `Se reparte entre las prendas. Subtotal: ${formatoDinero(totales.subtotal, 'COP')}.` : undefined}
           disparador={
-            <Button variante="ghost" tamano="sm" icono={Tag} disabled={!hayLineas} data-testid="pos-descuento-global">
+            <button
+              type="button"
+              disabled={!hayLineas}
+              className="ml-auto inline-flex h-6 shrink-0 items-center gap-1 px-1.5 t-nav text-ink transition-colors duration-(--dur-instant) hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:text-disabled disabled:hover:bg-transparent"
+              data-testid="pos-descuento-global"
+            >
+              <Icono icono={Tag} tamano={14} />
               {descuentoGlobal ? (descuentoGlobal.tipo === 'porcentaje' ? `Descuento ${porcentaje(descuentoGlobal.valor)}` : 'Descuento aplicado') : 'Descuento'}
-            </Button>
+            </button>
           }
         />
       </div>
       <div className="flex items-end justify-between gap-3">
-        <div className="min-w-0">
-          <p className="t-eyebrow text-ink-2">{separado ? 'Total de la venta' : 'Total a cobrar'}</p>
+        <div className="min-w-0 t-small num text-ink-2" data-testid="pos-subtotal">
+          <p>
+            Subtotal <Dinero valor={totales.subtotal} />
+            {totales.descuentos > 0 && (
+              <>
+                {' · '}descuento <span className="text-accent-ink">−<Dinero valor={totales.descuentos} /></span>
+              </>
+            )}
+          </p>
+          <p>
+            IVA{tarifaIva !== null ? ` ${porcentaje(tarifaIva, 0)}` : ''} incluido <Dinero valor={totales.iva} />
+          </p>
           {separado && (
-            <p className="t-small num text-ink-2" data-testid="pos-separado-resumen">
+            <p data-testid="pos-separado-resumen">
               Abona hoy <strong className="font-semibold text-ink"><Dinero valor={separado.abono} /></strong> · saldo <Dinero valor={separado.saldo} />
             </p>
           )}
-          {!separado && cambio > 0 && (
-            <p className="t-small num text-ink-2" data-testid="pos-cambio">
-              <Icono icono={Banknote} tamano={14} className="mr-1 inline" />
-              Cambio a devolver <strong className="font-semibold text-ink">{formatoDinero(cambio, 'COP')}</strong>
-            </p>
-          )}
         </div>
-        <p className="t-kpi-sm num text-ink" data-testid="pos-total">
+        <p className="shrink-0 t-kpi-sm num text-ink" data-testid="pos-total">
           <Dinero valor={totales.total} animar />
         </p>
       </div>

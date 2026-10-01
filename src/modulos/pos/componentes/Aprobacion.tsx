@@ -1,5 +1,5 @@
 import { BadgeCheck, Send } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { COP, Fraccion, Id, SolicitudAprobacion } from '@/dominio/tipos';
 import { redondear } from '@/dominio/reglas/dinero';
 import { ESTADOS_APROBACION } from '@/config/estados';
@@ -33,7 +33,7 @@ export function AvisoDescuento({ esVendedor, fraccion, maximo, actual, vivas, al
   const aprobada = actual?.estado === 'aprobada' && actual.datos.tipo === 'descuento' && actual.datos.porcentaje + 1e-9 >= fraccion && actual.usadaEnVentaId === null;
   const disponible = vivas.find((s) => s.estado === 'aprobada' && s.id !== actual?.id && (!supera || s.datos.porcentaje + 1e-9 >= fraccion));
 
-  let cuerpo: React.ReactNode = null;
+  let cuerpo: ReactNode = null;
   if (supera && aprobada && actual?.datos.tipo === 'descuento') {
     cuerpo = (
       <>
@@ -109,7 +109,7 @@ export function AvisoDescuento({ esVendedor, fraccion, maximo, actual, vivas, al
     );
   }
   return (
-    <div role="status" className="flex flex-wrap items-center gap-2 border border-line bg-surface-2 px-3 py-1.5" data-testid="pos-aviso-descuento">
+    <div role="status" className="flex flex-wrap items-center gap-2 border border-line bg-surface-2 px-3 py-1" data-testid="pos-aviso-descuento">
       {cuerpo}
     </div>
   );

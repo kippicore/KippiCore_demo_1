@@ -4,6 +4,7 @@ import { BASE_CAJA } from '@/config/negocio';
 import { useAcciones, useEstadoDominio } from '@/estado';
 import { dinero } from '@/lib/formato';
 import { Button, Dialog, InputNumero, avisar } from '@/ui';
+import { seleccionarTodo } from './campos';
 
 /**
  * Apertura de caja (PRD 7.2): la base inicial con la que arranca el efectivo del local ese día. Se usa en el POS
@@ -63,7 +64,7 @@ export function DialogoAbrirCaja({ abierto, alCambiar, localId, alAbrir }: Props
           abrir();
         }}
       >
-        <InputNumero etiqueta="Base inicial" prefijo="$" sufijo="COP" valor={base} alCambiar={setBase} error={error ?? undefined} ayuda={`Lo habitual: ${dinero(BASE_CAJA, 'COP')} de cambio.`} data-testid="pos-base-inicial" />
+        <InputNumero etiqueta="Base inicial" prefijo="$" sufijo="COP" valor={base} alCambiar={setBase} error={error ?? undefined} ayuda={`Lo habitual: ${dinero(BASE_CAJA, 'COP')} de cambio.`} onFocus={seleccionarTodo} data-testid="pos-base-inicial" />
       </form>
     </Dialog>
   );

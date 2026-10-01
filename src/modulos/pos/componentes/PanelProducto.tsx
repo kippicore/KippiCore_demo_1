@@ -1,5 +1,5 @@
 import { ScanBarcode, Shirt, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { Id } from '@/dominio/tipos';
 import { useDinero, useEstadoDominio, useHoy, useSel } from '@/estado';
 import { existencia, selMatrizExistencias } from '@/selectores';
@@ -24,9 +24,11 @@ export interface PropsPanelProducto {
   /** Producto abierto en la grilla (lo controla la página para que "Nueva venta" lo limpie). */
   productoId: Id | null;
   alElegirProducto: (productoId: Id | null) => void;
+  /** A la derecha de la línea de ayuda (estado de la caja del local). */
+  extra?: ReactNode;
 }
 
-export function PanelProducto({ localId, enCarrito, alAgregar, alEscanear, ultimoEscaneo, productoId, alElegirProducto }: PropsPanelProducto) {
+export function PanelProducto({ localId, enCarrito, alAgregar, alEscanear, ultimoEscaneo, productoId, alElegirProducto, extra }: PropsPanelProducto) {
   return (
     <section aria-label="Productos" className="flex min-h-0 flex-col gap-3">
       <div className="flex items-start gap-3">
@@ -34,7 +36,7 @@ export function PanelProducto({ localId, enCarrito, alAgregar, alEscanear, ultim
           className="min-w-0 flex-1"
           localId={localId}
           enfocarAlMontar
-          placeholder="Buscar por nombre, referencia, SKU o escanear el código"
+          placeholder="Buscar por nombre, referencia, SKU o código"
           alElegir={(r) => {
             alElegirProducto(r.producto.id);
             if (r.variante) alAgregar(r.variante.id);
@@ -46,9 +48,12 @@ export function PanelProducto({ localId, enCarrito, alAgregar, alEscanear, ultim
           </Button>
         </Pista>
       </div>
-      <p aria-live="polite" className="-mt-1 min-h-[18px] t-small text-muted" data-testid="pos-ultimo-escaneo">
-        {ultimoEscaneo ?? TEXTOS.escaneo.ayuda}
-      </p>
+      <div className="-mt-1 flex min-h-6 items-center justify-between gap-3">
+        <p aria-live="polite" className="min-w-0 truncate t-small text-muted" data-testid="pos-ultimo-escaneo" title={ultimoEscaneo ?? undefined}>
+          {ultimoEscaneo ?? TEXTOS.escaneo.ayuda}
+        </p>
+        {extra}
+      </div>
       <div className="min-h-0 flex-1 overflow-y-auto border border-line bg-surface">
         {productoId ? (
           <FichaVariantes productoId={productoId} localId={localId} enCarrito={enCarrito} alAgregar={alAgregar} alCerrar={() => alElegirProducto(null)} />

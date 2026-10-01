@@ -6,6 +6,7 @@ import { MEDIOS_PAGO } from '@/config/negocio';
 import { useAcciones, useEstadoDominio, useHoy } from '@/estado';
 import { dinero as formatoDinero, fecha } from '@/lib/formato';
 import { Button, Dialog, Icono, InputNumero, Select, SelectorFecha } from '@/ui';
+import { seleccionarTodo } from './campos';
 
 /**
  * Venta de bono de regalo (PRD 7.2): plata recibida por anticipado, no es venta hasta que se redime. Se cobra con
@@ -102,7 +103,7 @@ export function DialogoBono({ abierto, alCambiar, localId, cajaAbierta }: PropsD
           }}
         >
           <div>
-            <InputNumero etiqueta="Valor del bono" prefijo="$" sufijo="COP" valor={valor} alCambiar={setValor} error={error && !valor ? error : undefined} data-testid="pos-bono-valor" />
+            <InputNumero etiqueta="Valor del bono" prefijo="$" sufijo="COP" valor={valor} alCambiar={setValor} error={error && !valor ? error : undefined} onFocus={seleccionarTodo} data-testid="pos-bono-valor" />
             <div className="mt-2 flex gap-1.5">
               {VALORES_RAPIDOS.map((v) => (
                 <Button key={v} variante="secondary" tamano="sm" onClick={() => setValor(v)}>

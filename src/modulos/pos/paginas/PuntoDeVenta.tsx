@@ -307,7 +307,7 @@ export default function PuntoDeVenta() {
   const dialogoCajaAbierta = dialogo === 'caja';
 
   return (
-    <div data-testid="pos" className="-mb-20 flex h-[calc(100dvh-var(--sticky-top)+8px)] min-h-[500px] flex-col gap-3 pt-3 pb-1">
+    <div data-testid="pos" className="-mb-20 flex h-[calc(100dvh-var(--sticky-top)+8px)] min-h-[500px] flex-col gap-2.5 pt-2.5 pb-1">
       <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
           <h1 className="t-h1 text-ink">Punto de venta</h1>
@@ -329,10 +329,9 @@ export default function PuntoDeVenta() {
             </p>
           )}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <EstadoCaja estado={cajaLocal?.estado ?? 'sin_abrir'} abrio={resumenCaja?.abrio ?? ''} desde={resumenCaja?.sesion.abierta.ts ?? null} alAbrir={() => setDialogo('caja')} />
+        <div className="flex flex-wrap items-center gap-1">
           <Button variante="ghost" tamano="sm" icono={Undo2} onClick={() => setDialogo('devoluciones')} data-testid="pos-abrir-devoluciones">
-            Cambios y devoluciones
+            Devoluciones y cambios
           </Button>
           <Button variante="ghost" tamano="sm" icono={Gift} onClick={() => setDialogo('bono')} data-testid="pos-abrir-bono">
             Vender bono
@@ -343,7 +342,7 @@ export default function PuntoDeVenta() {
       {exito ? (
         <PanelExito ventaId={exito.ventaId} efectos={exito.efectos} alNueva={nuevaVenta} />
       ) : (
-        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(400px,452px)] gap-4">
+        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(400px,460px)] gap-4">
           <PanelProducto
             localId={localId}
             enCarrito={(id) => enCarrito(s, id)}
@@ -352,9 +351,10 @@ export default function PuntoDeVenta() {
             ultimoEscaneo={ultimoEscaneo}
             productoId={productoId}
             alElegirProducto={setProductoId}
+            extra={<EstadoCaja estado={cajaLocal?.estado ?? 'sin_abrir'} abrio={resumenCaja?.abrio ?? ''} desde={resumenCaja?.sesion.abierta.ts ?? null} alAbrir={() => setDialogo('caja')} />}
           />
-          <section aria-label="Venta en curso" className="flex min-h-0 flex-col border border-line bg-surface" data-testid="pos-venta">
-            <div className="border-b border-line-soft p-3">
+          <section aria-label="Venta en curso" className="flex min-h-0 flex-col overflow-y-auto border border-line bg-surface" data-testid="pos-venta">
+            <div className="border-b border-line-soft px-3 pb-2.5 pt-2">
               <ClienteVendedor
                 cliente={s.cliente}
                 alCliente={(c) => {
@@ -368,7 +368,7 @@ export default function PuntoDeVenta() {
                 vendedorFijo={esVendedor}
               />
             </div>
-            <div className="min-h-[96px] flex-1 overflow-y-auto" data-testid="pos-carrito">
+            <div className="min-h-[64px] flex-1 overflow-y-auto" data-testid="pos-carrito">
               <Carrito
                 lineas={s.lineas}
                 totales={totales}
@@ -382,7 +382,7 @@ export default function PuntoDeVenta() {
                 alDescuento={(clave, descuento) => despachar({ t: 'descuentoLinea', clave, descuento })}
               />
             </div>
-            <div className="flex flex-col gap-2.5 border-t border-line p-3">
+            <div className="flex flex-col gap-1.5 border-t border-line px-3 py-2">
               <AvisoDescuento
                 esVendedor={esVendedor}
                 fraccion={fraccion}
@@ -490,10 +490,8 @@ export default function PuntoDeVenta() {
 function EstadoCaja({ estado, abrio, desde, alAbrir }: { estado: 'sin_abrir' | 'abierta' | 'cerrada' | 'revisada'; abrio: string; desde: string | null; alAbrir: () => void }) {
   if (estado === 'abierta')
     return (
-      <p className="inline-flex items-center gap-2 t-small text-ink-2" data-testid="pos-estado-caja" data-estado="abierta">
-        <PuntoEstado tono="success">
-          Caja abierta{desde ? ` · ${abrio.split(' ')[0] ?? ''} ${hora(desde)}` : ''}
-        </PuntoEstado>
+      <p className="inline-flex shrink-0 items-center gap-2 t-small text-ink-2" data-testid="pos-estado-caja" data-estado="abierta">
+        <PuntoEstado tono="success">Caja abierta{desde ? ` · ${abrio.split(' ')[0] ?? ''} ${hora(desde)}` : ''}</PuntoEstado>
         <Link to={rutas.caja()} className="t-nav text-ink underline-offset-4 hover:underline">
           Ver caja
         </Link>
@@ -501,17 +499,15 @@ function EstadoCaja({ estado, abrio, desde, alAbrir }: { estado: 'sin_abrir' | '
     );
   if (estado === 'sin_abrir')
     return (
-      <div className="inline-flex items-center gap-2" data-testid="pos-estado-caja" data-estado="sin_abrir">
-        <PuntoEstado tono="warning" className="t-small text-ink-2">
-          Caja sin abrir
-        </PuntoEstado>
-        <Button variante="secondary" tamano="sm" onClick={alAbrir} data-testid="pos-abrir-caja">
+      <p className="inline-flex shrink-0 items-center gap-2 t-small text-ink-2" data-testid="pos-estado-caja" data-estado="sin_abrir">
+        <PuntoEstado tono="warning">Caja sin abrir</PuntoEstado>
+        <button type="button" onClick={alAbrir} className="t-nav text-ink underline underline-offset-4 hover:no-underline" data-testid="pos-abrir-caja">
           Abrir caja
-        </Button>
-      </div>
+        </button>
+      </p>
     );
   return (
-    <p className="inline-flex items-center gap-2 t-small text-ink-2" data-testid="pos-estado-caja" data-estado="cerrada">
+    <p className="inline-flex shrink-0 items-center gap-2 t-small text-ink-2" data-testid="pos-estado-caja" data-estado="cerrada">
       <PuntoEstado tono="neutral">Caja de hoy cerrada</PuntoEstado>
       <Link to={rutas.caja()} className="t-nav text-ink underline-offset-4 hover:underline">
         Ver caja
@@ -519,4 +515,3 @@ function EstadoCaja({ estado, abrio, desde, alAbrir }: { estado: 'sin_abrir' | '
     </p>
   );
 }
-

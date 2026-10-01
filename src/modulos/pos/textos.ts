@@ -2,7 +2,7 @@
 export const TEXTOS = {
   escaneo: {
     boton: 'Simular escaneo',
-    ayuda: 'Escribe o escanea un código y presiona Enter, o busca por nombre o referencia.',
+    ayuda: 'Escribe o escanea un código y presiona Enter.',
   },
   masVendidos: (local: string) => `Lo más vendido en ${local}`,
   grillaAyuda: (local: string) => `Toca una talla para agregarla. Las existencias son las de ${local}.`,

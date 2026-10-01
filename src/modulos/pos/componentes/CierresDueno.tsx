@@ -2,9 +2,9 @@ import { ArrowUpRight, Clock3 } from 'lucide-react';
 import type { FechaISO, Id } from '@/dominio/tipos';
 import { sumarDias } from '@/dominio/reglas/fechas';
 import { ESTADOS_CAJA, type EstiloEstado } from '@/config/estados';
-import { useEstadoDominio, useHoy, useSel } from '@/estado';
+import { useDinero, useEstadoDominio, useHoy, useSel } from '@/estado';
 import { selCierresDelDia, type CierreDelDia } from '@/selectores';
-import { dinero as formatoDinero, entero, fechaCorta, fechaLarga, hora } from '@/lib/formato';
+import { entero, fechaCorta, fechaLarga, hora } from '@/lib/formato';
 import { Badge, BadgeEstado, BotonExportar, Dinero, EmptyState, FranjaResumen, ResaltarFila, Segmentado, Table, type ColumnaTabla, cn } from '@/ui';
 import { lecturaDiferencia } from '../calculos';
 import { selCierresRecientes } from '../selectores';
@@ -33,6 +33,7 @@ export function estiloCierre(f: Pick<CierreDelDia, 'estado' | 'diferencia'>): Es
 export function CierresDueno({ dia, alDia, alAbrir, resaltar }: PropsCierresDueno) {
   const hoy = useHoy();
   const e = useEstadoDominio();
+  const d = useDinero();
   const filas = useSel(selCierresDelDia, { fecha: dia });
   const recientes = useSel(selCierresRecientes, { hoy, dias: 7 });
 
@@ -53,7 +54,7 @@ export function CierresDueno({ dia, alDia, alAbrir, resaltar }: PropsCierresDuen
   const columnas: ColumnaTabla<{ fecha: FechaISO; fila: CierreDelDia }>[] = [
     { id: 'fecha', encabezado: 'Fecha', celda: (x) => <span className="num">{fechaCorta(x.fecha)}</span>, ordenar: (x) => x.fecha, ancho: 90 },
     { id: 'local', encabezado: 'Local', celda: (x) => x.fila.localNombre, ordenar: (x) => x.fila.localNombre },
-    { id: 'cajero', encabezado: 'Cerró', celda: (x) => x.fila.cajero || '—', truncar: true },
+    { id: 'cajero', encabezado: 'Cerró', celda: (x) => x.fila.cajero || '—', truncar: true, ancho: 240 },
     { id: 'esperado', encabezado: 'Esperado', celda: (x) => (x.fila.esperado === null ? '—' : <Dinero valor={x.fila.esperado} />), numerica: true, ordenar: (x) => x.fila.esperado },
     { id: 'contado', encabezado: 'Contado', celda: (x) => (x.fila.contado === null ? '—' : <Dinero valor={x.fila.contado} />), numerica: true, ordenar: (x) => x.fila.contado },
     {
@@ -66,7 +67,7 @@ export function CierresDueno({ dia, alDia, alAbrir, resaltar }: PropsCierresDuen
     },
     { id: 'estado', encabezado: 'Estado', celda: (x) => <BadgeEstado estado={estiloCierre(x.fila)} tamano="sm" /> },
   ];
-  const historial = recientes.flatMap((d) => d.filas.filter((f) => f.sesionId).map((f) => ({ fecha: d.fecha, fila: f })));
+  const historial = recientes.flatMap((r) => r.filas.filter((f) => f.sesionId).map((f) => ({ fecha: r.fecha, fila: f })));
 
   return (
     <div className="flex flex-col gap-6" data-testid="caja-cierres">
@@ -100,7 +101,7 @@ export function CierresDueno({ dia, alDia, alAbrir, resaltar }: PropsCierresDuen
         ]}
       />
 
-      <ul className="grid grid-cols-1 gap-4 lg:grid-cols-3" data-testid="caja-tarjetas">
+      <ul className="grid grid-cols-1 gap-4 lg:grid-cols-3 [&>li]:flex [&>li>div]:flex-1" data-testid="caja-tarjetas">
         {filas.map((f) => {
           const c = cierreDe(f);
           const lectura = f.diferencia === null ? null : lecturaDiferencia(f.diferencia);
@@ -115,21 +116,23 @@ export function CierresDueno({ dia, alDia, alAbrir, resaltar }: PropsCierresDuen
                   data-testid={`caja-tarjeta-${f.localId}`}
                   data-estado={f.estado}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
+                  <div>
+                    <div className="flex items-start justify-between gap-3">
                       <h3 className="t-h3 text-ink">{f.localNombre}</h3>
-                      <p className="mt-0.5 flex items-center gap-1.5 t-small text-muted">
-                        <Clock3 size={14} aria-hidden />
-                        {f.estado === 'sin_abrir' ? 'No se abrió la caja' : c ? `Cerró ${f.cajero} a las ${hora(c.ts)}` : `Abrió ${f.cajero}`}
-                      </p>
+                      <BadgeEstado estado={estiloCierre(f)} />
                     </div>
-                    <BadgeEstado estado={estiloCierre(f)} />
+                    <p className="mt-1 flex items-center gap-1.5 t-small text-muted">
+                      <Clock3 size={14} aria-hidden className="shrink-0" />
+                      <span className="min-w-0 truncate" title={f.cajero}>
+                        {f.estado === 'sin_abrir' ? 'No se abrió la caja' : c ? `Cerró ${f.cajero} · ${hora(c.ts)}` : `Abrió ${f.cajero}`}
+                      </span>
+                    </p>
                   </div>
                   <p
                     className={cn('t-kpi-sm num', lectura === 'faltante' && 'text-danger', lectura === 'sobrante' && 'text-warning', lectura === 'cuadro' && 'text-success', lectura === null && 'text-ink')}
                     data-testid={`caja-resultado-${f.localId}`}
                   >
-                    {lectura === 'cuadro' ? 'Cuadró' : lectura === 'faltante' && f.diferencia !== null ? `Faltan ${formatoDinero(Math.abs(f.diferencia), 'COP')}` : lectura === 'sobrante' && f.diferencia !== null ? `Sobran ${formatoDinero(f.diferencia, 'COP')}` : f.estado === 'abierta' ? 'Abierta' : '—'}
+                    {lectura === 'cuadro' ? 'Cuadró' : lectura === 'faltante' && f.diferencia !== null ? `Faltan ${d(Math.abs(f.diferencia))}` : lectura === 'sobrante' && f.diferencia !== null ? `Sobran ${d(f.diferencia)}` : f.estado === 'abierta' ? 'Abierta' : '—'}
                   </p>
                   <dl className="grid grid-cols-2 gap-3 border-t border-line-soft pt-3 t-small">
                     <div>
