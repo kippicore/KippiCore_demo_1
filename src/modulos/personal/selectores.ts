@@ -12,6 +12,7 @@ import type {
   MesISO,
   MetaVentas,
   ParametrosNomina,
+  PeriodoNomina,
   TipoVinculacion,
 } from '@/dominio/tipos';
 import { mesDe } from '@/dominio/reglas/fechas';
@@ -24,7 +25,9 @@ import {
   selRiesgosContratacion,
   type CostoEmpleado,
   type ModoCosto,
+  selVistaPreviaNomina,
   type RiesgoContratacion,
+  type VistaPreviaNomina,
 } from '@/selectores';
 import { ultimoDiaDelMes } from './calculos';
 
@@ -363,3 +366,56 @@ export const selConsecuenciasRetiro = crearSelector<{ empleadoId: Id; fecha: Fec
     usuarios: Object.values(e.usuarios).filter((u) => u.empleadoId === empleadoId && u.activo).length,
   }),
 );
+
+/** Las tablas que lee `selVistaPreviaNomina` (src/selectores/nomina.ts): las de la nómina más lo que escribiría al aprobar. */
+const TABLAS_VISTA_PREVIA = [...TABLAS_COSTO, 'cuentasPorPagar', 'gastos', 'meta', 'locales', 'proveedores', 'usuarios', 'empresa', 'cuentas'] as const;
+
+export interface VistaPreviaConPersonas {
+  /** La liquidación que se aprobaría, con el nombre y el local de cada línea. */
+  liquidacion: LiquidacionNomina | null;
+  lineas: LineaConPersona[];
+  error: string | null;
+}
+
+/** Vista previa del periodo (la misma que escribiría `nomina.aprobar`) con el nombre, el slug y el local de cada línea. */
+export const selVistaPreviaConPersonas = crearSelector<{ periodo: PeriodoNomina; exoneracion: boolean; ahora: FechaHoraISO }, VistaPreviaConPersonas>(
+  'c1.vistaPrevia',
+  TABLAS_VISTA_PREVIA,
+  (e, p) => {
+    const v: VistaPreviaNomina = selVistaPreviaNomina(e, p);
+    const locales = Object.values(e.locales);
+    return {
+      liquidacion: v.liquidacion,
+      error: v.error,
+      lineas: (v.liquidacion?.lineas ?? []).map((linea) => {
+        const em = e.empleados[linea.empleadoId];
+        return { linea, nombre: nombreEmpleado(em), slug: em?.slug ?? null, localNombre: nombreLocal(locales, linea.localId) };
+      }),
+    };
+  },
+);
+
+/** Un contrato por su id (para verificar la PILA desde la nómina). */
+export const selContratoDeLinea = crearSelector<{ contratoId: Id }, Contrato | null>('c1.contrato', ['contratos'], (e, { contratoId }) => e.contratos[contratoId] ?? null);
+
+export interface PresetComparativo {
+  empleadoId: Id;
+  nombre: string;
+  cargo: Empleado['cargo'];
+  tipo: TipoVinculacion;
+  valor: COP;
+  riesgoArl: 1 | 2 | 3 | 4 | 5;
+}
+
+/** Las personas activas con su valor mensual, para llenar el comparativo "con el caso de…". */
+export const selPresetsComparativo = crearSelector<{ hoy: FechaISO }, PresetComparativo[]>('c1.presets', ['empleados', 'contratos'], (e, { hoy }) => {
+  const r: PresetComparativo[] = [];
+  for (const em of Object.values(e.empleados)) {
+    if (em.eliminadoEn || (em.fechaRetiro !== null && em.fechaRetiro <= hoy)) continue;
+    const c = e.contratos[em.contratoVigenteId];
+    const valor = c?.tipo === 'laboral' ? c.salarioBase : c?.honorarios;
+    if (!c || !valor) continue;
+    r.push({ empleadoId: em.id, nombre: nombreEmpleado(em), cargo: em.cargo, tipo: c.tipo, valor, riesgoArl: c.riesgoArl });
+  }
+  return r.sort((a, b) => (a.nombre < b.nombre ? -1 : 1));
+});

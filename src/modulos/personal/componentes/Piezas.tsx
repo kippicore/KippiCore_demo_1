@@ -131,6 +131,18 @@ export function InsigniasPersona({ tipo, riesgo, retirado, tamano = 'sm' }: { ti
 }
 
 // ---------------------------------------------------------------------------------------------------------
+// Controles dentro de una fila clicable
+// ---------------------------------------------------------------------------------------------------------
+/** Evita que un botón dentro de una fila de tabla abra también el detalle de la fila. */
+export function SinPropagar({ children }: { children: ReactNode }) {
+  return (
+    <span role="presentation" className="inline-flex" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+      {children}
+    </span>
+  );
+}
+
+// ---------------------------------------------------------------------------------------------------------
 // Límite de error
 // ---------------------------------------------------------------------------------------------------------
 interface EstadoLimite {
