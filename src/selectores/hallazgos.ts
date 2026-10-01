@@ -294,7 +294,7 @@ export const selHallazgos = crearSelector<{ hoy: FechaISO; localId?: Id | 'todos
     }
     let vipRiesgo = 0;
     for (const [id, x] of m) if (!e.clientes[id]?.eliminadoEn && x.valor >= 3_000_000 && diferenciaDias(x.ultima, hoy) > 90) vipRiesgo += 1;
-    if (vipRiesgo > 0) agregar('vip-en-riesgo', { cantidad: vipRiesgo, umbral: '$ 3 millones' }, vipRiesgo, Math.min(1.5, vipRiesgo / 20));
+    if (vipRiesgo > 0) agregar('vip-en-riesgo', { cantidad: vipRiesgo, umbral: '$ 3 millones' }, vipRiesgo, Math.min(1.5, vipRiesgo / 20), { umbral: 3_000_000 });
 
     // P13: margen que se come el dólar en los dos últimos pedidos de un producto.
     let caida: { categoria: Categoria; puntos: number } | null = null;

@@ -1,3 +1,4 @@
+import { TASA_EJEMPLO } from '@/config/monedas';
 import type { Alerta, Categoria, COP, EstadoDominio, FechaHoraISO, Id, Notificacion, ParteFrase, SolicitudAprobacion } from '@/dominio/tipos';
 import { asistenciaDia } from '@/dominio/reglas/asistencia';
 import { saldoCxP } from '@/dominio/reglas/cuentas';
@@ -186,7 +187,7 @@ export const selAlertas = crearSelector<{ localId: Id | 'todos'; ahora: FechaHor
         const s = saldoCxP(c);
         const tasa = c.moneda === 'COP' ? 1 : selTasaVigente(e, { moneda: c.moneda, fecha: hoy });
         const cop = c.moneda === 'COP' ? s : Math.round((s / 100) * tasa);
-        const monto: Trozo[] = c.moneda === 'COP' ? [{ cop: s }] : [`${montoExtranjero(s, c.moneda)}, unos `, { cop, palabras: true }, ' con la tasa de ejemplo'];
+        const monto: Trozo[] = c.moneda === 'COP' ? [{ cop: s }] : [`${montoExtranjero(s, c.moneda)}, unos `, { cop, palabras: true }, tasa === TASA_EJEMPLO.valores[c.moneda] ? ' con la tasa de ejemplo' : ' con la tasa vigente'];
         const esSaldoFabrica = c.categoria === 'proveedor_importacion' && c.concepto.toLowerCase().includes('saldo');
         r.push({
           id: `cxp:${c.id}:por_vencer`,
@@ -418,7 +419,7 @@ export const MAX_NUEVAS_ARRIBA = 2;
  * vendedor), así que se aprueba en la misma alerta (`aprobacion`) y el enlace lleva a la prenda. La app (E1) arma
  * su propia ruta por tipo.
  */
-function accionAprobacion(e: EstadoDominio, s: SolicitudAprobacion): Pick<Alerta, 'accion' | 'aprobacion' | 'localId'> {
+function accionAprobacion(e: EstadoDominio, s: SolicitudAprobacion): Pick<Alerta, 'accion' | 'aprobacion' | 'localId' | 'contextoPartes'> {
   const pendiente = s.estado === 'pendiente';
   if (s.datos.tipo === 'anulacion')
     return {
@@ -429,10 +430,16 @@ function accionAprobacion(e: EstadoDominio, s: SolicitudAprobacion): Pick<Alerta
   if (s.datos.tipo === 'descuento') {
     const v = e.variantes[s.datos.varianteIds[0] ?? ''];
     const p = v ? e.productos[v.productoId] : undefined;
+    // El resumen del dominio trae los valores en pesos al final ("… · $ 789.900 → $ 631.920"): se separan para que
+    // sigan la moneda activa (fase 4, flujo 6).
+    const corte = s.resumen.lastIndexOf(' · ');
+    const contextoPartes: ParteFrase[] | undefined =
+      corte > 0 ? [{ texto: s.resumen.slice(0, corte + 3) }, { dinero: s.datos.valorLista }, { texto: ' → ' }, { dinero: s.datos.valorFinal }] : undefined;
     return {
       accion: p ? { texto: 'Ver la prenda', ruta: rutas.producto(p.referencia) } : { texto: 'Ver ventas', ruta: rutas.ventas() },
       aprobacion: pendiente ? { solicitudId: s.id } : undefined,
       localId: s.datos.localId,
+      contextoPartes,
     };
   }
   return {

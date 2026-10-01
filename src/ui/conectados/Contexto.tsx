@@ -8,6 +8,8 @@ import type { Id, Moneda, Rol } from '@/dominio/tipos';
 import { PERSONAS_ROL } from '@/config/permisos';
 import { emitirUI, useEstadoDominio, useFiltroLocal, useMoneda, useRolActivo, useSel, useSesion, useTasasVigentes } from '@/estado';
 import { textoTasas } from '@/lib/moneda';
+import { dinero } from '@/lib/formato';
+import { MONEDAS, TASA_EJEMPLO } from '@/config/monedas';
 import { selLocales } from '@/selectores';
 import { cn } from '../cn';
 import { Icono } from '../primitivos/Icono';
@@ -218,14 +220,17 @@ export function SelectorRol({ resaltar }: { resaltar?: boolean }) {
  * t-small accent-ink: "Estás viendo todo en US$ · Volver a pesos".
  */
 export function FranjaMoneda({ className }: { className?: string }) {
-  const { moneda } = useMoneda();
+  const { moneda, tasa } = useMoneda();
   const cambiar = useCambiarMoneda();
   if (moneda === 'COP') return null;
   const s = SIMBOLOS.find((x) => x.valor === moneda);
+  // La tasa con la que se convierte (fase 4): la de ejemplo hasta que el visitante la edita en Configuración.
+  const deEjemplo = tasa === TASA_EJEMPLO.valores[moneda];
   return (
     <div data-testid="franja-moneda" role="status" className={cn('flex h-8 items-center justify-center gap-2 bg-accent-soft px-4 t-small text-accent-ink', className)}>
       <span>
-        Estás viendo todo en <strong className="font-bold">{s?.etiqueta}</strong> con la tasa de ejemplo
+        Estás viendo todo en <strong className="font-bold">{s?.etiqueta}</strong> con {deEjemplo ? 'la tasa de ejemplo' : 'tu tasa'} ({MONEDAS[moneda].simbolo}
+        {'\u00a0'}1 = {dinero(tasa)})
       </span>
       <span aria-hidden>·</span>
       <button type="button" onClick={() => cambiar('COP')} className="font-bold underline underline-offset-3 hover:no-underline">
