@@ -12,6 +12,12 @@ import { Badge, cn, FraseConDinero, Icono, PuntoEstado } from '@/ui/ligero';
  * aviso informativo ("Se resuelve en el computador").
  */
 export function destinoAlerta(a: Alerta, e: ReturnType<typeof useEstadoDominio>): string | null {
+  // Las notificaciones (portal, venta web…) traen el documento del que hablan.
+  if (a.origen?.tipo === 'importacion') {
+    const imp = e.importaciones[a.origen.id];
+    return imp ? rutas.appImportacion(imp.numero) : rutas.appImportaciones();
+  }
+  if (a.origen?.tipo === 'venta') return rutas.appVentas();
   const [, resto = ''] = a.id.split(/:(.*)/s);
   switch (a.tipo) {
     case 'caja_con_diferencia':

@@ -95,4 +95,9 @@ export interface Alerta {
   contextoPartes?: ParteFrase[];
   /** Solicitud que se puede aprobar o rechazar desde la misma alerta en el escritorio (compartidos C-D). */
   aprobacion?: { solicitudId: Id };
+  /**
+   * Documento del que trata la alerta (el `origen` de la notificación: la importación que reportó el portal, la venta
+   * web…). La app del dueño lo usa para llevar a SU pantalla equivalente sin leer la ruta del escritorio (fase 4).
+   */
+  origen?: RefDocumento | null;
 }

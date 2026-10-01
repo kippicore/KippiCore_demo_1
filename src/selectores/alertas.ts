@@ -392,6 +392,7 @@ export const selAlertas = crearSelector<{ localId: Id | 'todos'; ahora: FechaHor
           ts: x.ts,
           localId: null,
           nueva: true,
+          origen: x.origen,
           prioridad: i < MAX_NUEVAS_ARRIBA ? 0 : 3.5,
         };
         const sol = x.tipo === 'aprobacion_solicitada' ? solicitudPorNotificacion.get(x.id) : undefined;
