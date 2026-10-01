@@ -12,7 +12,9 @@ import { VitePWA } from 'vite-plugin-pwa';
  */
 const GRUPOS_CHUNKS: { name: string; test: RegExp; priority?: number }[] = [
   { name: 'precarga', test: /vite[\\/]preload-helper|^\0vite\/preload-helper/, priority: 100 },
-  { name: 'react', test: /node_modules[\\/](react|react-dom|react-router|zustand|immer|scheduler)[\\/]/ },
+  // clsx va con React (F2-C): Recharts también lo usa y, sin esto, quedaba dentro del chunk `graficos` y TODA
+  // pantalla que usa `cn()` descargaba y evaluaba Recharts al arrancar (≈ 105 KB gz).
+  { name: 'react', test: /node_modules[\\/](react|react-dom|react-router|zustand|immer|scheduler|clsx)[\\/]/, priority: 10 },
   { name: 'radix', test: /node_modules[\\/]@radix-ui[\\/]/ },
   { name: 'tabla', test: /node_modules[\\/]@tanstack[\\/]/ },
   { name: 'graficos', test: /node_modules[\\/](recharts|d3-[^\\/]+|victory-vendor)[\\/]/ },

@@ -9,6 +9,7 @@ import { Marca } from '@/ui/conectados/Marca';
 import { cn } from '@/ui/cn';
 import { Icono } from '@/ui/primitivos/Icono';
 import { AvisosGlobales } from '../AvisosGlobales';
+import { sincronizarColorTema } from '../colorTema';
 
 /**
  * Layout de la tienda `/tienda` (PLAN 8.6): siempre claro, cuerpo de 16 px. Encabezado FLOTANTE de la referencia
@@ -38,7 +39,7 @@ export function LayoutTienda() {
   useEffect(() => {
     const raiz = document.documentElement;
     raiz.dataset.theme = 'light';
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#F9F9F9');
+    sincronizarColorTema();
   }, []);
   useEffect(() => {
     document.title = `${marca.nombre} · Moda masculina en Bogotá`;

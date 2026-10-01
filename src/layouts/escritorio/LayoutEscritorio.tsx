@@ -11,6 +11,7 @@ import { FranjaMoneda } from '@/ui/conectados/Contexto';
 import { useResaltar } from '@/ui/conectados/Guia';
 import { ProveedorTooltips } from '@/ui/primitivos/Tooltip';
 import { AvisosGlobales } from '../AvisosGlobales';
+import { sincronizarColorTema } from '../colorTema';
 import { AvisoPantallaPequena } from './AvisoPantallaPequena';
 import { BarraLateral } from './BarraLateral';
 import { BarraSuperior } from './BarraSuperior';
@@ -107,6 +108,7 @@ function LayoutConDatos() {
     raiz.dataset.rol = rol;
     raiz.dataset.moneda = moneda;
     raiz.dataset.theme = 'light';
+    sincronizarColorTema();
     return () => {
       delete raiz.dataset.rol;
       delete raiz.dataset.moneda;

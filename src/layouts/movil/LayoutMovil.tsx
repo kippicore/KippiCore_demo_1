@@ -8,6 +8,7 @@ import { cn } from '@/ui/cn';
 import { Icono } from '@/ui/primitivos/Icono';
 import { AvisosGlobales } from '../AvisosGlobales';
 import { iconoNavegacion } from '../iconos';
+import { sincronizarColorTema } from '../colorTema';
 
 /**
  * Layout de la app del dueño `/app` (PLAN 8.5). SIEMPRE del dueño (`ContextoRolForzado`). Oscuro por defecto
@@ -16,7 +17,6 @@ import { iconoNavegacion } from '../iconos';
  * el scroll de cada pestaña conservado. SIN Radix ni librerías pesadas: es la ruta con presupuesto de arranque.
  * Marcador común `data-testid="pagina"`; conserva `data-testid="layout-movil"`.
  */
-const COLOR_TEMA = { dark: '#0A0A0A', light: '#F9F9F9' } as const;
 
 function pestanaDe(pathname: string): string {
   const p = PESTANAS_APP.filter((t) => t.ruta !== '/app').find((t) => pathname === t.ruta || pathname.startsWith(`${t.ruta}/`));
@@ -34,8 +34,7 @@ export function LayoutMovil() {
   useEffect(() => {
     const raiz = document.documentElement;
     raiz.dataset.theme = oscuro ? 'dark' : 'light';
-    const meta = document.querySelector('meta[name="theme-color"]');
-    meta?.setAttribute('content', oscuro ? COLOR_TEMA.dark : COLOR_TEMA.light);
+    sincronizarColorTema();
     return () => {
       raiz.dataset.theme = 'light';
     };
