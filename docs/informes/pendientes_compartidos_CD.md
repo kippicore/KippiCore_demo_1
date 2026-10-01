@@ -20,3 +20,9 @@
 1. Hallazgos con dinero en palabras (no convierte moneda): `Hallazgo` debe traer `cifras` en COP para armar la frase con `<Dinero>`.
 2. CONTRATOS §10: documentar `?vista=` de analisis (hallazgos|proyeccion|meses|calor|semanas), `?resaltar=` de analisisProductos, `?vista=<ejemplo>` de tablaDinamica.
 3. **Datos (calibración)**: `selDesempenoVendedores` destaca a Natalia Ríos (≈36 % sobre el promedio) por encima de Valentina Gómez; el guion pide a Valentina como estrella indiscutible del negocio (no solo de Parque 93). Calzado queda 3.º en días de inventario (181) tras abrigos (388) y suéteres (191); el guion pide al calzado como la categoría dormida evidente (P5). Ajustar generador/seed o la definición de los selectores para que la historia sea coherente en todas las pantallas.
+
+## C3 (worktree-agent-a5008f498bd27ea2d, 249147a)
+1. `selEventosCalendario`/`selProximosEventos`: título de vencimientos con monto formateado en pesos (Inicio y /app no respetan moneda) → `EventoVista` con `monto: COP | null`, `montoOrigen`, título solo concepto.
+2. Mover `obligacionesIlustrativas` (src/modulos/calendario/calculos.ts) a `src/dominio/reglas/` y usarla en el selector compartido (N11: "PILA el día hábil 10" en próximos eventos de Inicio).
+3. Título corto de llegadas: "IMP-2026-07 · Llega a bodega".
+4. Recordatorios (`recordatorioMin`) visibles en Inicio y /app (D1/E1).
