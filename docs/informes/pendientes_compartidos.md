@@ -23,3 +23,11 @@ Ramas a fusionar: ver cada informe.
 ## A2 (rama worktree-agent-a1959e6d95b7c4d53, 2fd42f5)
 1. (= A4.1) cabecera fija de `Table` montada sobre filas cuando hay overflow-x.
 2. `src/ui/primitivos/Select.tsx` (Radix) puede llamar `onValueChange('')`: filtrar en el componente compartido.
+
+## B1 (rama worktree-agent-a52b22a451b97a0d0, ff39d46)
+1. (= B4.1) `BotonAccionesFila`.
+2. `src/styles/tokens.css` `--animate-page-in` con fill-mode `both` crea bloque contenedor para `position: fixed` → DragOverlay del Kanban corrido. Cambiar a `backwards`/`none` y quitar el `<style>` local con `:has()` de B1.
+3. `Dialog confirmarAlCerrar` pregunta siempre; debería detectar cambios (o documentar que se pase solo con cambios).
+4. Selector compartido de mensajes por origen (evita duplicar `selMensajesImportacion` en A4 y D5).
+5. Cifras W4/W12 fuera de guion → enviado a calibración (Oxford: costo $78.647, margen 57 %, sugerido $255.900; W12 sugiere 5 unidades con cobertura 90 días).
+6. Cobertura "hasta la siguiente llegada + 30 días" no existe como parámetro de `selSugerenciaPedido`.
