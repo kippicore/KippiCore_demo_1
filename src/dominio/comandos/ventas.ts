@@ -1299,7 +1299,7 @@ export const datafonoRegistrarAbono = manejador<
       'cuentaDestinoId',
     );
     exigir(
-      !Object.values(estado.abonosDatafono).some((a) => a.localId === local.id && a.ventasDe === d.ventasDe),
+      !estado.agregados.abonosDatafonoDia[claveDatafono(local.id, d.ventasDe)],
       'ABONO_DUPLICADO',
       `El abono del datáfono de ${local.nombre} del ${d.ventasDe} ya está registrado.`,
       'ventasDe',
@@ -1384,6 +1384,7 @@ export const datafonoRegistrarAbono = manejador<
   },
   escribir(estado, plan, ctx) {
     estado.abonosDatafono[plan.abono.id] = plan.abono;
+    estado.agregados.abonosDatafonoDia[claveDatafono(plan.abono.localId, plan.abono.ventasDe)] = plan.abono.id;
     for (const m of plan.movs) agregarMovimientoCuenta(estado, m);
     estado.gastos[plan.gasto.id] = plan.gasto;
     ctx.emitir({ tipo: 'AbonoDatafonoRegistrado', abonoId: plan.abono.id, neto: plan.abono.neto });

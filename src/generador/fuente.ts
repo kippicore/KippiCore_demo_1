@@ -93,12 +93,44 @@ export function diasDeVentana(plan: Plan, ahora: FechaHoraISO): FechaISO[] {
   return r;
 }
 
-export function crearFuente(plan: Plan, ahora: FechaHoraISO): { fuente: FuenteGenerada<IntencionGen>; gen: Gen } {
+/** Medición opcional por tipo de intención (scripts/medir-generador.ts): el reloj lo pasa quien mide. */
+export interface Medidor {
+  reloj: () => number;
+  registrar: (tipo: string, ms: number) => void;
+}
+
+function* medido(
+  m: Medidor,
+  tipo: string,
+  g: Generator<SobreComando>,
+): Generator<SobreComando> {
+  const t0 = m.reloj();
+  try {
+    yield* g;
+  } finally {
+    m.registrar(tipo, m.reloj() - t0);
+  }
+}
+
+export function crearFuente(
+  plan: Plan,
+  ahora: FechaHoraISO,
+  medidor?: Medidor,
+): { fuente: FuenteGenerada<IntencionGen>; gen: Gen } {
   const gen = new Gen(plan);
   const fuente: FuenteGenerada<IntencionGen> = {
     dias: diasDeVentana(plan, ahora),
-    planificarDia: (dia) => planificarDia(plan, dia),
-    materializar: (it, estado) => MATERIALIZADORES[it.tipo](gen, it, estado),
+    planificarDia: medidor
+      ? (dia) => {
+          const t0 = medidor.reloj();
+          const r = planificarDia(plan, dia);
+          medidor.registrar('planificarDia', medidor.reloj() - t0);
+          return r;
+        }
+      : (dia) => planificarDia(plan, dia),
+    materializar: medidor
+      ? (it, estado) => medido(medidor, it.tipo, MATERIALIZADORES[it.tipo](gen, it, estado))
+      : (it, estado) => MATERIALIZADORES[it.tipo](gen, it, estado),
   };
   return { fuente, gen };
 }
@@ -158,9 +190,14 @@ function completarMeta(estado: EstadoDominio, plan: Plan, gen: Gen, ahora: Fecha
  * Construcción completa por días, cediendo el control (worker: progreso). Mismo `ancla`, `ahora`, `semilla`,
  * `escala` y `registro` ⇒ mismo estado, en cualquier motor de JavaScript.
  */
-export function* construirEstado(e: EntradaGenerador): Generator<Progreso, EstadoDominio, void> {
+export function* construirEstado(
+  e: EntradaGenerador,
+  medidor?: Medidor,
+): Generator<Progreso, EstadoDominio, void> {
+  const t0 = medidor?.reloj();
   const { plan, base } = crearPlan(e);
-  const { fuente, gen } = crearFuente(plan, e.ahora);
+  if (medidor && t0 !== undefined) medidor.registrar('plan', medidor.reloj() - t0);
+  const { fuente, gen } = crearFuente(plan, e.ahora, medidor);
   const estado = yield* construir({
     estado: base,
     fuente,
@@ -173,8 +210,8 @@ export function* construirEstado(e: EntradaGenerador): Generator<Progreso, Estad
 }
 
 /** Construcción sin ceder el control (Node, pruebas y respaldo en el hilo principal). */
-export function generarEstado(e: EntradaGenerador): EstadoDominio {
-  const g = construirEstado(e);
+export function generarEstado(e: EntradaGenerador, medidor?: Medidor): EstadoDominio {
+  const g = construirEstado(e, medidor);
   for (;;) {
     const paso = g.next();
     if (paso.done) return paso.value;

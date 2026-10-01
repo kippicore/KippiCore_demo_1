@@ -54,7 +54,7 @@ export function* materializarReposicion(g: Gen, it: IntencionGen, estado: Estado
     for (const p of g.plan.productos) {
       if (!d.seVende(p, fecha)) continue;
       const minimo = estado.productos[p.id]?.stockMinimo ?? 2;
-      const part = d.participacion(local.id, fecha, p.categoria);
+      const part = d.participacionEfectiva(local.id, fecha, p.categoria);
       const t = d.productosDe(p.categoria, fecha);
       const totalPeso = t.acumulada[t.acumulada.length - 1] ?? 0;
       if (totalPeso <= 0) continue;

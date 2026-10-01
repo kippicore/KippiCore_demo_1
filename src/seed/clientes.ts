@@ -34,7 +34,7 @@ export const TIPOS_LATENTES_CLIENTES: TipoLatenteCliente[] = [
   {
     id: 'frecuente',
     proporcion: 0.22,
-    compras18m: [5, 9],
+    compras18m: [4, 7],
     factorTicket: 1.1,
     abandonoDias: null,
     altaUltimosDias: null,

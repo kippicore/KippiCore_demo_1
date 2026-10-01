@@ -17,7 +17,7 @@ import {
   IMPORTACIONES_EN_CURSO,
   type ImportacionEnCurso,
 } from '@/seed/importaciones';
-import { CURVA_PEDIDO } from '@/seed/tallas';
+import { CURVA_PEDIDO, DEMANDA_TALLAS } from '@/seed/tallas';
 import { diaN, diferenciaDias } from '@/dominio/reglas/fechas';
 import { idGenerado } from '@/dominio/motor/ids';
 import { type Calendario, masDias } from './calendario';
@@ -47,6 +47,11 @@ const VOLUMEN_POR_UNIDAD: Record<Categoria, number> = {
 
 /** Componente específico del arancel ("Otros tributos aduaneros"), como fracción del FOB en pesos (ejemplo). */
 const OTROS_TRIBUTOS_SOBRE_FOB = 0.25;
+/**
+ * Días de demanda esperada de calzado que deja el pedido grande al ancla. Con la demanda real (agotados de
+ * tallas y colores) da ≈ 160 días de inventario (P5).
+ */
+const DIAS_CALZADO_DORMIDO = 125;
 /** Fracción que se distribuye a los locales al recibir (el resto queda de reserva en bodega, 7.9). */
 export const FRACCION_DISTRIBUIDA = 0.8;
 /** Horizonte del plan después del ancla. */
@@ -293,8 +298,9 @@ export function planImportaciones(e: EntradaPlanImportaciones): PlanImportacione
       if ((p.fechas.recibido_bodega as FechaISO) < e.inicio) break;
       pedidos.push(p);
     }
-    // Hacia adelante. Ruifeng no vuelve a pedir hasta después del ancla (el calzado está dormido).
-    const primero = n ? masDias(ancla0.pedido, cadencia) : masDias(e.ancla, 25);
+    // Hacia adelante. Tras el pedido grande, Ruifeng repone antes (cinturones y billeteras; el calzado sobra) y
+    // ese pedido llega antes del ancla, así al ancla solo hay cuatro importaciones en curso (N2–N5).
+    const primero = n ? masDias(ancla0.pedido, cadencia) : masDias(ancla0.pedido, 200);
     for (let p = primero; p <= horizonte; p = masDias(p, cadencia)) pedidos.push(regular(p));
   }
 
@@ -334,62 +340,99 @@ export function planImportaciones(e: EntradaPlanImportaciones): PlanImportacione
   }
   const oxfordM = HISTORIA_IMPORTACIONES.oxfordM.clave.split('|') as [Id, string, Id];
 
+  // Cantidades con política "pedir hasta" (7.9): objetivo = demanda esperada de esta llegada a la siguiente
+  // + 30 días, × 1,15, con la curva de pedido casi pareja; se pide el objetivo menos lo que se espera que quede
+  // del pedido anterior (consumo con la curva de demanda). Así la M se queda corta (P3) y nada se acumula.
+  const cantidadesPorPedido = new Map<Pedido, Map<Id, Record<Id, number>>>();
+  const infoVariante = new Map<Id, { p: ProductoPlan; talla: string; color: Id }>();
+  for (const p of e.productos)
+    for (const [k, v] of Object.entries(p.variantes)) {
+      const [talla, color] = k.split('|') as [string, Id];
+      infoVariante.set(v, { p, talla, color });
+    }
+  const consumo = (p: ProductoPlan, talla: string, color: Id, d1: FechaISO, d2: FechaISO) =>
+    d2 <= d1 ? 0 : esperado(acum, p.id, d1, d2) * (DEMANDA_TALLAS[p.curva][talla] ?? 0) * e.demanda.fraccionColor(p, color, d1);
+  for (const fab of fabricas) {
+    const propios = pedidos
+      .filter((p) => p.proveedorId === fab.id)
+      .sort((a, b) => ((a.fechas.recibido_bodega as FechaISO) < (b.fechas.recibido_bodega as FechaISO) ? -1 : 1));
+    const stock = new Map<Id, number>();
+    let anterior: FechaISO | null = null;
+    // Después del pedido grande de calzado, los siguientes de Ruifeng no traen calzado hasta pasar el ancla (P5).
+    const dormido = (propios.find((p) => p.dormido)?.fechas.recibido_bodega as FechaISO | undefined) ?? null;
+    const lista = llegadas.get(fab.id) ?? [];
+    for (const ped of propios) {
+      const llegada = ped.fechas.recibido_bodega as FechaISO;
+      if (anterior) {
+        for (const [v, q] of stock) {
+          const x = infoVariante.get(v);
+          if (x) stock.set(v, Math.max(0, q - consumo(x.p, x.talla, x.color, anterior, llegada)));
+        }
+      }
+      const siguiente = lista.find((x) => x > llegada) ?? masDias(llegada, 200);
+      const desde = ped.cargaInicial ? e.inicio : llegada;
+      const hasta = masDias(siguiente, HISTORIA_IMPORTACIONES.coberturaExtraDias);
+      const referencias = ped.narrativa ? ped.narrativa.referencias : (porProveedor.get(fab.id) ?? []).map((p) => p.id);
+      const porProducto = new Map<Id, Record<Id, number>>();
+      for (const refId of referencias) {
+        const p = e.productos.find((x) => x.id === refId);
+        if (!p) continue;
+        const demanda = esperado(acum, p.id, desde, hasta) * HISTORIA_IMPORTACIONES.margenSeguridad;
+        const curva = CURVA_PEDIDO[p.curva];
+        const cantidades: Record<Id, number> = {};
+        for (const talla of p.tallas) {
+          for (const color of p.colores) {
+            const v = p.variantes[`${talla}|${color}`];
+            if (!v) continue;
+            let objetivo = demanda * (curva[talla] ?? 0) * e.demanda.fraccionColor(p, color, llegada);
+            const esOxfordM = p.id === oxfordM[0] && talla === oxfordM[1] && color === oxfordM[2];
+            if (esOxfordM) {
+              // P3: se agota ≈ 3 veces en 6 meses. El pedido que llega antes del ancla trae lo justo para N1.
+              const antesDelAncla = llegada <= e.ancla && llegada > masDias(e.ancla, -120);
+              if (antesDelAncla && !ped.narrativa) objetivo = consumo(p, talla, color, llegada, e.ancla) + 12;
+              else objetivo *= HISTORIA_IMPORTACIONES.oxfordM.factor;
+            }
+            if (p.sinMovimiento && llegada < e.demanda.limiteSinMovimiento) objetivo += 2;
+            if (!ped.dormido && p.categoria === 'calzado' && dormido && llegada > dormido && llegada <= masDias(e.ancla, 60))
+              objetivo = 0;
+            if (ped.dormido && p.categoria === 'calzado') {
+              // P5: el pedido grande de temporada deja ≈ 160 días de inventario de calzado al ancla.
+              objetivo = consumo(p, talla, color, llegada, e.ancla) + consumo(p, talla, color, e.ancla, masDias(e.ancla, DIAS_CALZADO_DORMIDO));
+            }
+            const forzada = ped.narrativa?.unidadesForzadas[`${p.id}|${talla}|${color}`];
+            const q = forzada ?? Math.max(0, Math.round(objetivo - (stock.get(v) ?? 0)));
+            if (q > 0) cantidades[v] = q;
+            stock.set(v, (stock.get(v) ?? 0) + q);
+          }
+        }
+        if (Object.keys(cantidades).length) porProducto.set(p.id, cantidades);
+      }
+      cantidadesPorPedido.set(ped, porProducto);
+      anterior = llegada;
+    }
+  }
+
   const importaciones: ImportacionPlan[] = [];
   for (const ped of pedidos) {
     const fab = fabricas.find((f) => f.id === ped.proveedorId) as ProveedorSeed;
     const perfil = fab.perfil as NonNullable<ProveedorSeed['perfil']>;
     const moneda = fab.datos.moneda === 'CNY' ? 'CNY' : 'USD';
     const rng = rngPlan(e.semilla, `imp-detalle:${fab.id}:${ped.pedido}:${ped.cargaInicial ? 'i' : 'r'}`);
-    const llegada = ped.fechas.recibido_bodega as FechaISO;
-    const lista = llegadas.get(fab.id) ?? [];
-    const siguiente = lista.find((x) => x > llegada) ?? masDias(llegada, 200);
-    const coberturaDesde = ped.cargaInicial ? e.inicio : llegada;
-    const coberturaHasta = masDias(siguiente, HISTORIA_IMPORTACIONES.coberturaExtraDias);
-    const referencias = ped.narrativa
-      ? ped.narrativa.referencias
-      : (porProveedor.get(fab.id) ?? []).map((p) => p.id);
     const id = ped.cargaInicial
       ? idGenerado('im', 'inicial', fab.id.slice(3))
       : idGenerado('im', fab.id.slice(3), ped.pedido);
     const lineas: LineaImportacion[] = [];
     let volumen = 0;
-    for (const refId of referencias) {
-      const p = e.productos.find((x) => x.id === refId);
+    for (const [productoId, cantidades] of cantidadesPorPedido.get(ped) ?? []) {
+      const p = e.productos.find((x) => x.id === productoId);
       if (!p) continue;
-      let demanda = esperado(acum, p.id, coberturaDesde, coberturaHasta) * HISTORIA_IMPORTACIONES.margenSeguridad;
-      if (ped.dormido && p.categoria === 'calzado') demanda *= dorm.factorCantidad;
-      const curva = CURVA_PEDIDO[p.curva];
-      const cantidades: Record<Id, number> = {};
       let unidades = 0;
-      for (const talla of p.tallas) {
-        for (const color of p.colores) {
-          const v = p.variantes[`${talla}|${color}`];
-          if (!v) continue;
-          let q = demanda * (curva[talla] ?? 0) * e.demanda.fraccionColor(p, color, llegada);
-          const esOxfordM = p.id === oxfordM[0] && talla === oxfordM[1] && color === oxfordM[2];
-          if (esOxfordM) {
-            // P3: se agota ≈ 3 veces en 6 meses. El pedido que llega antes del ancla trae lo justo para N1.
-            const antesDelAncla = llegada <= e.ancla && llegada > masDias(e.ancla, -120);
-            if (antesDelAncla && !ped.narrativa) {
-              q = esperado(acum, p.id, llegada, e.ancla) * 0.38 * e.demanda.fraccionColor(p, color, llegada) + 14;
-            } else q *= HISTORIA_IMPORTACIONES.oxfordM.factor;
-          }
-          const forzada = ped.narrativa?.unidadesForzadas[`${p.id}|${talla}|${color}`];
-          let n = forzada ?? Math.round(q);
-          if (forzada === undefined) n = Math.max(ped.narrativa ? 4 : 2, n);
-          cantidades[v] = n;
-          unidades += n;
-        }
-      }
+      for (const q of Object.values(cantidades)) unidades += q;
       if (unidades <= 0) continue;
-      lineas.push({
-        id: `${id}-l${lineas.length + 1}`,
-        productoId: p.id,
-        cantidades,
-        costoUnitarioOrigen: p.fob.centavos,
-      });
+      lineas.push({ id: `${id}-l${lineas.length + 1}`, productoId: p.id, cantidades, costoUnitarioOrigen: p.fob.centavos });
       volumen += unidades * VOLUMEN_POR_UNIDAD[p.categoria];
     }
+    if (!lineas.length) continue;
     // N5: el saldo del pedido de Lanxin en producción es ≈ US$ 14.700 (FOB ≈ US$ 21.000).
     if (ped.narrativa?.saldoCentavos) {
       const objetivo = Math.round(ped.narrativa.saldoCentavos / 0.7);

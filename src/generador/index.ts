@@ -6,6 +6,7 @@ export {
   diasDeVentana,
   generarEstado,
   type EntradaGenerador,
+  type Medidor,
 } from './fuente';
 export { Plan } from './plan';
 export { hashTexto } from './prng';

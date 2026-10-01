@@ -32,6 +32,18 @@ export const CATEGORIAS: readonly Categoria[] = [
   'accesorios',
 ];
 
+/** Mezcla de la vendedora estrella (P2): más sastrería y abrigos, menos polos. */
+export const AJUSTE_ESTRELLA: Partial<Record<Categoria, number>> = {
+  blazers: 2.4,
+  trajes: 2.6,
+  abrigos_chaquetas: 1.6,
+  polos: 0.6,
+  accesorios: 0.6,
+};
+export const LOCAL_ESTRELLA = 'p93';
+/** Fracción esperada de las ventas de Parque 93 que hace la vendedora estrella. */
+const PARTE_ESTRELLA = 0.42;
+
 /** Días antes del ancla desde los que las 5 referencias de P6 dejan de venderse. */
 export const DIAS_SIN_MOVIMIENTO = 75;
 /** Meses antes del ancla en que el beige y el camel empiezan a subir en suéteres (P12). */
@@ -177,6 +189,30 @@ export class Demanda {
     return ((m.acumulada[i] ?? 0) - previo) / total;
   }
 
+  /**
+   * Participación efectiva de una categoría en las unidades de un local: en Parque 93 mezcla la de Valentina
+   * (≈ 42 % de las ventas, con más sastrería, P2) con la del resto. La usan las cantidades de los pedidos, la
+   * distribución y la reposición, para que la mercancía esté donde se vende.
+   */
+  participacionEfectiva(localId: Id, fecha: FechaISO, categoria: Categoria): number {
+    const base = this.participacion(localId, fecha, categoria);
+    if (localId !== LOCAL_ESTRELLA) return base;
+    const m = this.mezcla(localId, fecha, AJUSTE_ESTRELLA);
+    const total = m.acumulada[m.acumulada.length - 1] ?? 1;
+    const i = m.cats.indexOf(categoria);
+    const estrella = ((m.acumulada[i] ?? 0) - (i > 0 ? (m.acumulada[i - 1] ?? 0) : 0)) / total;
+    // El accesorio que agrega la estrella en ≈ 34 % de sus ventas (≈ 0,09 de las unidades de Parque 93).
+    const accesorio = categoria === 'accesorios' ? 0.09 : 0;
+    return (1 - PARTE_ESTRELLA) * base + PARTE_ESTRELLA * estrella + accesorio;
+  }
+
+  /** Unidades esperadas por día de una categoría en un local, en un mes típico del local (afinidad, 7.9). */
+  unidadesLocalCategoria(local: ConfigLocal, fecha: FechaISO, categoria: Categoria): number {
+    const p = local.perfil;
+    if (!p) return 0;
+    return p.ventasDiaBase * p.unidadesPorVenta * this.participacionEfectiva(local.id, fecha, categoria);
+  }
+
   /** ¿La referencia se vende en esa fecha? (P6: las 5 sin movimiento dejan de venderse). */
   seVende(p: ProductoPlan, fecha: FechaISO): boolean {
     return !(p.sinMovimiento && fecha >= this.limiteSinMovimiento);
@@ -201,7 +237,10 @@ export class Demanda {
   /** Peso de cada color de una referencia (P12: azul en camisas; beige y camel subiendo en suéteres). */
   pesoColor(p: ProductoPlan, colorId: Id, fecha: FechaISO): number {
     const familia = FAMILIA_COLOR[colorId];
-    if (p.categoria === 'camisas' && familia === 'azul') return 1.35;
+    if (p.categoria === 'camisas' && familia === 'azul')
+      // La Oxford azul cielo es la combinación estrella (N1, P3); el resto del azul pesa menos para que el azul
+      // sea ≈ 1 de cada 3 camisas (P12).
+      return p.id === 'pd_cam_0142' && colorId === 'col_azc' ? 1.4 : 0.3;
     if (p.categoria === 'punto' && (familia === 'beige' || familia === 'camel'))
       return fecha >= this.inicioTendenciaBeige ? 1.8 : 0.9;
     return 1;
@@ -316,7 +355,7 @@ export class Demanda {
         if (lam <= 0) continue;
         const unidades = lam * (l.perfil?.unidadesPorVenta ?? 1.4);
         for (const c of CATEGORIAS) {
-          const part = this.participacion(l.id, fecha, c);
+          const part = this.participacionEfectiva(l.id, fecha, c);
           if (part <= 0) continue;
           const t = this.productosDe(c, fecha);
           const total = t.acumulada[t.acumulada.length - 1] ?? 0;

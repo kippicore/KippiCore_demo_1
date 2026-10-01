@@ -108,6 +108,8 @@ export interface Agregados {
   cajaAbierta: Record<Id, Id>;
   /** Por `${localId}@${fecha}`: sesión de caja abierta ese día (una por local y día). */
   cajaDia: Record<string, Id>;
+  /** Por `${localId}@${ventasDe}`: abono del datáfono registrado (uno por local y día de ventas, V11). */
+  abonosDatafonoDia: Record<string, Id>;
 }
 
 export interface EstadoDominio {

@@ -98,13 +98,18 @@ export function planClientes(e: EntradaClientes): ClientePlan[] {
       activoHasta = masDias(e.ancla, -rng.entero(...latente.abandonoDias));
       alta = masDias(activoHasta, -rng.entero(150, 900));
     } else alta = masDias(e.ancla, -rng.entero(75, 1100));
-    const activoDesde = alta > e.inicio ? alta : e.inicio;
-    const hasta = activoHasta ?? masDias(e.ancla, 400);
-    const diasActivo = Math.max(1, diferenciaDias(activoDesde, hasta));
+    let activoDesde = alta > e.inicio ? alta : e.inicio;
+    // Los ocasionales compran de vez en cuando, pero sus 1–3 compras caen en los últimos meses (P11: si no,
+    // casi todos quedarían "en riesgo" con la regla de 90 días).
+    if (tipo === 'ocasional') {
+      const reciente = masDias(e.ancla, -240);
+      if (activoDesde < reciente) activoDesde = reciente;
+    }
     const compras = rng.entero(...latente.compras18m);
     // Las compras de los tipos latentes son para la ventana completa; quien llegó después compra en proporción.
     const diasRef = Math.min(DIAS_VENTANA_REF, Math.max(30, diferenciaDias(activoDesde, activoHasta ?? e.ancla)));
-    const tasa = (compras * (latente.altaUltimosDias ? 1 : diasRef / DIAS_VENTANA_REF)) / Math.max(30, diasRef);
+    const completa = latente.altaUltimosDias !== null || tipo === 'ocasional';
+    const tasa = (compras * (completa ? 1 : diasRef / DIAS_VENTANA_REF)) / Math.max(30, diasRef);
     const mes = rng.entero(1, 12);
     const diaNac = rng.entero(1, mes === 2 ? 28 : 30);
     const canalAlta: OrigenCliente = (['pos', 'whatsapp', 'instagram', 'web'] as const)[
@@ -150,7 +155,6 @@ export function planClientes(e: EntradaClientes): ClientePlan[] {
       tallas,
       colorFavorito: rng.elegir(COLORES).id,
     });
-    void diasActivo;
   });
   return r;
 }

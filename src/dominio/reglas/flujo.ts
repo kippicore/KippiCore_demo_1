@@ -227,7 +227,8 @@ export function egresosNomina(e: {
 }): MovimientoFlujo[] {
   const r: MovimientoFlujo[] = [];
   const hasta = sumarDias(e.hoy, e.dias);
-  const dentro = (f: FechaISO) => f > e.hoy && f <= hasta;
+  // Lo de hoy que aún no se causó (la nómina de las 6:00 p. m.) también cuenta: se carga mañana.
+  const dentro = (f: FechaISO) => f >= e.hoy && f <= hasta;
   const push = (fecha: FechaISO, valor: COP, tipo: TipoMovimientoFlujo, concepto: string) => {
     if (valor && dentro(fecha) && !e.yaCausadas.has(`${tipo}|${fecha}`))
       r.push({ fecha, valor: -valor, tipo, concepto, refId: null });

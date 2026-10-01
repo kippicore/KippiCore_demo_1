@@ -49,7 +49,9 @@ describe('flujo de caja (6.20.9)', () => {
       yaCausadas: new Set(),
     });
     const quincenas = movs.filter((m) => m.tipo === 'nomina_neto');
+    // La quincena de hoy, si aún no está causada, también cuenta (F2-A2: la nómina se aprueba a las 6:00 p. m.).
     expect(quincenas.map((m) => m.fecha)).toEqual([
+      '2026-09-30',
       '2026-10-15',
       '2026-10-31',
       '2026-11-15',

@@ -373,6 +373,7 @@ export function estadoInicial(e: EntradaEstadoInicial): EstadoDominio {
       bonosRedimidos: {},
       cajaAbierta: {},
       cajaDia: {},
+      abonosDatafonoDia: {},
     },
   };
 }

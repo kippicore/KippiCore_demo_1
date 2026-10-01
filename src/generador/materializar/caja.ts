@@ -95,11 +95,9 @@ export function* materializarDatafono(g: Gen, it: IntencionGen, estado: EstadoDo
   // Días que liquida hoy: desde el día hábil anterior (incluido) hasta ayer.
   let desde = masDias(fecha, -1);
   while (desde > g.plan.inicio && !g.plan.calendario.esHabil(desde)) desde = masDias(desde, -1);
-  const yaRegistrados = new Set<string>();
-  for (const a of Object.values(estado.abonosDatafono)) if (a.ventasDe >= desde) yaRegistrados.add(`${a.localId}@${a.ventasDe}`);
   for (let d = desde; d < fecha; d = masDias(d, 1)) {
     for (const local of g.plan.localesVenta) {
-      if (!localVivo(estado, local.id) || yaRegistrados.has(`${local.id}@${d}`)) continue;
+      if (!localVivo(estado, local.id) || estado.agregados.abonosDatafonoDia[claveDatafono(local.id, d)]) continue;
       const cobrado = estado.agregados.datafonoDia[claveDatafono(local.id, d)];
       if (!cobrado || cobrado.debito + cobrado.credito <= 0) continue;
       yield emitir('datafono.registrarAbono', {

@@ -86,6 +86,9 @@ function horasPlantilla(g: Gen, empleadoId: Id, desde: FechaISO, hasta: FechaISO
   return r;
 }
 
+/** Ventas del mes para los insumos explícitos (se calculan una vez por mes: quincena y mes la comparten). */
+const cacheVentasMes = new WeakMap<Gen, Map<string, ReturnType<typeof ventasDelMes>>>();
+
 function* aprobarYPagar(
   g: Gen,
   it: IntencionGen,
@@ -117,7 +120,14 @@ function* aprobarYPagar(
     if (periodo.inicio < g.plan.lunesTurnos) {
       // Sin turnos almacenados: insumos explícitos (días completos y horas de la plantilla).
       insumos = {};
-      const ventas = ventasDelMes(estado, periodo.fin.slice(0, 7));
+      const mes = periodo.fin.slice(0, 7);
+      let ventas = cacheVentasMes.get(g)?.get(mes);
+      if (!ventas) {
+        ventas = ventasDelMes(estado, mes);
+        const c = cacheVentasMes.get(g) ?? new Map<string, ReturnType<typeof ventasDelMes>>();
+        c.set(mes, ventas);
+        cacheVentasMes.set(g, c);
+      }
       for (const e of empleados) {
         const contrato = estado.contratos[e.contratoVigenteId];
         if (!contrato) continue;

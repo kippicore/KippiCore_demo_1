@@ -1,6 +1,7 @@
 import type { COP, EstadoDominio, FechaISO, Id } from '../tipos';
 import { NOMBRES_OBLIGACIONES } from '@/config/obligaciones';
 import { saldoCxP } from './cuentas';
+import { calcularCostoAterrizado } from './costeo';
 import { copDeCentavos } from './dinero';
 import { diaSemana, mesDe, sumarDias } from './fechas';
 import {
@@ -54,6 +55,47 @@ function tasaVigente(estado: EstadoDominio, moneda: 'USD' | 'CNY', fecha: FechaI
   for (const t of Object.values(estado.tasas))
     if (t.moneda === moneda && t.fecha <= fecha && (!mejor || t.fecha > mejor.fecha)) mejor = t;
   return mejor?.valor ?? 0;
+}
+
+/**
+ * Lo que falta girar de las importaciones en curso y aún no es cuenta por pagar: tributos aduaneros al iniciar la
+ * nacionalización (M8), flete al embarcar, agente y bodegaje al levante y transporte a Bogotá, en sus fechas
+ * estimadas (valores de la importación, convertidos con la tasa vigente).
+ */
+export function egresosImportacionesEnCurso(estado: EstadoDominio, hoy: FechaISO, dias: number): MovimientoFlujo[] {
+  const r: MovimientoFlujo[] = [];
+  const hasta = sumarDias(hoy, dias);
+  const causadas = new Map<Id, Set<string>>();
+  for (const c of Object.values(estado.cuentasPorPagar)) {
+    if (c.eliminadoEn || c.documento?.tipo !== 'importacion') continue;
+    const s = causadas.get(c.documento.id) ?? new Set<string>();
+    s.add(c.categoria);
+    causadas.set(c.documento.id, s);
+  }
+  for (const imp of Object.values(estado.importaciones)) {
+    if (imp.eliminadoEn || imp.estado === 'recibido_bodega' || imp.estado === 'cotizado') continue;
+    const ya = causadas.get(imp.id) ?? new Set<string>();
+    const tasa = tasaVigente(estado, imp.moneda, hoy) || imp.tasaPedido;
+    const costeo = calcularCostoAterrizado({
+      lineas: imp.lineas,
+      costos: imp.costos,
+      moneda: imp.moneda,
+      metodoProrrateo: imp.metodoProrrateo,
+      tasaCosteo: tasa,
+    });
+    const agregar = (categoria: string, fecha: FechaISO, valor: COP, concepto: string) => {
+      if (ya.has(categoria) || valor <= 0) return;
+      const f = fecha <= hoy ? sumarDias(hoy, 1) : fecha;
+      if (f > hasta) return;
+      r.push({ fecha: f, valor: -valor, tipo: 'cuenta_por_pagar', concepto: `${concepto} ${imp.numero}`, refId: imp.id });
+    };
+    const h = imp.hitos;
+    agregar('tributos_aduaneros', h.en_nacionalizacion.real ?? h.en_nacionalizacion.estimada, costeo.tributos, 'Tributos aduaneros');
+    agregar('agente_carga', sumarDias(h.embarcado.real ?? h.embarcado.estimada, 15), costeo.flete, 'Flete internacional');
+    agregar('agente_aduanas', sumarDias(h.nacionalizado.real ?? h.nacionalizado.estimada, 10), imp.costos.honorariosAgente + imp.costos.bodegajePuerto, 'Agente de aduanas y bodegaje');
+    agregar('transporte', sumarDias(h.en_transporte_bogota.real ?? h.en_transporte_bogota.estimada, 15), imp.costos.transporteInterno, 'Transporte a Bogotá');
+  }
+  return r;
 }
 
 /** Prima semestral, cesantías e intereses anuales estimados de los contratos laborales vigentes. */
@@ -223,6 +265,7 @@ export function proyeccionFlujoEstado(estado: EstadoDominio, o: OpcionesFlujoEst
       yaCausadas,
     }),
   ];
+  movimientos.push(...egresosImportacionesEnCurso(estado, hoy, dias));
   for (const v of vencimientosTributarios(sumarDias(hoy, 1), sumarDias(hoy, dias), estado.parametros.obligaciones)) {
     if (yaCausadas.has(`${v.tipo}|${v.fecha}`)) continue;
     const valor = ultimos[v.tipo]?.valor ?? 0;

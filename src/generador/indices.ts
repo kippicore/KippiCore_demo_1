@@ -1,4 +1,7 @@
 import type { ClaveExistencia, FechaISO, Id, MesISO } from '@/dominio/tipos';
+import { sumarDias } from '@/dominio/reglas/fechas';
+
+const siguienteDia = (f: FechaISO) => sumarDias(f, 1);
 
 /**
  * Índices incrementales del generador (PLAN 7.1, 7.4). Son candidatos, no la verdad: cada intención diaria de
@@ -53,6 +56,25 @@ export class Indices {
     const l = mapa.get(fecha) ?? [];
     mapa.delete(fecha);
     return l;
+  }
+
+  private readonly ultimaRevision = new Map<string, FechaISO>();
+
+  /**
+   * Eventos `${fecha}|${localId}` desde la última revisión del local (excluida) hasta hoy: así un evento que cae
+   * en un día cerrado (25 de diciembre, 1 de enero) se atiende en la siguiente apertura.
+   */
+  pendientes<T>(mapa: Map<string, T[]>, localId: Id, franja: string, hoy: FechaISO, inicio: FechaISO): T[] {
+    const clave = `${franja}|${localId}`;
+    let d = this.ultimaRevision.get(clave) ?? inicio;
+    const r: T[] = [];
+    if (d === inicio) r.push(...this.tomar(mapa, `${d}|${localId}`));
+    while (d < hoy) {
+      d = siguienteDia(d);
+      r.push(...this.tomar(mapa, `${d}|${localId}`));
+    }
+    this.ultimaRevision.set(clave, hoy);
+    return r;
   }
 
   sumarVenta(mes: MesISO, iva: number, base: number, financiera: number): void {

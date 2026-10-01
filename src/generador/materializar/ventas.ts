@@ -28,6 +28,7 @@ import {
   VENDEDORA_ESTRELLA,
 } from '@/seed/estacionalidad';
 import { masDias } from '../calendario';
+import { AJUSTE_ESTRELLA } from '../demanda';
 import {
   clienteVivo,
   empleadoActivo,
@@ -61,13 +62,6 @@ const ORDEN_TALLAS: Record<string, readonly string[]> = {
   unica: ['Única'],
 };
 
-const AJUSTE_ESTRELLA: Partial<Record<Categoria, number>> = {
-  blazers: 1.7,
-  trajes: 1.7,
-  abrigos_chaquetas: 1.4,
-  polos: 0.7,
-  accesorios: 0.6,
-};
 
 /** Vendedor de turno del local a esa hora (7.8): plantilla + guarda de retirados; Valentina pesa × 1,3. */
 export function vendedorPara(g: Gen, estado: EstadoDominio, localId: Id, ts: string, rng: Rng): Id | null {
@@ -109,7 +103,8 @@ export function elegirCliente(
   forzar: boolean,
   filtro: ((c: ClientePlan) => boolean) | null = null,
 ): ClientePlan | null {
-  if (!forzar && !rng.chance(g.plan.config.clientes.proporcionVentasConCliente)) return null;
+  // Separados y créditos llevan cliente siempre (≈ 2,5 % de las ventas): el resto se descuenta del 15 % (P11).
+  if (!forzar && !rng.chance(g.plan.config.clientes.proporcionVentasConCliente - 0.022)) return null;
   const candidatos: ClientePlan[] = [];
   const pesos: number[] = [];
   for (const c of g.plan.clientes) {
@@ -294,7 +289,7 @@ export function construirPagos(
     if (efectivo < valor) {
       return [
         pago('efectivo', efectivo, { sesionCajaId: sesion, recibido: recibidoEfectivo(rng, efectivo) }),
-        pago('nequi', valor - efectivo),
+        pago(rng.chance(0.5) ? 'nequi' : 'datafono_debito', valor - efectivo),
       ];
     }
   }
@@ -610,7 +605,7 @@ export function* materializarRevision(g: Gen, it: IntencionGen, estado: EstadoDo
   const fecha = fechaDe(it.ts);
   if (!localVivo(estado, localId)) return;
   if (it.datos.franja === 'separados') {
-    const eventos = g.idx.tomar(g.idx.separados, `${fecha}|${localId}`);
+    const eventos = g.idx.pendientes(g.idx.separados, localId, 'separados', fecha, g.plan.inicio);
     for (const [k, ev] of eventos.entries()) {
       const venta = estado.ventas[ev.ventaId];
       if (!venta || venta.anulacion || venta.separado?.cerrado) continue;
@@ -635,7 +630,7 @@ export function* materializarRevision(g: Gen, it: IntencionGen, estado: EstadoDo
     return;
   }
   // Devoluciones (≈ 3 %), 1–15 días después: cambio, saldo a favor o reembolso.
-  const eventos = g.idx.tomar(g.idx.devoluciones, `${fecha}|${localId}`);
+  const eventos = g.idx.pendientes(g.idx.devoluciones, localId, 'devoluciones', fecha, g.plan.inicio);
   for (const [k, ev] of eventos.entries()) {
     const venta = estado.ventas[ev.ventaId];
     if (!venta || venta.anulacion || venta.tipo === 'separado') continue;
@@ -658,8 +653,15 @@ export function* materializarRevision(g: Gen, it: IntencionGen, estado: EstadoDo
       const s = sesion ? estado.sesionesCaja[sesion] : undefined;
       const hayEfectivo = s ? efectivoEsperado(s.abierta.baseInicial, estado.agregados.efectivoSesion[s.id] ?? 0, s.egresos) >= valorAprox : false;
       if (original === 'efectivo' && hayEfectivo) reembolso = { medio: 'efectivo', sesionCajaId: sesion };
-      else if (['datafono_debito', 'datafono_credito', 'nequi', 'daviplata', 'qr_bre_b'].includes(original))
-        reembolso = { medio: original, sesionCajaId: null };
+      else if (original === 'datafono_debito' || original === 'datafono_credito') {
+        // El datáfono solo devuelve si el local ya cobró con datáfono hoy al menos ese valor (el abono del día
+        // nunca queda negativo); si no, se devuelve por transferencia.
+        const hoy = estado.agregados.datafonoDia[`${localId}@${fecha}`];
+        reembolso =
+          hoy && hoy.debito + hoy.credito >= valorAprox
+            ? { medio: original, sesionCajaId: null }
+            : { medio: 'transferencia', sesionCajaId: null };
+      } else if (['nequi', 'daviplata', 'qr_bre_b'].includes(original)) reembolso = { medio: original, sesionCajaId: null };
       else reembolso = { medio: 'transferencia', sesionCajaId: null };
       if (totalPagado(venta) < valorAprox) continue;
     }

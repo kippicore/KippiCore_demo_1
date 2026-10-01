@@ -113,8 +113,8 @@ export function planificarDia(plan: Plan, dia: FechaISO): IntencionGen[] {
     if (dm === 2 || dm === 5 || dm === 12) r.push(it('gastos.ocasionales', `ocasionales:${dia}`, `${dia}T10:00`));
     // Narrativa al ancla (7.11).
     if (dia === masDias(A, -21)) r.push(it('narrativa', `narrativa:conteo:${dia}`, `${dia}T08:30`, { caso: 'conteo' }));
-    if (dia === masDias(A, -3)) r.push(it('narrativa', `narrativa:flujo:${dia}`, `${dia}T08:00`, { caso: 'flujo' }));
     if (dia === masDias(A, -1)) {
+      r.push(it('narrativa', `narrativa:flujo:${dia}`, `${dia}T22:00`, { caso: 'flujo' }));
       r.push(it('narrativa', `narrativa:solicitudes:${dia}`, `${dia}T19:00`, { caso: 'solicitudes' }));
       r.push(it('narrativa', `narrativa:existencias:${dia}`, `${dia}T19:50`, { caso: 'existencias' }));
     }

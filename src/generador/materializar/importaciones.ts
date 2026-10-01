@@ -258,9 +258,7 @@ function* recibir(
     if (n <= 0) continue;
     const p = g.plan.productoDeVariante.get(v);
     if (!p) continue;
-    const pesos = locales.map(
-      (l) => (l.perfil?.participacionDistribucion ?? 0.3) * d.participacion(l.id, fecha, p.categoria),
-    );
+    const pesos = locales.map((l) => d.unidadesLocalCategoria(l, fecha, p.categoria));
     const total = pesos.reduce((a, x) => a + x, 0) || 1;
     const repartible = Math.floor(n * FRACCION_DISTRIBUIDA);
     let asignado = 0;
