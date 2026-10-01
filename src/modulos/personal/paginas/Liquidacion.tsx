@@ -205,7 +205,8 @@ function DialogoPago({ liquidacion: l, alCerrar }: { liquidacion: LiquidacionNom
   const acciones = useAcciones();
   const saldos = useSel(selSaldosCuentas);
   const dinero = useDinero();
-  const inicial = saldos.cuentas.find((c) => c.cuenta.tipo === 'banco') ?? saldos.cuentas[0];
+  // La cuenta de arranque es la primera con saldo para toda la nómina; si ninguna alcanza, la de mayor saldo.
+  const inicial = saldos.cuentas.find((c) => c.saldo >= l.totales.neto) ?? [...saldos.cuentas].sort((a, b) => b.saldo - a.saldo)[0];
   const [fecha, setFecha] = useState<string | null>(hoy);
   const [cuentaId, setCuentaId] = useState<Id | null>(inicial?.cuenta.id ?? null);
   const [errores, setErrores] = useState<Partial<Record<'fecha' | 'cuentaId', string>>>({});

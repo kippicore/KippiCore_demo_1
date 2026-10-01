@@ -134,7 +134,7 @@ function PilaContratista({ contrato, nombre }: { contrato: Contrato; nombre: str
           return (
             <li key={m} className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-3" data-testid={`personal-pila-${m}`} data-verificada={ok ? 'si' : 'no'}>
               <span className="min-w-0">
-                <span className="block t-body font-semibold capitalize text-ink">{mesAnio(m)}</span>
+                <span className="block t-body font-semibold text-ink">{mesAnio(m).replace(/^./, (c) => c.toUpperCase())}</span>
                 <span className="block t-small text-muted">{ok ? (v?.soporte ? `Soporte: ${v.soporte.nombreArchivo}` : 'Verificada') : 'Sin soporte de la planilla'}</span>
               </span>
               <span className="flex items-center gap-3">

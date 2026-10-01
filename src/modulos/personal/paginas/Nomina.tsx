@@ -50,7 +50,7 @@ function CuerpoNomina() {
             </h2>
             {periodo && (
               <p className="mt-1 t-body text-muted">
-                Del <Fecha valor={periodo.inicio} formato="larga" /> al <Fecha valor={periodo.fin} formato="larga" />
+                Del <Fecha valor={periodo.inicio} /> al <Fecha valor={periodo.fin} />
               </p>
             )}
           </div>
@@ -236,7 +236,7 @@ function Historial({ hoy }: { hoy: string }) {
   const resaltar = useResaltar();
   const liquidaciones = useSel(selLiquidaciones);
   const columnas: ColumnaTabla<LiquidacionNomina>[] = [
-    { id: 'numero', encabezado: 'Nómina', ancho: 130, celda: (l) => <span className="num font-semibold">{l.numero}</span>, ordenar: (l) => l.numero },
+    { id: 'numero', encabezado: 'Nómina', ancho: 150, celda: (l) => <span className="num whitespace-nowrap font-semibold">{l.numero}</span>, ordenar: (l) => l.numero },
     { id: 'periodo', encabezado: 'Periodo', truncar: true, ancho: '30%', celda: (l) => l.periodo.etiqueta, ordenar: (l) => l.periodo.fin },
     {
       id: 'estado',

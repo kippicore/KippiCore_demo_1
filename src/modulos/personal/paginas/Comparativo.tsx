@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BotonEnlace, Dinero, InputNumero, Select, Switch } from '@/ui';
+import { BotonEnlace, InputNumero, Select, Switch } from '@/ui';
 import { emitirUI, useHoy, useSel } from '@/estado';
-import { plural } from '@/lib/formato';
 import { rutas } from '@/app/rutas';
 import { selComparativoModalidades, selNarrativa } from '@/selectores';
 import { AvisoRiesgoLista } from '../componentes/AlertasRiesgo';
@@ -109,12 +108,7 @@ function Cuerpo() {
           <p className="mt-1 max-w-[72ch] t-body text-muted">Mira si alguno de los que tienes por prestación de servicios se parece más a un empleado.</p>
         </div>
         {exposicion.filas.length > 0 ? (
-          <>
-            <AvisoRiesgoLista exposicion={exposicion} />
-            <p className="t-body text-ink-2">
-              {TEXTOS.comparativo.siEmpleados}: <Dinero valor={exposicion.diferencia} className="font-bold text-ink" /> al mes entre {plural(exposicion.filas.length, 'persona')}.
-            </p>
-          </>
+          <AvisoRiesgoLista exposicion={exposicion} />
         ) : (
           <p className="border border-line bg-surface px-5 py-4 t-body text-ink-2">{TEXTOS.comparativo.sinRiesgo}</p>
         )}

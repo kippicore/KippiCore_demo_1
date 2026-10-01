@@ -37,7 +37,7 @@ export function TablaLineas({
     {
       id: 'persona',
       encabezado: 'Persona',
-      ancho: '28%',
+      ancho: conPdf ? '21%' : '24%',
       celda: (l) => (
         <span className="flex min-w-0 flex-col gap-1">
           <span className="block truncate t-body font-semibold text-ink">{l.nombre}</span>
@@ -56,16 +56,17 @@ export function TablaLineas({
     },
     { id: 'devengado', encabezado: 'Devengado', numerica: true, alinear: 'der', celda: (l) => <Dinero valor={devengadoDe(l.linea)} />, ordenar: (l) => devengadoDe(l.linea) },
     { id: 'deducciones', encabezado: 'Descuentos', numerica: true, alinear: 'der', celda: (l) => <Dinero valor={deduccionesDe(l.linea)} />, ordenar: (l) => deduccionesDe(l.linea) },
-    { id: 'neto', encabezado: 'Neto a pagar', numerica: true, alinear: 'der', celda: (l) => <Dinero valor={l.linea.netoAPagar} className="font-semibold" />, ordenar: (l) => l.linea.netoAPagar },
-    { id: 'aportes', encabezado: 'Aportes del negocio', numerica: true, alinear: 'der', celda: (l) => <Dinero valor={aportesDe(l.linea)} />, ordenar: (l) => aportesDe(l.linea) },
+    { id: 'neto', encabezado: 'Neto', numerica: true, alinear: 'der', celda: (l) => <Dinero valor={l.linea.netoAPagar} className="font-semibold" />, ordenar: (l) => l.linea.netoAPagar },
+    { id: 'aportes', encabezado: 'Aportes', numerica: true, alinear: 'der', celda: (l) => <Dinero valor={aportesDe(l.linea)} />, ordenar: (l) => aportesDe(l.linea) },
     { id: 'provisiones', encabezado: 'Provisiones', numerica: true, alinear: 'der', celda: (l) => <Dinero valor={provisionesDe(l.linea)} />, ordenar: (l) => provisionesDe(l.linea) },
-    { id: 'costo', encabezado: 'Costo para el negocio', numerica: true, alinear: 'der', celda: (l) => <Dinero valor={l.linea.costoEmpleador} className="font-bold text-ink" />, ordenar: (l) => l.linea.costoEmpleador },
+    { id: 'costo', encabezado: 'Costo total', numerica: true, alinear: 'der', celda: (l) => <Dinero valor={l.linea.costoEmpleador} className="font-bold text-ink" />, ordenar: (l) => l.linea.costoEmpleador },
     ...(conPdf
       ? [
           {
             id: 'pdf',
-            encabezado: 'Desprendible',
+            encabezado: 'PDF',
             alinear: 'der' as const,
+            ancho: 96,
             celda: (l: LineaConPersona) => (
               <SinPropagar>
                 <BotonDocumentoPdf documento={{ tipo: 'desprendible', liquidacionId: conPdf, empleadoId: l.linea.empleadoId }} etiqueta="PDF" />

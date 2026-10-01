@@ -116,15 +116,15 @@ function CuerpoLista() {
     {
       id: 'persona',
       encabezado: 'Persona',
-      ancho: '27%',
+      ancho: '25%',
       celda: (f) => <CeldaPersona empleado={f.empleado} nombre={f.nombre} />,
       ordenar: (f) => f.nombre,
     },
-    { id: 'local', encabezado: 'Local', truncar: true, ancho: '13%', celda: (f) => f.localNombre, ordenar: (f) => f.localNombre },
+    { id: 'local', encabezado: 'Local', truncar: true, ancho: '15%', celda: (f) => f.localNombre, ordenar: (f) => f.localNombre },
     {
       id: 'vinculacion',
       encabezado: 'Vinculación',
-      ancho: '19%',
+      ancho: '24%',
       celda: (f) => <InsigniasPersona tipo={f.tipo} riesgo={!!f.riesgo} retirado={f.retirado} />,
       ordenar: (f) => f.tipo ?? '',
     },

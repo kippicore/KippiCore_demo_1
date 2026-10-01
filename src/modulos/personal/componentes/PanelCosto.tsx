@@ -213,7 +213,7 @@ export function PanelCosto({ empleado, contrato, esquema, retirado }: PropsPanel
           <h2 className="t-h2 text-ink">{laboral ? '¿Y si fuera por prestación de servicios?' : '¿Y si tuviera contrato laboral?'}</h2>
           <p className="mt-1 max-w-[72ch] t-body text-muted">El mismo valor mensual en las dos modalidades, con lo que le queda a la persona.</p>
         </div>
-        <ComparativoLadoALado cmp={cmp} sujeto={`el cargo de ${empleado.nombres}`} />
+        <ComparativoLadoALado cmp={cmp} sujeto={`el cargo de ${empleado.nombres}`} sinNota />
       </section>
 
       {/* La nota legal acompaña a todo cálculo; el comparativo ya trae la suya, esta cubre el resto de la pestaña. */}

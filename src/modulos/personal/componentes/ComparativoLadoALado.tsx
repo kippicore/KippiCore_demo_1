@@ -44,9 +44,11 @@ export interface PropsComparativo {
   cmp: ComparativoModalidades;
   /** Cargo o persona de la que se habla ("este cargo"). */
   sujeto?: string;
+  /** La pestaña de costo ya trae su nota legal al final. */
+  sinNota?: boolean;
 }
 
-export function ComparativoLadoALado({ cmp, sujeto = 'este cargo' }: PropsComparativo) {
+export function ComparativoLadoALado({ cmp, sujeto = 'este cargo', sinNota }: PropsComparativo) {
   const l = cmp.laboral;
   const d = l.desglose;
   const p = cmp.prestacion;
@@ -118,7 +120,7 @@ export function ComparativoLadoALado({ cmp, sujeto = 'este cargo' }: PropsCompar
           </div>
         </div>
       </div>
-      <NotaNomina />
+      {!sinNota && <NotaNomina />}
     </section>
   );
 }
