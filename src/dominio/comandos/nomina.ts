@@ -52,8 +52,9 @@ export function ventasDelMes(
     basePorVendedor.set(vendedor, { base: a.base + base, total: a.total + total });
     totalPorLocal.set(local, (totalPorLocal.get(local) ?? 0) + total);
   };
-  for (const v of Object.values(estado.ventas)) {
-    if (v.anulacion) continue;
+  for (const id in estado.ventas) {
+    const v = estado.ventas[id];
+    if (!v || v.anulacion) continue;
     if (v.ts.startsWith(mes)) sumar(v.vendedorId, v.localId, v.base, v.total);
     const cancelado = v.separado?.cerrado?.resultado === 'cancelado' ? v.separado.cerrado : null;
     if (cancelado && cancelado.ts.startsWith(mes)) sumar(v.vendedorId, v.localId, -v.base, -v.total);
@@ -192,7 +193,8 @@ export const nominaAprobar = manejador<'nomina.aprobar', PlanAprobacion>({
     );
     const params = structuredClone(estado.parametros.nomina);
     const mes = mesDe(p.fin);
-    const ventas = ventasDelMes(estado, mes);
+    // Las ventas del mes solo cuentan en el periodo que lo cierra (comisiones y bono de meta).
+    const ventas = cierraMes(p) ? ventasDelMes(estado, mes) : { basePorVendedor: new Map(), totalPorLocal: new Map() };
     const lineas: LiquidacionEmpleado[] = empleados.map((e) => {
       const contrato = requerirExiste(estado.contratos, e.contratoVigenteId, 'el contrato', 'periodo');
       const insumos = d.insumos?.[e.id] ?? calcularInsumos(estado, e, contrato, p, ventas, ctx.ts);

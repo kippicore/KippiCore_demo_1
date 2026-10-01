@@ -186,8 +186,9 @@ export function cuentaDeMedio(estado: EstadoDominio, medio: MedioPago, localId: 
 export function saldoAFavorCliente(estado: EstadoDominio, clienteId: Id): COP {
   let saldo = 0;
   const ventasCliente = new Set<Id>();
-  for (const v of Object.values(estado.ventas)) {
-    if (v.clienteId !== clienteId) continue;
+  for (const id in estado.ventas) {
+    const v = estado.ventas[id];
+    if (!v || v.clienteId !== clienteId) continue;
     ventasCliente.add(v.id);
     if (v.separado?.cerrado?.resultado === 'cancelado') for (const p of v.pagos) saldo += p.valor;
     for (const p of v.pagos) if (p.medio === 'saldo_a_favor') saldo -= p.valor;

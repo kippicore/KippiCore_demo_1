@@ -111,6 +111,9 @@ export function planificarDia(plan: Plan, dia: FechaISO): IntencionGen[] {
     if (ob.primaFechas.includes(md) || md === ob.cesantiasFecha || md === ob.interesesCesantiasFecha)
       r.push(it('prestaciones', `prestaciones:${dia}`, `${dia}T06:10`));
     if (dm === 2 || dm === 5 || dm === 12) r.push(it('gastos.ocasionales', `ocasionales:${dia}`, `${dia}T10:00`));
+    // Conteo físico mensual (segundo martes), rotando local y categoría; no en las semanas del conteo narrativo.
+    if (ds === 2 && dm >= 8 && dm <= 14 && (dia < masDias(A, -35) || dia > masDias(A, -7)))
+      r.push(it('conteo', `conteo:${dia}`, `${dia}T08:15`));
     // Narrativa al ancla (7.11).
     if (dia === masDias(A, -21)) r.push(it('narrativa', `narrativa:conteo:${dia}`, `${dia}T08:30`, { caso: 'conteo' }));
     if (dia === masDias(A, -1)) {

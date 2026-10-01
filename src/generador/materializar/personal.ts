@@ -3,7 +3,7 @@ import { calcularInsumos, ventasDelMes } from '@/dominio/comandos/nomina';
 import { claveMarcacionDia } from '@/dominio/comandos/tx';
 import { diaSemana, diasDelMes, fechaDe, minutosDeHora, rangoFechas } from '@/dominio/reglas/fechas';
 import { horasNocturnasTurno, horasNetasTurno } from '@/dominio/reglas/jornada';
-import { periodosDelMes } from '@/dominio/reglas/nomina';
+import { cierraMes, periodosDelMes } from '@/dominio/reglas/nomina';
 import { idGenerado } from '@/dominio/motor/ids';
 import { masDias } from '../calendario';
 import { CUENTA_CORRIENTE, empleadoActivo, type Gen } from '../contexto';
@@ -86,6 +86,8 @@ function horasPlantilla(g: Gen, empleadoId: Id, desde: FechaISO, hasta: FechaISO
   return r;
 }
 
+const SIN_VENTAS: ReturnType<typeof ventasDelMes> = { basePorVendedor: new Map(), totalPorLocal: new Map() };
+
 /** Ventas del mes para los insumos explícitos (se calculan una vez por mes: quincena y mes la comparten). */
 const cacheVentasMes = new WeakMap<Gen, Map<string, ReturnType<typeof ventasDelMes>>>();
 
@@ -121,7 +123,7 @@ function* aprobarYPagar(
       // Sin turnos almacenados: insumos explícitos (días completos y horas de la plantilla).
       insumos = {};
       const mes = periodo.fin.slice(0, 7);
-      let ventas = cacheVentasMes.get(g)?.get(mes);
+      let ventas = cierraMes(periodo) ? cacheVentasMes.get(g)?.get(mes) : SIN_VENTAS;
       if (!ventas) {
         ventas = ventasDelMes(estado, mes);
         const c = cacheVentasMes.get(g) ?? new Map<string, ReturnType<typeof ventasDelMes>>();

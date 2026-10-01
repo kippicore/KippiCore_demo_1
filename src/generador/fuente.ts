@@ -20,7 +20,7 @@ import { Plan } from './plan';
 import type { IntencionGen } from './tipos';
 import { materializarCajaAbrir, materializarCajaCerrar, materializarDatafono } from './materializar/caja';
 import { materializarImportacion } from './materializar/importaciones';
-import { materializarRecibirTraslados, materializarReposicion } from './materializar/inventario';
+import { materializarConteo, materializarRecibirTraslados, materializarReposicion } from './materializar/inventario';
 import { idsSolicitudes, materializarNarrativa, PERSONAS_NARRATIVA } from './materializar/narrativa';
 import { materializarMarcacion, materializarNomina, materializarTurnosSemana } from './materializar/personal';
 import {
@@ -74,6 +74,7 @@ const MATERIALIZADORES: Record<IntencionGen['tipo'], Materializador> = {
   'venta.guion': materializarVentaGuion,
   revision: materializarRevision,
   reposicion: materializarReposicion,
+  conteo: materializarConteo,
   'traslados.recibir': materializarRecibirTraslados,
   'importacion.hito': materializarImportacion,
   'cxp.pagos': materializarPagos,

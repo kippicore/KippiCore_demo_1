@@ -98,3 +98,38 @@ export function* materializarReposicion(g: Gen, it: IntencionGen, estado: Estado
     g.idx.agregar(g.idx.trasladosPorRecibir, fecha, trasladoId);
   }
 }
+
+const ROTACION_CONTEO = ['bod', 'p93', 'zr', 'usq'] as const;
+const CATEGORIAS_CONTEO = ['camisas', 'pantalones', 'accesorios', 'polos', 'punto', 'calzado'] as const;
+
+/** Conteo físico mensual (7.4): un local y una categoría por mes; casi siempre cuadra, a veces 1–2 diferencias. */
+export function* materializarConteo(g: Gen, it: IntencionGen, estado: EstadoDominio): Generator<SobreComando> {
+  const fecha = fechaDe(it.ts);
+  const n = Number(fecha.slice(0, 4)) * 12 + Number(fecha.slice(5, 7));
+  const localId = ROTACION_CONTEO[n % ROTACION_CONTEO.length] as Id;
+  const categoria = CATEGORIAS_CONTEO[n % CATEGORIAS_CONTEO.length] ?? 'camisas';
+  if (!localVivo(estado, localId)) return;
+  if (Object.values(estado.conteos).some((c) => c.localId === localId && c.estado === 'en_curso')) return;
+  const emitir = g.emisor(it);
+  const rng = g.rng(it.clave);
+  const conteoId = idGenerado('cf', fecha, localId);
+  yield emitir('conteo.iniciar', { conteoId, localId, categorias: [categoria] }, { usuarioId: 'u_bodega' });
+  const c = estado.conteos[conteoId];
+  if (!c) return;
+  const conStock = Object.keys(c.lineas).filter((v) => existencias(estado, v, localId) > 0).sort();
+  const diferencias = rng.chance(0.6) ? new Set<Id>() : new Set(rng.muestra(conStock, rng.entero(1, 2)));
+  const cantidades: Record<Id, number> = {};
+  const motivos: Record<Id, 'perdida' | 'hallazgo' | 'error'> = {};
+  for (const v of Object.keys(c.lineas)) {
+    const hay = existencias(estado, v, localId);
+    if (!diferencias.has(v)) {
+      cantidades[v] = hay;
+      continue;
+    }
+    const sobra = rng.chance(0.3);
+    cantidades[v] = sobra ? hay + 1 : hay - 1;
+    motivos[v] = sobra ? 'hallazgo' : rng.chance(0.7) ? 'perdida' : 'error';
+  }
+  yield emitir('conteo.guardar', { conteoId, cantidades }, { usuarioId: 'u_bodega' });
+  yield emitir('conteo.aplicar', { conteoId, motivos }, { usuarioId: 'u_bodega' });
+}

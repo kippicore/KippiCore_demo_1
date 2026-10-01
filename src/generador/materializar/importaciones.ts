@@ -14,7 +14,7 @@ import { copDeCentavos, prorratearMayorResiduo } from '@/dominio/reglas/dinero';
 import { fechaDe } from '@/dominio/reglas/fechas';
 import { idHijo } from '@/dominio/motor/ids';
 import { masDias } from '../calendario';
-import { CUENTA_CORRIENTE, existencias, type Gen, localVivo, varianteVendible } from '../contexto';
+import { CUENTA_CORRIENTE, type Gen, localVivo, varianteVendible } from '../contexto';
 import { FRACCION_DISTRIBUIDA } from '../plan-importaciones';
 import type { IntencionGen, ImportacionPlan } from '../tipos';
 import { asegurarSaldo, pagarCxP } from './pagos';
@@ -289,5 +289,4 @@ function* recibir(
   if (estado.importaciones[plan.id]?.estado !== 'recibido_bodega') return;
   const llegada = fecha < g.plan.inicio ? g.plan.inicio : masDias(fecha, 1);
   for (const x of distribucion) g.idx.agregar(g.idx.trasladosPorRecibir, llegada, x.trasladoId);
-  void existencias;
 }

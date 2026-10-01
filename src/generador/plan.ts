@@ -15,7 +15,7 @@ import { SEED, type Seed } from '@/seed';
 import type { ConfigLocal } from '@/config/locales';
 import type { TurnoPlantilla } from '@/config/turnos';
 import { SEMANAS_TURNOS } from '@/config/turnos';
-import { diaN, diaSemana, inicioVentana, lunesDe, minutosDeHora } from '@/dominio/reglas/fechas';
+import { diaSemana, inicioVentana, lunesDe, minutosDeHora } from '@/dominio/reglas/fechas';
 import { idGenerado } from '@/dominio/motor/ids';
 import { Calendario, masDias } from './calendario';
 import { Demanda } from './demanda';
@@ -446,7 +446,6 @@ export class Plan {
     };
     agregar('cl_andres_gutierrez', 'usq', 'em_scardenas', andres, '17:40');
     agregar('cl_ricardo_penuela', 'p93', 'em_vgomez', ricardo, '16:20');
-    void diaN;
     return { ancla: A, separados, tardanzas, ausencias, novedades, comprasGuion };
   }
 }

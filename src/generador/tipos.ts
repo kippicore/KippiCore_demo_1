@@ -29,6 +29,7 @@ export type TipoIntencion =
   | 'venta.guion'
   | 'revision'
   | 'reposicion'
+  | 'conteo'
   | 'traslados.recibir'
   | 'importacion.hito'
   | 'cxp.pagos'

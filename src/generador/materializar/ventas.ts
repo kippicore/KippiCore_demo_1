@@ -398,7 +398,6 @@ function programarSeparado(g: Gen, rng: Rng, ventaId: Id, localId: Id, fecha: Fe
   if (narrativo) primero = masDias(A, 1);
   if (ultimo < primero) ultimo = primero;
   const span = Math.max(0, diaN(ultimo) - diaN(primero));
-  g.idx.separadosActivos.add(ventaId);
   if (!completa) {
     const f = masDias(limite, rng.entero(1, 5));
     g.idx.agregar(g.idx.separados, `${f}|${localId}`, { ventaId, localId, accion: 'cancelar', fraccion: 0 });
@@ -606,7 +605,7 @@ export function* materializarRevision(g: Gen, it: IntencionGen, estado: EstadoDo
   if (!localVivo(estado, localId)) return;
   if (it.datos.franja === 'separados') {
     const eventos = g.idx.pendientes(g.idx.separados, localId, 'separados', fecha, g.plan.inicio);
-    for (const [k, ev] of eventos.entries()) {
+    for (const ev of eventos) {
       const venta = estado.ventas[ev.ventaId];
       if (!venta || venta.anulacion || venta.separado?.cerrado) continue;
       if (venta.tipo !== 'separado' && venta.tipo !== 'credito') continue;
@@ -616,7 +615,6 @@ export function* materializarRevision(g: Gen, it: IntencionGen, estado: EstadoDo
       if (ev.accion === 'cancelar') {
         if (!venta.clienteId) continue;
         yield emitir('separado.cancelar', { ventaId: venta.id, destinoAbonos: 'saldo_favor', reembolso: null });
-        g.idx.separadosActivos.delete(venta.id);
         continue;
       }
       let valor = ev.fraccion >= 1 ? saldo : Math.round((saldo * ev.fraccion) / 1000) * 1000;
@@ -624,8 +622,6 @@ export function* materializarRevision(g: Gen, it: IntencionGen, estado: EstadoDo
       const [p] = construirPagos(g, estado, rng, localId, fecha, valor, false);
       if (!p) continue;
       yield emitir('venta.abonar', { ventaId: venta.id, pago: p });
-      if (valor === saldo) g.idx.separadosActivos.delete(venta.id);
-      void k;
     }
     return;
   }

@@ -45,8 +45,6 @@ export class Indices {
   readonly ultimaVentaVendedor = new Map<string, Id>();
   /** Cuentas pequeñas que se dejan vencer la semana del ancla ("hoy quedan 1–2 vencidas", 7.10). */
   vencidasNarrativas = 0;
-  /** Separados activos generados (para la calibración del flujo). */
-  readonly separadosActivos = new Set<Id>();
 
   agregar<T>(mapa: Map<FechaISO, T[]>, fecha: FechaISO, x: T): void {
     const l = mapa.get(fecha);
