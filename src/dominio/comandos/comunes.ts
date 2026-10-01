@@ -165,14 +165,11 @@ export function construirCliente(id: Id, datos: DatosCliente, ctx: Contexto): Cl
   return { ...traza(ctx), ...datos, id, notas: [] };
 }
 
-/** Sesión de caja abierta de un local (la más reciente), o null. */
+/** Sesión abierta de un local, o null (agregado `cajaAbierta`). */
 export function sesionAbiertaDelLocal(estado: EstadoDominio, localId: Id): SesionCaja | null {
-  let encontrada: SesionCaja | null = null;
-  for (const s of Object.values(estado.sesionesCaja)) {
-    if (s.localId === localId && s.cierre === null && (!encontrada || s.abierta.ts > encontrada.abierta.ts))
-      encontrada = s;
-  }
-  return encontrada;
+  const id = estado.agregados.cajaAbierta[localId];
+  const s = id ? estado.sesionesCaja[id] : undefined;
+  return s && s.cierre === null ? s : null;
 }
 
 /** Cuenta que recibe la plata de un medio (parametros.ventas.cuentaPorMedio). */
@@ -202,14 +199,11 @@ export function saldoAFavorCliente(estado: EstadoDominio, clienteId: Id): COP {
   return saldo;
 }
 
-/** Saldo de un bono de regalo (V12). */
+/** Saldo de un bono de regalo (V12): valor − Σ redimido (agregado `bonosRedimidos`). */
 export function saldoBono(estado: EstadoDominio, bonoId: Id): COP {
   const bono = estado.bonos[bonoId];
   if (!bono) return 0;
-  let usado = 0;
-  for (const v of Object.values(estado.ventas))
-    for (const p of v.pagos) if (p.bonoId === bonoId) usado += p.valor;
-  return bono.valor - usado;
+  return bono.valor - (estado.agregados.bonosRedimidos[bonoId] ?? 0);
 }
 
 /** Lo que ya usa el mismo comando de bonos y saldo a favor (varios pagos con el mismo medio). */

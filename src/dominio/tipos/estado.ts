@@ -100,6 +100,14 @@ export interface Agregados {
   datafonoDia: Record<string, { debito: COP; credito: COP }>;
   /** Por `${empleadoId}@${fecha}`: IDs de marcaciones ordenadas por ts (P3). */
   marcacionesDia: Record<string, Id[]>;
+  /** Por `${empleadoId}@${fecha}`: IDs de los turnos de ese día (F2-A2: solapes, jornada y marcaciones en O(1)). */
+  turnosDia: Record<string, Id[]>;
+  /** Por bono: Σ redimido con el medio `bono_regalo` (F2-A2: saldo del bono en O(1), V12). */
+  bonosRedimidos: Record<Id, COP>;
+  /** Por local: sesión de caja abierta (F2-A2: una sola abierta por local en O(1)). */
+  cajaAbierta: Record<Id, Id>;
+  /** Por `${localId}@${fecha}`: sesión de caja abierta ese día (una por local y día). */
+  cajaDia: Record<string, Id>;
 }
 
 export interface EstadoDominio {

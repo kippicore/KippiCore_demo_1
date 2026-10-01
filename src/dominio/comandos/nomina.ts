@@ -36,7 +36,7 @@ import {
   requerirExiste,
 } from './comunes';
 import { escribirPagoCxP, nuevaCxP, planearPagoCxP, type PlanPagoCxP } from './finanzas';
-import { claveMarcacionDia, fijarConsecutivo, leerConsecutivo, manejador, traza } from './tx';
+import { claveMarcacionDia, claveTurnoDia, fijarConsecutivo, leerConsecutivo, manejador, traza } from './tx';
 
 /** Nómina: aprobar (instantánea), pagar y anular la aprobación (PLAN 6.10, 6.19 P4, 6.20.5–6, 6.21). */
 
@@ -100,8 +100,10 @@ export function calcularInsumos(
     }
   }
   const h = { ed: 0, en: 0, rn: 0, df: 0 };
-  const turnos = Object.values(estado.turnos).filter(
-    (t) => t.empleadoId === empleado.id && t.fecha >= desde && t.fecha <= hasta,
+  const turnos = activos.flatMap((f) =>
+    (estado.agregados.turnosDia[claveTurnoDia(empleado.id, f)] ?? [])
+      .map((id) => estado.turnos[id])
+      .filter((t): t is NonNullable<typeof t> => !!t),
   );
   for (const t of turnos) {
     const marcs = (estado.agregados.marcacionesDia[claveMarcacionDia(empleado.id, t.fecha)] ?? [])

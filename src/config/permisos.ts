@@ -60,7 +60,7 @@ export const PERMISOS_COMANDOS: Record<TipoComando, readonly Actor[]> = {
   'contacto.editar': [D],
   'contacto.eliminar': [D],
   'importacion.crear': [D, G],
-  'importacion.editar': [D],
+  'importacion.editar': [D, G],
   'importacion.eliminar': [D],
   'importacion.cambiarEstado': [D, G, P],
   'importacion.actualizarHitos': [D, G],

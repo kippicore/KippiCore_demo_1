@@ -408,6 +408,17 @@ export const importacionEditar = manejador<'importacion.editar', { id: Id; cambi
     if (c.origenSugerencia !== undefined)
       cambios.origenSugerencia = c.origenSugerencia ? { ...c.origenSugerencia } : null;
     if (c.nota !== undefined) cambios.nota = c.nota;
+    if (c.aforo !== undefined) {
+      exigir(
+        c.aforo === null ||
+          (['automatico', 'documental', 'fisico'].includes(c.aforo.tipo) &&
+            (c.aforo.motivo === null || typeof c.aforo.motivo === 'string')),
+        'AFORO_INVALIDO',
+        'Elige el tipo de aforo.',
+        'aforo',
+      );
+      cambios.aforo = c.aforo ? { ...c.aforo } : null;
+    }
     return { id: imp.id, cambios };
   },
   escribir(estado, plan, ctx) {
@@ -659,7 +670,7 @@ export const importacionCambiarEstado = manejador<'importacion.cambiarEstado', P
 
 export const importacionActualizarHitos = manejador<
   'importacion.actualizarHitos',
-  { id: Id; hitos: Record<EstadoImportacion, HitoImportacion> }
+  { id: Id; hitos: Record<EstadoImportacion, HitoImportacion>; vencimientoSaldo: FechaISO | null }
 >({
   validar(estado, d) {
     const imp = requerir(estado.importaciones, d.importacionId, 'la importación', 'importacionId');
@@ -675,12 +686,21 @@ export const importacionActualizarHitos = manejador<
       'Las fechas estimadas deben ir en orden.',
       'estimadas',
     );
-    return { id: imp.id, hitos };
+    // Como al cambiar de estado (M6): el saldo a la fábrica sin abonos vence en la nueva estimada de "listo".
+    const saldo = estado.cuentasPorPagar[idHijo(imp.id, 'cxp-saldo')];
+    const nuevoVenc = hitos.listo_despacho.real ?? hitos.listo_despacho.estimada;
+    const vencimientoSaldo =
+      saldo && saldo.abonos.length === 0 && saldo.fechaVencimiento !== nuevoVenc ? nuevoVenc : null;
+    return { id: imp.id, hitos, vencimientoSaldo };
   },
   escribir(estado, plan, ctx) {
     const imp = estado.importaciones[plan.id];
     if (!imp) return;
     imp.hitos = plan.hitos;
+    if (plan.vencimientoSaldo) {
+      const saldo = estado.cuentasPorPagar[idHijo(imp.id, 'cxp-saldo')];
+      if (saldo) saldo.fechaVencimiento = plan.vencimientoSaldo;
+    }
     marcarEditado(imp, ctx);
     ctx.emitir({ tipo: 'EntidadCambiada', coleccion: 'importaciones', id: imp.id, accion: 'editada' });
   },

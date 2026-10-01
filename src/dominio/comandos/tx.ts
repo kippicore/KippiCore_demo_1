@@ -178,10 +178,21 @@ export function claveDatafono(localId: Id, fecha: FechaISO): string {
 /** Actualiza los agregados por un cobro (positivo) o su reverso (negativo): saldos, efectivo de la sesión y datáfono. */
 export function registrarCobroEnAgregados(
   estado: EstadoDominio,
-  cobro: { valor: COP; medio: MedioPago; cuentaId: Id | null; sesionCajaId: Id | null; ts: FechaHoraISO },
+  cobro: {
+    valor: COP;
+    medio: MedioPago;
+    cuentaId: Id | null;
+    sesionCajaId: Id | null;
+    ts: FechaHoraISO;
+    bonoId?: Id | null;
+  },
   localId: Id,
 ): void {
   sumarSaldo(estado, cobro.cuentaId, cobro.valor);
+  if (cobro.bonoId && cobro.medio === 'bono_regalo') {
+    estado.agregados.bonosRedimidos[cobro.bonoId] =
+      (estado.agregados.bonosRedimidos[cobro.bonoId] ?? 0) + cobro.valor;
+  }
   if (cobro.medio === 'efectivo' && cobro.sesionCajaId) {
     estado.agregados.efectivoSesion[cobro.sesionCajaId] =
       (estado.agregados.efectivoSesion[cobro.sesionCajaId] ?? 0) + cobro.valor;
@@ -243,4 +254,40 @@ export function fijarIndiceMarcaciones(estado: EstadoDominio, clave: string, ids
   });
   if (ordenados.length === 0) delete estado.agregados.marcacionesDia[clave];
   else estado.agregados.marcacionesDia[clave] = ordenados;
+}
+
+// ---------- Turnos ----------
+
+export function claveTurnoDia(empleadoId: Id, fecha: FechaISO): string {
+  return `${empleadoId}@${fecha}`;
+}
+
+/** Registra un turno en el índice del día (llamar después de escribirlo en la tabla). */
+export function indexarTurno(estado: EstadoDominio, t: { id: Id; empleadoId: Id; fecha: FechaISO }): void {
+  const clave = claveTurnoDia(t.empleadoId, t.fecha);
+  const ids = estado.agregados.turnosDia[clave] ?? [];
+  if (!ids.includes(t.id)) estado.agregados.turnosDia[clave] = [...ids, t.id];
+}
+
+/** Quita un turno del índice del día. */
+export function desindexarTurno(estado: EstadoDominio, t: { id: Id; empleadoId: Id; fecha: FechaISO }): void {
+  const clave = claveTurnoDia(t.empleadoId, t.fecha);
+  const ids = (estado.agregados.turnosDia[clave] ?? []).filter((x) => x !== t.id);
+  if (ids.length) estado.agregados.turnosDia[clave] = ids;
+  else delete estado.agregados.turnosDia[clave];
+}
+
+// ---------- Caja ----------
+
+export function claveCajaDia(localId: Id, fecha: FechaISO): string {
+  return `${localId}@${fecha}`;
+}
+
+export function registrarAperturaCaja(estado: EstadoDominio, sesion: { id: Id; localId: Id; abierta: { ts: FechaHoraISO } }): void {
+  estado.agregados.cajaAbierta[sesion.localId] = sesion.id;
+  estado.agregados.cajaDia[claveCajaDia(sesion.localId, fechaDe(sesion.abierta.ts))] = sesion.id;
+}
+
+export function registrarCierreCaja(estado: EstadoDominio, sesion: { id: Id; localId: Id }): void {
+  if (estado.agregados.cajaAbierta[sesion.localId] === sesion.id) delete estado.agregados.cajaAbierta[sesion.localId];
 }

@@ -13,7 +13,15 @@ import {
   requerirExiste,
   textoObligatorio,
 } from './comunes';
-import { agregarMovimientoCuenta, manejador, marcarEditado, traza } from './tx';
+import {
+  agregarMovimientoCuenta,
+  claveCajaDia,
+  manejador,
+  marcarEditado,
+  registrarAperturaCaja,
+  registrarCierreCaja,
+  traza,
+} from './tx';
 
 /** Caja (PLAN 6.7, 6.21, V8, W11): una sesión por local y día, arqueo ciego y revisión del dueño. */
 
@@ -32,21 +40,20 @@ export const cajaAbrir = manejador<'caja.abrir', SesionCaja>({
     exigir(local.vende && local.cuentaCajaId, 'LOCAL_SIN_CAJA', `${local.nombre} no tiene caja.`, 'localId');
     enteroNoNegativo(d.baseInicial, 'baseInicial', 'La base de la caja no puede ser negativa.');
     const hoy = fechaDe(ctx.ts);
-    for (const s of Object.values(estado.sesionesCaja)) {
-      if (s.localId !== local.id) continue;
-      exigir(
-        s.cierre !== null,
-        'CAJA_ABIERTA',
-        `La caja de ${local.nombre} sigue abierta desde ${fechaDe(s.abierta.ts)}.`,
-        'localId',
-      );
-      exigir(
-        fechaDe(s.abierta.ts) !== hoy,
-        'CAJA_DEL_DIA',
-        `La caja de ${local.nombre} ya se abrió hoy.`,
-        'localId',
-      );
-    }
+    const abierta = estado.agregados.cajaAbierta[local.id];
+    const previa = abierta ? estado.sesionesCaja[abierta] : undefined;
+    exigir(
+      !previa || previa.cierre !== null,
+      'CAJA_ABIERTA',
+      `La caja de ${local.nombre} sigue abierta desde ${previa ? fechaDe(previa.abierta.ts) : ''}.`,
+      'localId',
+    );
+    exigir(
+      !estado.agregados.cajaDia[claveCajaDia(local.id, hoy)],
+      'CAJA_DEL_DIA',
+      `La caja de ${local.nombre} ya se abrió hoy.`,
+      'localId',
+    );
     return {
       ...traza(ctx),
       id: d.sesionId,
@@ -60,6 +67,7 @@ export const cajaAbrir = manejador<'caja.abrir', SesionCaja>({
   },
   escribir(estado, sesion, ctx) {
     estado.sesionesCaja[sesion.id] = sesion;
+    registrarAperturaCaja(estado, sesion);
     ctx.emitir({ tipo: 'CajaAbierta', sesionId: sesion.id, localId: sesion.localId });
   },
 });
@@ -206,6 +214,7 @@ export const cajaCerrar = manejador<
     const s = estado.sesionesCaja[plan.sesionId];
     if (!s) return;
     s.cierre = plan.cierre;
+    registrarCierreCaja(estado, s);
     marcarEditado(s, ctx);
     if (plan.ajuste) agregarMovimientoCuenta(estado, plan.ajuste);
     ctx.emitir({

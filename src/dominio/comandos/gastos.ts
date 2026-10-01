@@ -359,6 +359,7 @@ export const gastoRecurrenteEliminar = crudEliminar<'gastoRecurrente.eliminar', 
 export const gastoRecurrenteGenerarMes = manejador<'gastoRecurrente.generarMes', PlanGastoNuevo[]>({
   validar(estado, d, ctx) {
     exigir(/^\d{4}-\d{2}$/.test(d.mes), 'MES_INVALIDO', 'Escribe el mes (AAAA-MM).', 'mes');
+    if (d.hasta) fechaValida(d.hasta, 'hasta');
     const generados = new Set<Id>();
     for (const g of Object.values(estado.gastos))
       if (g.recurrenteId && g.fecha.startsWith(d.mes)) generados.add(g.recurrenteId);
@@ -375,6 +376,7 @@ export const gastoRecurrenteGenerarMes = manejador<'gastoRecurrente.generarMes',
         continue;
       const dia = Math.min(r.diaDelMes, diasDelMes(d.mes));
       const fecha = `${d.mes}-${String(dia).padStart(2, '0')}`;
+      if (d.hasta && fecha > d.hasta) continue;
       const gastoId = idHijo(r.id, d.mes);
       const datos: DatosGasto = {
         fecha,

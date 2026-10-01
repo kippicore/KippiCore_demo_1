@@ -363,6 +363,16 @@ export function estadoInicial(e: EntradaEstadoInicial): EstadoDominio {
     notasCredito: {},
     mensajes: [],
     notificaciones: {},
-    agregados: { existencias: {}, saldosCuentas, efectivoSesion: {}, datafonoDia: {}, marcacionesDia: {} },
+    agregados: {
+      existencias: {},
+      saldosCuentas,
+      efectivoSesion: {},
+      datafonoDia: {},
+      marcacionesDia: {},
+      turnosDia: {},
+      bonosRedimidos: {},
+      cajaAbierta: {},
+      cajaDia: {},
+    },
   };
 }

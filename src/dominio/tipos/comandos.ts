@@ -186,7 +186,11 @@ export interface MapaComandos {
   'contacto.editar': { contactoId: Id; cambios: Partial<DatosContacto> };
   'contacto.eliminar': { contactoId: Id };
   'importacion.crear': DatosImportacion & { importacionId: Id };
-  'importacion.editar': { importacionId: Id; cambios: Partial<DatosImportacion> };
+  /** `aforo`: lo registra quien sigue la nacionalización (ajuste F2-A2: N3 y ≈ 15 % de los pedidos). */
+  'importacion.editar': {
+    importacionId: Id;
+    cambios: Partial<DatosImportacion> & { aforo?: Importacion['aforo'] };
+  };
   'importacion.eliminar': { importacionId: Id; motivo: string | null };
   'importacion.cambiarEstado': {
     importacionId: Id;
@@ -270,7 +274,8 @@ export interface MapaComandos {
   'gastoRecurrente.crear': { recurrenteId: Id; datos: DatosGastoRecurrente };
   'gastoRecurrente.editar': { recurrenteId: Id; cambios: Partial<DatosGastoRecurrente> };
   'gastoRecurrente.eliminar': { recurrenteId: Id };
-  'gastoRecurrente.generarMes': { mes: MesISO };
+  /** hasta: solo los recurrentes cuya fecha del mes ya llegó (ajuste F2-A2: el generador no causa gastos futuros, G2). */
+  'gastoRecurrente.generarMes': { mes: MesISO; hasta?: FechaISO | null };
   // Personal y nómina
   'empleado.crear': { empleadoId: Id; contratoId: Id; datos: DatosEmpleado; contrato: DatosContrato };
   'empleado.editar': { empleadoId: Id; cambios: Partial<DatosEmpleado> };

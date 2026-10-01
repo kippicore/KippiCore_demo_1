@@ -31,7 +31,16 @@ import {
   tsValido,
 } from './comunes';
 import { crudEliminar } from './crud';
-import { claveMarcacionDia, fijarIndiceMarcaciones, manejador, marcarEditado, traza } from './tx';
+import {
+  claveMarcacionDia,
+  claveTurnoDia,
+  desindexarTurno,
+  fijarIndiceMarcaciones,
+  indexarTurno,
+  manejador,
+  marcarEditado,
+  traza,
+} from './tx';
 
 /** Personal: empleados, contratos, comisiones, metas, turnos, marcaciones, novedades y PILA (PLAN 6.9, 6.21). */
 
@@ -210,7 +219,11 @@ export const empleadoRetirar = manejador<
     e.fechaRetiro = plan.fecha;
     const c = estado.contratos[e.contratoVigenteId];
     if (c) c.fin = plan.fecha;
-    for (const t of plan.turnosFuturos) delete estado.turnos[t];
+    for (const t of plan.turnosFuturos) {
+      const previo = estado.turnos[t];
+      if (previo) desindexarTurno(estado, previo);
+      delete estado.turnos[t];
+    }
     for (const u of plan.usuarios) {
       const usuario = estado.usuarios[u];
       if (usuario) usuario.activo = false;
@@ -371,8 +384,16 @@ function validarTurnos(
   excluir: ReadonlySet<Id>,
   aceptarExceso: boolean,
 ): boolean[] {
-  const existentes = Object.values(estado.turnos).filter((t) => !excluir.has(t.id));
-  const todos: TurnoPlan[] = [...existentes, ...nuevos];
+  // Turnos de un empleado en un día: los guardados (índice `turnosDia`, sin los excluidos) más los nuevos.
+  const delDia = (empleadoId: Id, fecha: FechaISO): TurnoPlan[] => {
+    const r: TurnoPlan[] = [];
+    for (const id of estado.agregados.turnosDia[claveTurnoDia(empleadoId, fecha)] ?? []) {
+      const t = estado.turnos[id];
+      if (t && !excluir.has(id)) r.push(t);
+    }
+    for (const n of nuevos) if (n.empleadoId === empleadoId && n.fecha === fecha) r.push(n);
+    return r;
+  };
   return nuevos.map((t) => {
     const e = requerir(estado.empleados, t.empleadoId, 'el empleado', 'empleadoId');
     exigir(
@@ -396,8 +417,8 @@ function validarTurnos(
       'El descanso debe ser menor que el turno.',
       'descansoMin',
     );
-    for (const o of todos) {
-      if (o.id === t.id || o.empleadoId !== t.empleadoId || o.fecha !== t.fecha) continue;
+    for (const o of delDia(t.empleadoId, t.fecha)) {
+      if (o.id === t.id) continue;
       if (seSolapan(o, t))
         fallar(
           'TURNO_SOLAPADO',
@@ -406,11 +427,8 @@ function validarTurnos(
         );
     }
     const lunes = lunesDe(t.fecha);
-    const domingo = sumarDias(lunes, 6);
     let horas = 0;
-    for (const o of todos)
-      if (o.empleadoId === t.empleadoId && o.fecha >= lunes && o.fecha <= domingo)
-        horas += horasNetasTurno(o);
+    for (let k = 0; k < 7; k++) for (const o of delDia(t.empleadoId, sumarDias(lunes, k))) horas += horasNetasTurno(o);
     const max = jornadaMaximaVigente(estado.parametros.nomina, lunes);
     const excede = horas > max + 1e-9;
     if (excede && !aceptarExceso) {
@@ -446,6 +464,7 @@ export const turnoAsignar = manejador<'turno.asignar', Turno>({
   },
   escribir(estado, t, ctx) {
     estado.turnos[t.id] = t;
+    indexarTurno(estado, t);
     ctx.emitir({ tipo: 'TurnoCambiado', turnoId: t.id });
   },
 });
@@ -473,7 +492,10 @@ export const turnoMover = manejador<'turno.mover', Turno>({
     };
   },
   escribir(estado, t, ctx) {
+    const previo = estado.turnos[t.id];
+    if (previo) desindexarTurno(estado, previo);
     estado.turnos[t.id] = t;
+    indexarTurno(estado, t);
     ctx.emitir({ tipo: 'TurnoCambiado', turnoId: t.id });
   },
 });
@@ -483,6 +505,8 @@ export const turnoEliminar = manejador<'turno.eliminar', { id: Id }>({
     return { id: requerirExiste(estado.turnos, d.turnoId, 'el turno', 'turnoId').id };
   },
   escribir(estado, plan, ctx) {
+    const previo = estado.turnos[plan.id];
+    if (previo) desindexarTurno(estado, previo);
     delete estado.turnos[plan.id];
     ctx.emitir({ tipo: 'TurnoCambiado', turnoId: plan.id });
   },
@@ -529,6 +553,7 @@ export const turnoCopiarSemana = manejador<'turno.copiarSemana', Turno[]>({
   escribir(estado, turnos, ctx) {
     for (const t of turnos) {
       estado.turnos[t.id] = t;
+      indexarTurno(estado, t);
       ctx.emitir({ tipo: 'TurnoCambiado', turnoId: t.id });
     }
   },
@@ -580,7 +605,8 @@ export const marcacionRegistrar = manejador<'marcacion.registrar', Marcacion>({
         'empleadoId',
       );
     }
-    const turno = Object.values(estado.turnos).find((t) => t.empleadoId === e.id && t.fecha === fecha);
+    const turnoId = estado.agregados.turnosDia[claveTurnoDia(e.id, fecha)]?.[0];
+    const turno = turnoId ? estado.turnos[turnoId] : undefined;
     exigir(turno, 'SIN_TURNO', `${e.nombres} no tiene turno programado ese día.`, 'empleadoId');
     exigir(
       d.localId === turno.localId || d.localId === e.localId,
