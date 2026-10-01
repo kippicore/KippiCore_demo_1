@@ -184,7 +184,7 @@ export const PISTAS_TEXTOS: Record<string, string> = {
   'tienda.franja':
     'Esta tienda se arma sola con tu inventario. Compra algo y mira la venta llegar a KippiCore.',
   'portal.formulario':
-    'Esto es lo que ve tu agente de aduanas con el enlace. Si actualiza el estado, a ti te llega la alerta y el aviso a quien sigue.',
+    'Esto es lo que ve tu agente de aduanas con el enlace. Si actualiza el estado, a ti te llega la alerta.',
 };
 export const PISTA_BOTON = 'Entendido';
 
