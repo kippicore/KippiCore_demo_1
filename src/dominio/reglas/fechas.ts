@@ -7,11 +7,22 @@ import type { DiaSemana, FechaHoraISO, FechaISO, HoraHHmm, MesISO } from '../tip
  */
 const MS_DIA = 86_400_000;
 
+/** Caché acotada de conversiones (las mismas ≈ 600 fechas se convierten cientos de miles de veces al generar). */
+const CACHE_MAX = 4096;
+const cacheDiaN = new Map<string, number>();
+const cacheDeDiaN = new Map<number, string>();
+
 export function diaN(fecha: FechaISO): number {
-  const a = Number(fecha.slice(0, 4));
-  const m = Number(fecha.slice(5, 7));
-  const d = Number(fecha.slice(8, 10));
-  return Date.UTC(a, m - 1, d) / MS_DIA;
+  const clave = fecha.length === 10 ? fecha : fecha.slice(0, 10);
+  const c = cacheDiaN.get(clave);
+  if (c !== undefined) return c;
+  const a = Number(clave.slice(0, 4));
+  const m = Number(clave.slice(5, 7));
+  const d = Number(clave.slice(8, 10));
+  const n = Date.UTC(a, m - 1, d) / MS_DIA;
+  if (cacheDiaN.size >= CACHE_MAX) cacheDiaN.clear();
+  cacheDiaN.set(clave, n);
+  return n;
 }
 
 function dos(n: number): string {
@@ -19,8 +30,13 @@ function dos(n: number): string {
 }
 
 export function deDiaN(n: number): FechaISO {
+  const c = cacheDeDiaN.get(n);
+  if (c !== undefined) return c;
   const f = new Date(n * MS_DIA);
-  return `${f.getUTCFullYear()}-${dos(f.getUTCMonth() + 1)}-${dos(f.getUTCDate())}`;
+  const r = `${f.getUTCFullYear()}-${dos(f.getUTCMonth() + 1)}-${dos(f.getUTCDate())}`;
+  if (cacheDeDiaN.size >= CACHE_MAX) cacheDeDiaN.clear();
+  cacheDeDiaN.set(n, r);
+  return r;
 }
 
 export function sumarDias(fecha: FechaISO, dias: number): FechaISO {

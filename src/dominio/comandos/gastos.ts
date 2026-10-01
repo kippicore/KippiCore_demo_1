@@ -361,8 +361,11 @@ export const gastoRecurrenteGenerarMes = manejador<'gastoRecurrente.generarMes',
     exigir(/^\d{4}-\d{2}$/.test(d.mes), 'MES_INVALIDO', 'Escribe el mes (AAAA-MM).', 'mes');
     if (d.hasta) fechaValida(d.hasta, 'hasta');
     const generados = new Set<Id>();
-    for (const g of Object.values(estado.gastos))
-      if (g.recurrenteId && g.fecha.startsWith(d.mes)) generados.add(g.recurrenteId);
+    // for…in sin copiar la tabla: el generador lo llama a diario (rendimiento F2-B).
+    for (const id in estado.gastos) {
+      const g = estado.gastos[id];
+      if (g?.recurrenteId && g.fecha.startsWith(d.mes)) generados.add(g.recurrenteId);
+    }
     const planes: PlanGastoNuevo[] = [];
     let usados = 0;
     for (const r of Object.values(estado.gastosRecurrentes)) {

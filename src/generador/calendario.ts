@@ -132,9 +132,15 @@ export function tercerDiaSemanaDelMes(anio: number, mes: number, ds: number): Fe
   return masDias(f, 14);
 }
 
+const viernesNoviembre = new Map<number, FechaISO>();
+/** Último viernes de noviembre (Black Friday), memoizado por año (rendimiento F2-B). */
 export function ultimoViernesNoviembre(anio: number): FechaISO {
-  let f = `${anio}-11-30`;
-  while (diaSemana(f) !== 5) f = masDias(f, -1);
+  let f = viernesNoviembre.get(anio);
+  if (f === undefined) {
+    f = `${anio}-11-30`;
+    while (diaSemana(f) !== 5) f = masDias(f, -1);
+    viernesNoviembre.set(anio, f);
+  }
   return f;
 }
 

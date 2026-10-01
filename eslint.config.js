@@ -50,6 +50,16 @@ const REACT = r(['react', 'react-dom', 'react-dom/*', 'react/*', 'react-router',
 const ESTADO = r(['@/estado', '@/estado/*'], 'Esta capa no puede leer el estado de la app (5.3).');
 const UI = r(['@/ui', '@/ui/*'], 'Esta capa no puede importar componentes (5.3).');
 const LAYOUTS = r(['@/layouts', '@/layouts/*', '@/app', '@/app/*'], 'Esta capa no puede importar layouts ni el router (5.3).');
+// El contrato de rutas (src/app/rutas.ts, puro) lo usan selectores (alertas), ui/conectados y módulos (5.5.1).
+const LAYOUTS_SALVO_RUTAS = r(
+  // (gitignore: no se puede re-incluir un archivo si se excluye la carpeta; por eso '@/app/*' y no '@/app').
+  ['@/layouts', '@/layouts/*', '@/app/*', '!@/app/rutas'],
+  'Esta capa no puede importar layouts ni el router; del router solo @/app/rutas (5.3, 5.5.1).',
+);
+const LAYOUTS_SALVO_CONTRATOS = r(
+  ['@/layouts', '@/layouts/*', '@/app/*', '!@/app/rutas', '!@/app/useParamsRuta'],
+  'Esta capa no puede importar layouts ni el router; del router solo @/app/rutas y @/app/useParamsRuta (5.5.1).',
+);
 const MODULOS = r(['@/modulos', '@/modulos/*', '@/movil', '@/movil/*', '@/tienda', '@/tienda/*', '@/seguimiento', '@/seguimiento/*'], 'Esta capa no puede importar módulos (5.3).');
 const GENERADOR = r(['@/generador', '@/generador/*'], 'Esta capa no puede importar el generador (5.3).');
 const SELECTORES = r(['@/selectores', '@/selectores/*'], 'Esta capa no puede importar selectores (5.3).');
@@ -114,7 +124,7 @@ export default tseslint.config(
   capa(['src/dominio/**'], [REACT, ESTADO, UI, LAYOUTS, MODULOS, GENERADOR, SELECTORES, REPORTES, LIB, IMMER]),
   capa(['src/dominio/motor/vivo.ts', 'src/dominio/motor/vivo.test.ts'], [REACT, ESTADO, UI, LAYOUTS, MODULOS, GENERADOR, SELECTORES, REPORTES, LIB]),
   capa(['src/generador/**'], [REACT, ESTADO, UI, LAYOUTS, MODULOS, SELECTORES, REPORTES, LIB, IMMER]),
-  capa(['src/selectores/**'], [REACT, ESTADO, UI, LAYOUTS, MODULOS, GENERADOR, REPORTES, LIB, IMMER]),
+  capa(['src/selectores/**'], [REACT, ESTADO, UI, LAYOUTS_SALVO_RUTAS, MODULOS, GENERADOR, REPORTES, LIB, IMMER]),
   capa(['src/reportes/**'], [
     REACT,
     ESTADO,
@@ -128,9 +138,9 @@ export default tseslint.config(
   capa(['src/lib/**'], [r(['react', 'react-dom', 'react-dom/*', 'zustand']), ESTADO, UI, LAYOUTS, MODULOS, GENERADOR, SELECTORES, REPORTES]),
   capa(['src/estado/**'], [UI, LAYOUTS, MODULOS]),
   capa(['src/ui/**'], [ESTADO, SELECTORES, MODULOS, LAYOUTS, GENERADOR, REPORTES]),
-  capa(['src/ui/conectados/**'], [MODULOS, LAYOUTS, GENERADOR]),
+  capa(['src/ui/conectados/**'], [MODULOS, LAYOUTS_SALVO_CONTRATOS, GENERADOR]),
   capa(['src/layouts/**', 'src/app/**'], [GENERADOR, INTERNOS_MODULO]),
-  capa(['src/modulos/**', 'src/movil/**', 'src/tienda/**', 'src/seguimiento/**'], [GENERADOR, LAYOUTS, INTERNOS_MODULO]),
+  capa(['src/modulos/**', 'src/movil/**', 'src/tienda/**', 'src/seguimiento/**'], [GENERADOR, LAYOUTS_SALVO_CONTRATOS, INTERNOS_MODULO]),
 
   // ---------- APIs del navegador fuera de las capas puras ----------
   {

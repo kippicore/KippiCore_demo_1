@@ -11,6 +11,20 @@ import type { IntencionGen } from '../tipos';
 
 const ID_BODEGA = 'bod';
 
+/** Variantes de un producto del plan ya separadas en talla y color (se calculan una vez; rendimiento F2-B). */
+const variantesPartidas = new WeakMap<object, { v: Id; talla: string; color: Id }[]>();
+function partir(variantes: Record<string, Id>): { v: Id; talla: string; color: Id }[] {
+  let r = variantesPartidas.get(variantes);
+  if (!r) {
+    r = Object.entries(variantes).map(([clave, v]) => {
+      const [talla, color] = clave.split('|') as [string, Id];
+      return { v, talla, color };
+    });
+    variantesPartidas.set(variantes, r);
+  }
+  return r;
+}
+
 /** Recibe los traslados que llegan hoy (distribución de ayer y reposición de esta mañana). */
 export function* materializarRecibirTraslados(g: Gen, it: IntencionGen, estado: EstadoDominio): Generator<SobreComando> {
   const fecha = fechaDe(it.ts);
@@ -67,10 +81,9 @@ export function* materializarReposicion(g: Gen, it: IntencionGen, estado: Estado
       // hace falta.
       if (porProducto * 14 < 1) continue;
       const tallas = DEMANDA_TALLAS[p.curva];
-      for (const [clave, v] of Object.entries(p.variantes)) {
+      for (const { v, talla, color } of partir(p.variantes)) {
         if (excluirOxford && v === oxfordM) continue;
         if (!varianteVendible(estado, v)) continue;
-        const [talla, color] = clave.split('|') as [string, Id];
         const porVariante = porProducto * (tallas[talla] ?? 0) * d.fraccionColor(p, color, fecha);
         const objetivo = Math.max(1, Math.round(porVariante * 14));
         const actual = existencias(estado, v, local.id) + (enCamino.get(`${v}@${local.id}`) ?? 0);

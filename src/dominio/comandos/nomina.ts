@@ -59,8 +59,9 @@ export function ventasDelMes(
     const cancelado = v.separado?.cerrado?.resultado === 'cancelado' ? v.separado.cerrado : null;
     if (cancelado && cancelado.ts.startsWith(mes)) sumar(v.vendedorId, v.localId, -v.base, -v.total);
   }
-  for (const d of Object.values(estado.devoluciones)) {
-    if (!d.ts.startsWith(mes)) continue;
+  for (const id in estado.devoluciones) {
+    const d = estado.devoluciones[id];
+    if (!d || !d.ts.startsWith(mes)) continue;
     const v = estado.ventas[d.ventaId];
     if (!v || v.anulacion) continue;
     const base = d.lineas.reduce((a, l) => a + l.base, 0);

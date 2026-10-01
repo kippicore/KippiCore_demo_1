@@ -120,9 +120,14 @@ export function validarDatosCliente(
       'Escribe un celular de 10 dígitos que empiece por 3.',
       'celular',
     );
-    const repetido = Object.values(estado.clientes).find(
-      (c) => !c.eliminadoEn && c.id !== excluirId && c.celular === datos.celular,
-    );
+    let repetido: (typeof estado.clientes)[string] | undefined;
+    for (const id in estado.clientes) {
+      const c = estado.clientes[id];
+      if (c && !c.eliminadoEn && c.id !== excluirId && c.celular === datos.celular) {
+        repetido = c;
+        break;
+      }
+    }
     exigir(
       !repetido,
       'CELULAR_DUPLICADO',
@@ -193,8 +198,9 @@ export function saldoAFavorCliente(estado: EstadoDominio, clienteId: Id): COP {
     if (v.separado?.cerrado?.resultado === 'cancelado') for (const p of v.pagos) saldo += p.valor;
     for (const p of v.pagos) if (p.medio === 'saldo_a_favor') saldo -= p.valor;
   }
-  for (const d of Object.values(estado.devoluciones)) {
-    if (ventasCliente.has(d.ventaId) && (d.compensacion === 'saldo_favor' || d.compensacion === 'cambio'))
+  for (const id in estado.devoluciones) {
+    const d = estado.devoluciones[id];
+    if (d && ventasCliente.has(d.ventaId) && (d.compensacion === 'saldo_favor' || d.compensacion === 'cambio'))
       saldo += d.valorTotal;
   }
   return saldo;

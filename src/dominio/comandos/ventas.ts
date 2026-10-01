@@ -75,8 +75,9 @@ type MovPlan = Omit<MovimientoInventario, 'usuarioId'>;
 /** Unidades ya devueltas por línea de una venta. */
 function devueltoPorLinea(estado: EstadoDominio, ventaId: Id): Map<Id, ValoresDevueltos> {
   const r = new Map<Id, ValoresDevueltos>();
-  for (const d of Object.values(estado.devoluciones)) {
-    if (d.ventaId !== ventaId) continue;
+  for (const id in estado.devoluciones) {
+    const d = estado.devoluciones[id];
+    if (!d || d.ventaId !== ventaId) continue;
     for (const l of d.lineas) {
       const a = r.get(l.lineaId) ?? { cantidad: 0, valor: 0, base: 0, iva: 0, costo: 0 };
       r.set(l.lineaId, {
@@ -92,7 +93,12 @@ function devueltoPorLinea(estado: EstadoDominio, ventaId: Id): Map<Id, ValoresDe
 }
 
 function devolucionesDe(estado: EstadoDominio, ventaId: Id): Devolucion[] {
-  return Object.values(estado.devoluciones).filter((d) => d.ventaId === ventaId);
+  const r: Devolucion[] = [];
+  for (const id in estado.devoluciones) {
+    const d = estado.devoluciones[id];
+    if (d && d.ventaId === ventaId) r.push(d);
+  }
+  return r;
 }
 
 function saldoDe(estado: EstadoDominio, venta: Venta): number {
