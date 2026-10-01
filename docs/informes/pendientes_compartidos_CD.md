@@ -10,3 +10,8 @@
 1. `src/layouts/tienda/LayoutTienda.tsx`: contador de bolsa fijo en 0 → usar `useCantidadBolsa()` de `@/tienda/publico`; luego retirar el parche `useContadorEnEncabezado()` de `src/tienda/enlaces.ts`.
 2. Mismo layout: íconos buscar/tiendas/cuenta/favoritos sin acción (botones muertos) y enlaces del header que no conservan `?marco=1`.
 3. Exportar `FilaCambio` desde `@/ui/ligero`.
+
+## D3 (worktree-agent-a226bf46d4a0beaf6, a318480)
+1. Comando `notaCredito.avanzarEstado` (acción `avanzarEstadoNotaCredito` { notaId, estado: 'enviada'|'aceptada' }, evento `NotaCreditoEstado`); retirar el avance en memoria de D3.
+2. `src/reportes/plantillas-pdf.ts` `emisor()`: con marca personalizada usar el nombre de la marca activa como razón social (hoy "Halden Moda Masculina S.A.S. (<negocio>)").
+3. Opcional: `rutas.facturacion({ tipo })` con valor para notas crédito.
