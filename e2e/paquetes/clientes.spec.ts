@@ -52,7 +52,8 @@ test.describe('lista de clientes', () => {
     await expect(page.getByTestId('segmento-vip')).toHaveAttribute('aria-pressed', 'true');
     const filas = page.getByTestId('tabla-clientes').locator('tbody tr[data-fila]');
     await expect(filas.first()).toContainText('VIP');
-    await expect(page.getByTestId('tabla-clientes').getByText(/Mostrando 1–\d+ de 45 clientes/)).toBeVisible();
+    // El total sale del dominio (la calibración cambió cuántos VIP hay: no se fija a mano).
+    await expect(page.getByTestId('tabla-clientes').getByText(new RegExp(`Mostrando 1–\\d+ de ${seg.vip} clientes`))).toBeVisible();
     // Quitar el filtro con el chip activo.
     await page.getByTestId('segmento-vip').click();
     await expect(page).not.toHaveURL(/segmento=/);

@@ -498,8 +498,16 @@ test('W11: el dueño ve los cierres de anoche (Zona Rosa con faltante), abre el 
   await page.getByTestId('caja-tarjeta-zr').click();
   await expect(page.getByTestId('caja-detalle')).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`sesion=${sesionFaltante}`));
-  await expect(page.getByTestId('caja-detalle-esperado')).toContainText('360.000');
-  await expect(page.getByTestId('caja-detalle-contado')).toContainText('320.000');
+  // Las cifras absolutas dependen de la calibración del generador; el faltante sembrado (40.000) no.
+  const cierre = await evaluar(
+    page,
+    (kc, id: string) => (kc.sel('selCierresDelDia', { fecha: '2026-09-29' }) as { sesionId: string; esperado: number; contado: number }[]).find((c) => c.sesionId === id),
+    sesionFaltante,
+  );
+  const miles = (n: number) => new Intl.NumberFormat('es-CO').format(n);
+  expect((cierre?.contado ?? 0) - (cierre?.esperado ?? 0)).toBe(-40_000);
+  await expect(page.getByTestId('caja-detalle-esperado')).toContainText(miles(cierre?.esperado ?? 0));
+  await expect(page.getByTestId('caja-detalle-contado')).toContainText(miles(cierre?.contado ?? 0));
   await expect(page.getByTestId('caja-detalle-diferencia')).toContainText('40.000');
   await expect(page.getByTestId('caja-detalle-medios')).toContainText('Total vendido');
   await page.getByTestId('caja-nota-revision').fill('Hablé con Natalia; se descuenta del cambio de mañana');
