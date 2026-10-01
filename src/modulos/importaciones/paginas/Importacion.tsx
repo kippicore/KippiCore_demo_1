@@ -1,4 +1,13 @@
-import { ArrowRightLeft, BellRing, ExternalLink, MoreHorizontal, PackageCheck, Pencil, Ship, Trash2 } from 'lucide-react';
+import {
+  ArrowRightLeft,
+  BellRing,
+  ExternalLink,
+  MoreHorizontal,
+  PackageCheck,
+  Pencil,
+  Ship,
+  Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router';
 import { propagarHoy, PESTANAS_IMPORTACION, rutas } from '@/app/rutas';
@@ -9,7 +18,17 @@ import { MATRIZ_AVISOS } from '@/config/textos/mensajes';
 import { siguienteEstado } from '@/dominio/reglas/importaciones';
 import { diferenciaDias } from '@/dominio/reglas/fechas';
 import { copDeCentavos } from '@/dominio/reglas/dinero';
-import { overrideHoy, useAcciones, useDinero, useHoy, useMarca, usePuede, useRolActivo, useSel, useSesion } from '@/estado';
+import {
+  overrideHoy,
+  useAcciones,
+  useDinero,
+  useHoy,
+  useMarca,
+  usePuede,
+  useRolActivo,
+  useSel,
+  useSesion,
+} from '@/estado';
 import { entero, numero as formatoNumero, plural, porcentaje } from '@/lib/formato';
 import { selImportaciones, selImportacionPorNumero, selTasaVigente, selAvisosEstado } from '@/selectores';
 import {
@@ -55,7 +74,14 @@ export default function ImportacionPagina() {
   if (!imp)
     return (
       <div className="pb-16">
-        <EncabezadoPagina migas={[{ texto: 'Inicio', a: rutas.inicio() }, { texto: 'Importaciones', a: rutas.importaciones() }, { texto: numero }]} titulo="No encontramos este pedido" />
+        <EncabezadoPagina
+          migas={[
+            { texto: 'Inicio', a: rutas.inicio() },
+            { texto: 'Importaciones', a: rutas.importaciones() },
+            { texto: numero },
+          ]}
+          titulo="No encontramos este pedido"
+        />
         <div className="mt-10 border border-line bg-surface">
           <EmptyState
             icono={Ship}
@@ -81,7 +107,9 @@ function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
   const marca = useMarca().nombre;
   const esDueno = rol === 'dueno';
   const verPagos = puede('ver.pagos');
-  const fila = useSel(selImportaciones, { hoy, incluirRecibidas: true }).find((f) => f.importacion.id === imp.id) ?? null;
+  const fila =
+    useSel(selImportaciones, { hoy, incluirRecibidas: true }).find((f) => f.importacion.id === imp.id) ??
+    null;
   const tasa = useSel(selTasaVigente, { moneda: imp.moneda, fecha: hoy });
   const mensajes = useSel(selMensajesImportacion, { importacionId: imp.id });
   const pendientes = useSel(selAvisosPendientes, { importacionId: imp.id });
@@ -94,18 +122,27 @@ function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
   const [eliminando, setEliminando] = useState(false);
 
   const siguiente = siguienteEstado(imp.estado);
-  const avisosSiguiente = useSel(selAvisosEstado, { importacionId: imp.id, estado: siguiente ?? imp.estado, marca, fecha: hoy });
+  const avisosSiguiente = useSel(selAvisosEstado, {
+    importacionId: imp.id,
+    estado: siguiente ?? imp.estado,
+    marca,
+    fecha: hoy,
+  });
   const retraso = fila?.retrasoDias ?? 0;
   const recibido = imp.estado === 'recibido_bodega';
   const llegada = fila?.llegadaEstimada ?? imp.hitos.recibido_bodega.estimada;
   const posicion = posicionRuta(imp, hoy);
   const diasLlegada = diferenciaDias(hoy, llegada);
   const puedeCambiar = esDueno && !recibido && puede('importacion.cambiarEstado');
-  const puedeRecibir = (esDueno || rol === 'bodega') && !recibido && ['nacionalizado', 'en_transporte_bogota'].includes(imp.estado);
+  const puedeRecibir =
+    (esDueno || rol === 'bodega') &&
+    !recibido &&
+    ['nacionalizado', 'en_transporte_bogota'].includes(imp.estado);
   const pagado = fila && fila.fobOrigen > 0 ? fila.pagadoOrigen / fila.fobOrigen : 0;
   const hayPendiente = pendientes && !leidas.includes(pendientes.notificacion.id);
 
-  const verComoAgente = () => window.open(propagarHoy(rutas.seguimiento(imp.numero), overrideHoy()), '_blank', 'noopener');
+  const verComoAgente = () =>
+    window.open(propagarHoy(rutas.seguimiento(imp.numero), overrideHoy()), '_blank', 'noopener');
   const eliminar = () => {
     const r = acciones.eliminarImportacion({ importacionId: imp.id, motivo: null });
     setEliminando(false);
@@ -122,12 +159,28 @@ function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
       etiqueta="Secciones del pedido"
       pestanas={[
         { a: rutas.importacion(imp.numero), etiqueta: 'Resumen', fin: true },
-        { a: rutas.importacionPestana(imp.numero, 'lineas'), etiqueta: 'Líneas', contador: imp.lineas.length },
+        {
+          a: rutas.importacionPestana(imp.numero, 'lineas'),
+          etiqueta: 'Líneas',
+          contador: imp.lineas.length,
+        },
         { a: rutas.importacionPestana(imp.numero, 'costo-aterrizado'), etiqueta: 'Costo aterrizado' },
         { a: rutas.importacionPestana(imp.numero, 'pagos'), etiqueta: 'Pagos' },
-        { a: rutas.importacionPestana(imp.numero, 'documentos'), etiqueta: 'Documentos', contador: imp.documentos.length },
-        { a: rutas.importacionPestana(imp.numero, 'contactos'), etiqueta: 'Contactos', contador: imp.contactoIds.length },
-        { a: rutas.importacionPestana(imp.numero, 'mensajes'), etiqueta: 'Mensajes', contador: mensajes.length },
+        {
+          a: rutas.importacionPestana(imp.numero, 'documentos'),
+          etiqueta: 'Documentos',
+          contador: imp.documentos.length,
+        },
+        {
+          a: rutas.importacionPestana(imp.numero, 'contactos'),
+          etiqueta: 'Contactos',
+          contador: imp.contactoIds.length,
+        },
+        {
+          a: rutas.importacionPestana(imp.numero, 'mensajes'),
+          etiqueta: 'Mensajes',
+          contador: mensajes.length,
+        },
       ]}
     />
   ) : undefined;
@@ -147,7 +200,10 @@ function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
             Ver como la agente de aduanas
           </ItemMenu>
           {puedeRecibir && (
-            <ItemMenu icono={PackageCheck} onSelect={() => navegar(rutas.recepcion({ importacion: imp.numero }))}>
+            <ItemMenu
+              icono={PackageCheck}
+              onSelect={() => navegar(rutas.recepcion({ importacion: imp.numero }))}
+            >
               Registrar la recepción
             </ItemMenu>
           )}
@@ -185,7 +241,11 @@ function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
   return (
     <div className="pb-16">
       <EncabezadoPagina
-        migas={[{ texto: 'Inicio', a: rutas.inicio() }, { texto: 'Importaciones', a: rutas.importaciones() }, { texto: imp.numero }]}
+        migas={[
+          { texto: 'Inicio', a: rutas.inicio() },
+          { texto: 'Importaciones', a: rutas.importaciones() },
+          { texto: imp.numero },
+        ]}
         eyebrow={fila?.proveedorNombre}
         titulo={imp.numero}
         insignia={
@@ -201,7 +261,11 @@ function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
       />
 
       {hayPendiente && pendientes && esDueno && (
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border border-ink bg-surface p-5" data-testid="avisos-pendientes" role="status">
+        <div
+          className="mt-8 flex flex-wrap items-center justify-between gap-4 border border-ink bg-surface p-5"
+          data-testid="avisos-pendientes"
+          role="status"
+        >
           <div className="max-w-[72ch]">
             <p className="t-eyebrow text-accent-ink">Reportado desde el portal</p>
             <p className="mt-1 t-label font-bold text-ink">{pendientes.notificacion.titulo}</p>
@@ -213,7 +277,11 @@ function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
             <Button variante="ghost" onClick={() => marcarLeida(pendientes.notificacion.id)}>
               Descartar
             </Button>
-            <Button icono={BellRing} onClick={() => setNotificar({ estado: pendientes.estado, fecha: hoy })} data-testid="revisar-avisos">
+            <Button
+              icono={BellRing}
+              onClick={() => setNotificar({ estado: pendientes.estado, fecha: hoy })}
+              data-testid="revisar-avisos"
+            >
               Revisar los avisos
             </Button>
           </div>
@@ -228,10 +296,17 @@ function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
                 etiqueta={recibido ? 'Recibido en bodega' : 'Llega a bodega'}
                 valor={recibido ? 0 : Math.max(0, diasLlegada)}
                 formatear={(n) => (recibido ? 'Recibido' : n === 0 ? 'Hoy' : plural(n, 'día', 'días'))}
-                nota={<Fecha valor={recibido ? (imp.recepcion?.fecha ?? llegada) : llegada} formato="larga" />}
+                nota={
+                  <Fecha valor={recibido ? (imp.recepcion?.fecha ?? llegada) : llegada} formato="larga" />
+                }
                 animar={false}
               />
-              <Kpi etiqueta="Prendas" valor={fila?.unidades ?? 0} formatear={entero} nota={`${imp.lineas.length} ${imp.lineas.length === 1 ? 'referencia' : 'referencias'}`} />
+              <Kpi
+                etiqueta="Prendas"
+                valor={fila?.unidades ?? 0}
+                formatear={entero}
+                nota={`${imp.lineas.length} ${imp.lineas.length === 1 ? 'referencia' : 'referencias'}`}
+              />
               {verPagos && fila && (
                 <>
                   <Kpi
@@ -245,7 +320,15 @@ function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
                     etiqueta="Pagado a la fábrica"
                     valor={pagado}
                     formatear={(n) => porcentaje(n, 0)}
-                    nota={fila.saldoOrigen > 0 ? <>Falta <MontoOrigen centavos={fila.saldoOrigen} moneda={imp.moneda} corta={false} /></> : 'Al día con la fábrica'}
+                    nota={
+                      fila.saldoOrigen > 0 ? (
+                        <>
+                          Falta <MontoOrigen centavos={fila.saldoOrigen} moneda={imp.moneda} corta={false} />
+                        </>
+                      ) : (
+                        'Al día con la fábrica'
+                      )
+                    }
                     a={rutas.importacionPestana(imp.numero, 'pagos')}
                   />
                 </>
@@ -256,13 +339,45 @@ function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
               <div className="space-y-6">
                 <Card titulo="Dónde viene" data-testid="card-ruta">
                   <RutaChina
-                    barcos={[{ id: imp.numero, numero: imp.numero, progreso: posicion.progreso, tramo: posicion.tramo, etiqueta: ETIQUETAS_ESTADO_IMPORTACION[imp.estado] }]}
+                    barcos={[
+                      {
+                        id: imp.numero,
+                        numero: imp.numero,
+                        progreso: posicion.progreso,
+                        tramo: posicion.tramo,
+                        etiqueta: ETIQUETAS_ESTADO_IMPORTACION[imp.estado],
+                      },
+                    ]}
                     origen={imp.puertoOrigen}
                     puertoDestino={imp.puertoDestino}
                     fechas={{
-                      origen: imp.hitos.embarcado.real ? <>Zarpe <Fecha valor={imp.hitos.embarcado.real} /></> : <>Zarpe est. <Fecha valor={imp.hitos.embarcado.estimada} /></>,
-                      puerto: imp.hitos.en_puerto.real ? <>Llegó <Fecha valor={imp.hitos.en_puerto.real} /></> : <>Llega est. <Fecha valor={imp.hitos.en_puerto.estimada} /></>,
-                      bodega: recibido ? <>Recibido <Fecha valor={imp.recepcion?.fecha ?? llegada} /></> : <>Llega est. <Fecha valor={imp.hitos.recibido_bodega.estimada} /></>,
+                      origen: imp.hitos.embarcado.real ? (
+                        <>
+                          Zarpe <Fecha valor={imp.hitos.embarcado.real} />
+                        </>
+                      ) : (
+                        <>
+                          Zarpe est. <Fecha valor={imp.hitos.embarcado.estimada} />
+                        </>
+                      ),
+                      puerto: imp.hitos.en_puerto.real ? (
+                        <>
+                          Llegó <Fecha valor={imp.hitos.en_puerto.real} />
+                        </>
+                      ) : (
+                        <>
+                          Llega est. <Fecha valor={imp.hitos.en_puerto.estimada} />
+                        </>
+                      ),
+                      bodega: recibido ? (
+                        <>
+                          Recibido <Fecha valor={imp.recepcion?.fecha ?? llegada} />
+                        </>
+                      ) : (
+                        <>
+                          Llega est. <Fecha valor={imp.hitos.recibido_bodega.estimada} />
+                        </>
+                      ),
                     }}
                   />
                 </Card>
@@ -285,12 +400,19 @@ function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
                           <dd className="text-ink">{MATRIZ_AVISOS[siguiente].para}</dd>
                         </div>
                       )}
-                      {esDueno && avisosSiguiente && avisosSiguiente.destinatarios.filter((d) => d.preseleccionado).length > 0 && (
-                        <div>
-                          <dt className="t-small text-muted">Se avisará a</dt>
-                          <dd className="text-ink">{avisosSiguiente.destinatarios.filter((d) => d.preseleccionado).map((d) => (d.tipo === 'dueno' ? 'ti' : d.nombre)).join(', ')}</dd>
-                        </div>
-                      )}
+                      {esDueno &&
+                        avisosSiguiente &&
+                        avisosSiguiente.destinatarios.filter((d) => d.preseleccionado).length > 0 && (
+                          <div>
+                            <dt className="t-small text-muted">Se avisará a</dt>
+                            <dd className="text-ink">
+                              {avisosSiguiente.destinatarios
+                                .filter((d) => d.preseleccionado)
+                                .map((d) => (d.tipo === 'dueno' ? 'ti' : d.nombre))
+                                .join(', ')}
+                            </dd>
+                          </div>
+                        )}
                     </dl>
                   </Card>
                 )}
@@ -298,15 +420,51 @@ function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
                   <ParesDatos
                     columnas={1}
                     pares={[
-                      ['Fábrica', fila ? esDueno ? <Link key="p" to={rutas.proveedor(imp.proveedorId)} className="underline underline-offset-4">{fila.proveedorNombre}</Link> : fila.proveedorNombre : ''],
+                      [
+                        'Fábrica',
+                        fila ? (
+                          esDueno ? (
+                            <Link
+                              key="p"
+                              to={rutas.proveedor(imp.proveedorId)}
+                              className="underline underline-offset-4"
+                            >
+                              {fila.proveedorNombre}
+                            </Link>
+                          ) : (
+                            fila.proveedorNombre
+                          )
+                        ) : (
+                          ''
+                        ),
+                      ],
                       ['Fecha del pedido', <Fecha key="f" valor={imp.fechaPedido} formato="larga" />],
                       ['Carga', textoCarga(imp.carga)],
-                      ...(verPagos ? ([['Moneda y tasa del pedido', `${imp.moneda === 'USD' ? 'US$' : 'CN¥'} · $ ${formatoNumero(imp.tasaPedido, 2)}`]] as const) : []),
-                      ...(imp.aforo && imp.aforo.tipo !== 'automatico' ? ([['Aforo', `${imp.aforo.tipo === 'fisico' ? 'Físico' : 'Documental'}${imp.aforo.motivo ? `: ${imp.aforo.motivo}` : ''}`]] as const) : []),
+                      ...(verPagos
+                        ? ([
+                            [
+                              'Moneda y tasa del pedido',
+                              `${imp.moneda === 'USD' ? 'US$' : 'CN¥'} · $ ${formatoNumero(imp.tasaPedido, 2)}`,
+                            ],
+                          ] as const)
+                        : []),
+                      ...(imp.aforo && imp.aforo.tipo !== 'automatico'
+                        ? ([
+                            [
+                              'Aforo',
+                              `${imp.aforo.tipo === 'fisico' ? 'Físico' : 'Documental'}${imp.aforo.motivo ? `: ${imp.aforo.motivo}` : ''}`,
+                            ],
+                          ] as const)
+                        : []),
                       ...(imp.nota ? ([['Nota', imp.nota]] as const) : []),
                     ]}
                   />
-                  {verPagos && fila && tasa > 0 && <p className="mt-4 t-small text-muted">Con la tasa de hoy, el valor de fábrica equivale a {dinero(copDeCentavos(fila.fobOrigen, tasa))}.</p>}
+                  {verPagos && fila && tasa > 0 && (
+                    <p className="mt-4 t-small text-muted">
+                      Con la tasa de hoy, el valor de fábrica equivale a{' '}
+                      {dinero(copDeCentavos(fila.fobOrigen, tasa))}.
+                    </p>
+                  )}
                 </Card>
                 {imp.recepcion && (
                   <Card titulo="Recepción en bodega">
@@ -314,8 +472,14 @@ function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
                       columnas={1}
                       pares={[
                         ['Fecha', <Fecha key="r" valor={imp.recepcion.fecha} formato="larga" />],
-                        ['Recibidas', entero(Object.values(imp.recepcion.lineas).reduce((a, l) => a + l.recibidas, 0))],
-                        ['Con defectos', entero(Object.values(imp.recepcion.lineas).reduce((a, l) => a + l.defectuosas, 0))],
+                        [
+                          'Recibidas',
+                          entero(Object.values(imp.recepcion.lineas).reduce((a, l) => a + l.recibidas, 0)),
+                        ],
+                        [
+                          'Con defectos',
+                          entero(Object.values(imp.recepcion.lineas).reduce((a, l) => a + l.defectuosas, 0)),
+                        ],
                         ...(imp.recepcion.nota ? ([['Nota', imp.recepcion.nota]] as const) : []),
                       ]}
                     />
@@ -330,12 +494,35 @@ function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
         {pestana === 'pagos' && <TabPagos imp={imp} />}
         {pestana === 'documentos' && <TabDocumentos imp={imp} />}
         {pestana === 'contactos' && <TabContactos imp={imp} />}
-        {pestana === 'mensajes' && <TabMensajes imp={imp} alRedactar={() => setNotificar({ estado: imp.estado, fecha: hoy })} />}
+        {pestana === 'mensajes' && (
+          <TabMensajes imp={imp} alRedactar={() => setNotificar({ estado: imp.estado, fecha: hoy })} />
+        )}
       </div>
 
-      <CambiarEstadoDialog imp={imp} abierto={cambiando} alCambiar={setCambiando} alCambiado={(estado, fecha) => setNotificar({ estado, fecha })} />
-      {notificar && <PanelNotificar imp={imp} estado={notificar.estado} fecha={notificar.fecha} abierto alCambiar={(a) => !a && setNotificar(null)} />}
-      <Dialog abierto={editando} alCambiar={setEditando} ancho="xl" eyebrow={imp.numero} titulo="Editar pedido" confirmarAlCerrar data-testid="dialogo-editar-pedido">
+      <CambiarEstadoDialog
+        imp={imp}
+        abierto={cambiando}
+        alCambiar={setCambiando}
+        alCambiado={(estado, fecha) => setNotificar({ estado, fecha })}
+      />
+      {notificar && (
+        <PanelNotificar
+          imp={imp}
+          estado={notificar.estado}
+          fecha={notificar.fecha}
+          abierto
+          alCambiar={(a) => !a && setNotificar(null)}
+        />
+      )}
+      <Dialog
+        abierto={editando}
+        alCambiar={setEditando}
+        ancho="xl"
+        eyebrow={imp.numero}
+        titulo="Editar pedido"
+        confirmarAlCerrar
+        data-testid="dialogo-editar-pedido"
+      >
         {editando && (
           <FormularioPedido
             imp={imp}

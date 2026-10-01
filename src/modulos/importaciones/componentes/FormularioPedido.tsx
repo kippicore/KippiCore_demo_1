@@ -5,13 +5,30 @@ import { PREFIJOS } from '@/dominio/motor/ids';
 import { indiceEstado } from '@/dominio/reglas/importaciones';
 import { copDeCentavos } from '@/dominio/reglas/dinero';
 import { nuevoId, useAcciones, useHoy, useSel } from '@/estado';
-import { entero, unidades as textoUnidades } from '@/lib/formato';
+import { entero, numero, unidades as textoUnidades } from '@/lib/formato';
 import { dineroOrigen } from '@/lib/moneda';
 import { selProveedores, selTasaVigente } from '@/selectores';
-import { Button, Checkbox, Dinero, GrupoRadio, InputNumero, Segmentado, Select, SelectorFecha, Stepper, Textarea } from '@/ui';
+import {
+  Button,
+  Checkbox,
+  Dinero,
+  GrupoRadio,
+  InputNumero,
+  Segmentado,
+  Select,
+  SelectorFecha,
+  Stepper,
+  Textarea,
+} from '@/ui';
 import { selCatalogoPedido, selContactosCadena, selDefectosPedido } from '../selectores';
 import { ETIQUETAS_CARGA, ETIQUETAS_ROL_CONTACTO } from '../textos';
-import { claveLinea, EditorLineas, fobBorradorCentavos, unidadesBorrador, type LineaBorrador } from './EditorLineas';
+import {
+  claveLinea,
+  EditorLineas,
+  fobBorradorCentavos,
+  unidadesBorrador,
+  type LineaBorrador,
+} from './EditorLineas';
 
 /**
  * Crear y editar un pedido a China (PRD 7.5): fábrica, moneda, tasa, tipo de carga (consolidada en m³ por defecto,
@@ -41,7 +58,12 @@ interface Ajustes {
 }
 
 function lineasDeImportacion(imp: Importacion): LineaBorrador[] {
-  return imp.lineas.map((l) => ({ clave: claveLinea(), productoId: l.productoId, fob: l.costoUnitarioOrigen / 100, cantidades: { ...l.cantidades } }));
+  return imp.lineas.map((l) => ({
+    clave: claveLinea(),
+    productoId: l.productoId,
+    fob: l.costoUnitarioOrigen / 100,
+    cantidades: { ...l.cantidades },
+  }));
 }
 
 export function FormularioPedido({
@@ -77,7 +99,8 @@ export function FormularioPedido({
 
   const moneda: MonedaExtranjera = ajustes.moneda ?? imp?.moneda ?? defectos.moneda;
   const tasaVigente = useSel(selTasaVigente, { moneda, fecha: hoy });
-  const tasa = ajustes.tasa !== undefined ? ajustes.tasa : (imp?.tasaPedido ?? (tasaVigente > 0 ? tasaVigente : null));
+  const tasa =
+    ajustes.tasa !== undefined ? ajustes.tasa : (imp?.tasaPedido ?? (tasaVigente > 0 ? tasaVigente : null));
   const fechaPedido = ajustes.fechaPedido ?? imp?.fechaPedido ?? hoy;
   const tipoCarga: TipoCarga = ajustes.tipoCarga ?? imp?.carga.tipo ?? 'consolidada';
   const pies = ajustes.pies ?? (imp?.carga.tipo === 'contenedor' ? imp.carga.pies : 20);
@@ -92,15 +115,31 @@ export function FormularioPedido({
 
   const totalUnidades = lineas.reduce((a, l) => a + unidadesBorrador(l), 0);
   const fobCentavos = lineas.reduce((a, l) => a + fobBorradorCentavos(l), 0);
-  const m3Estimado = defectos.m3PorPrenda && totalUnidades > 0 ? Math.round(totalUnidades * defectos.m3PorPrenda * 10) / 10 : null;
+  const m3Estimado =
+    defectos.m3PorPrenda && totalUnidades > 0
+      ? Math.max(0.1, Math.round(totalUnidades * defectos.m3PorPrenda * 10) / 10)
+      : null;
   const m3Guardado = imp?.carga.tipo === 'consolidada' ? imp.carga.m3 : null;
   const m3 = ajustes.m3 !== undefined ? ajustes.m3 : (m3Guardado ?? m3Estimado);
   const m3Efectivo = m3 ?? 5;
 
-  const carga: Importacion['carga'] = tipoCarga === 'consolidada' ? { tipo: 'consolidada', m3: m3Efectivo } : tipoCarga === 'contenedor' ? { tipo: 'contenedor', pies } : { tipo: 'aerea', kg: kg ?? 100 };
+  const carga: Importacion['carga'] =
+    tipoCarga === 'consolidada'
+      ? { tipo: 'consolidada', m3: m3Efectivo }
+      : tipoCarga === 'contenedor'
+        ? { tipo: 'contenedor', pies }
+        : { tipo: 'aerea', kg: kg ?? 100 };
 
-  const puertos = useMemo(() => (PUERTOS_ORIGEN.includes(puertoOrigen) ? PUERTOS_ORIGEN : [puertoOrigen, ...PUERTOS_ORIGEN]), [puertoOrigen]);
-  const contactosVisibles = contactos.filter((f) => f.contacto.rol !== 'proveedor' || f.contacto.proveedorId === proveedorId || contactoIds.includes(f.contacto.id));
+  const puertos = useMemo(
+    () => (PUERTOS_ORIGEN.includes(puertoOrigen) ? PUERTOS_ORIGEN : [puertoOrigen, ...PUERTOS_ORIGEN]),
+    [puertoOrigen],
+  );
+  const contactosVisibles = contactos.filter(
+    (f) =>
+      f.contacto.rol !== 'proveedor' ||
+      f.contacto.proveedorId === proveedorId ||
+      contactoIds.includes(f.contacto.id),
+  );
 
   const elegirProveedor = (id: Id) => {
     setProveedorId(id);
@@ -120,8 +159,10 @@ export function FormularioPedido({
     if (n === 1) {
       if (lineas.length === 0) e.lineas = 'Agrega al menos una referencia al pedido.';
       else if (lineas.some((l) => !l.productoId)) e.lineas = 'Elige la prenda de cada línea.';
-      else if (lineas.some((l) => !l.fob || l.fob <= 0)) e.lineas = 'Escribe el precio de fábrica de cada referencia.';
-      else if (lineas.some((l) => unidadesBorrador(l) <= 0)) e.lineas = 'Pide al menos una unidad de cada referencia.';
+      else if (lineas.some((l) => !l.fob || l.fob <= 0))
+        e.lineas = 'Escribe el precio de fábrica de cada referencia.';
+      else if (lineas.some((l) => unidadesBorrador(l) <= 0))
+        e.lineas = 'Pide al menos una unidad de cada referencia.';
     }
     setErrores(e);
     return Object.keys(e).length === 0;
@@ -153,7 +194,14 @@ export function FormularioPedido({
           carga,
           puertoOrigen,
           puertoDestino,
-          ...(lineasEditables ? { lineas: datosLineas.map((l, i) => ({ ...l, id: imp.lineas.find((x) => x.productoId === l.productoId)?.id ?? `${imp.id}-l${i + 1}` })) } : {}),
+          ...(lineasEditables
+            ? {
+                lineas: datosLineas.map((l, i) => ({
+                  ...l,
+                  id: imp.lineas.find((x) => x.productoId === l.productoId)?.id ?? `${imp.id}-l${i + 1}`,
+                })),
+              }
+            : {}),
           contactoIds,
           nota: nota.trim() || null,
         },
@@ -212,7 +260,10 @@ export function FormularioPedido({
               placeholder="Elige la fábrica"
               valor={proveedorId}
               alCambiar={elegirProveedor}
-              opciones={fabricas.map((f) => ({ valor: f.proveedor.id, etiqueta: `${f.proveedor.nombreCorto} · ${f.proveedor.moneda}` }))}
+              opciones={fabricas.map((f) => ({
+                valor: f.proveedor.id,
+                etiqueta: `${f.proveedor.nombreCorto} · ${f.proveedor.moneda}`,
+              }))}
               deshabilitado={!enCotizado}
               enModal
               error={errores.proveedorId}
@@ -238,10 +289,16 @@ export function FormularioPedido({
               alCambiar={(v) => ajustar({ tasa: v })}
               decimales={2}
               error={errores.tasaPedido}
-              ayuda={tasaVigente > 0 ? `Tasa de hoy: ${tasaVigente}` : undefined}
+              ayuda={tasaVigente > 0 ? `Tasa de hoy: $ ${numero(tasaVigente, 2)}` : undefined}
               data-testid="input-tasa"
             />
-            <SelectorFecha etiqueta="Fecha del pedido" hoy={hoy} valor={fechaPedido} alCambiar={(f) => ajustar({ fechaPedido: f })} enModal />
+            <SelectorFecha
+              etiqueta="Fecha del pedido"
+              hoy={hoy}
+              valor={fechaPedido}
+              alCambiar={(f) => ajustar({ fechaPedido: f })}
+              enModal
+            />
           </div>
 
           <GrupoRadio
@@ -251,9 +308,21 @@ export function FormularioPedido({
             valor={tipoCarga}
             alCambiar={(v) => ajustar({ tipoCarga: v })}
             opciones={[
-              { valor: 'consolidada', etiqueta: ETIQUETAS_CARGA.consolidada, descripcion: 'Compartes el contenedor y pagas por m³. Lo habitual para pedidos de ropa.' },
-              { valor: 'contenedor', etiqueta: ETIQUETAS_CARGA.contenedor, descripcion: 'Solo para pedidos muy grandes, como la temporada de calzado.' },
-              { valor: 'aerea', etiqueta: ETIQUETAS_CARGA.aerea, descripcion: 'Rápida y cara: para muestras o reposición urgente.' },
+              {
+                valor: 'consolidada',
+                etiqueta: ETIQUETAS_CARGA.consolidada,
+                descripcion: 'Compartes el contenedor y pagas por m³. Lo habitual para pedidos de ropa.',
+              },
+              {
+                valor: 'contenedor',
+                etiqueta: ETIQUETAS_CARGA.contenedor,
+                descripcion: 'Solo para pedidos muy grandes, como la temporada de calzado.',
+              },
+              {
+                valor: 'aerea',
+                etiqueta: ETIQUETAS_CARGA.aerea,
+                descripcion: 'Rápida y cara: para muestras o reposición urgente.',
+              },
             ]}
           />
           <div className="grid grid-cols-2 gap-x-6 gap-y-4">
@@ -264,21 +333,56 @@ export function FormularioPedido({
                 valor={m3}
                 alCambiar={(v) => ajustar({ m3: v })}
                 decimales={1}
+                placeholder="Por ejemplo, 5"
                 error={errores.carga}
-                ayuda={m3Estimado ? 'Estimado con el volumen por prenda del último pedido.' : 'Lo confirma tu agente de carga.'}
+                ayuda={
+                  m3Estimado
+                    ? 'Estimado con el volumen por prenda del último pedido.'
+                    : 'Lo confirma tu agente de carga.'
+                }
               />
             )}
             {tipoCarga === 'contenedor' && (
               <div>
                 <p className="mb-1.5 t-label text-ink">Tamaño del contenedor</p>
-                <Segmentado etiqueta="Tamaño del contenedor" valor={String(pies) as '20' | '40'} alCambiar={(v) => ajustar({ pies: v === '40' ? 40 : 20 })} opciones={[{ valor: '20', etiqueta: '20 pies' }, { valor: '40', etiqueta: '40 pies' }]} />
+                <Segmentado
+                  etiqueta="Tamaño del contenedor"
+                  valor={String(pies) as '20' | '40'}
+                  alCambiar={(v) => ajustar({ pies: v === '40' ? 40 : 20 })}
+                  opciones={[
+                    { valor: '20', etiqueta: '20 pies' },
+                    { valor: '40', etiqueta: '40 pies' },
+                  ]}
+                />
               </div>
             )}
-            {tipoCarga === 'aerea' && <InputNumero etiqueta="Peso (kg)" sufijo="kg" valor={kg} alCambiar={(v) => ajustar({ kg: v })} error={errores.carga} />}
-            <Select etiqueta="Puerto de origen" valor={puertoOrigen} alCambiar={(v) => ajustar({ puertoOrigen: v })} opciones={puertos.map((p) => ({ valor: p, etiqueta: p }))} enModal />
+            {tipoCarga === 'aerea' && (
+              <InputNumero
+                etiqueta="Peso (kg)"
+                sufijo="kg"
+                valor={kg}
+                alCambiar={(v) => ajustar({ kg: v })}
+                error={errores.carga}
+              />
+            )}
+            <Select
+              etiqueta="Puerto de origen"
+              valor={puertoOrigen}
+              alCambiar={(v) => ajustar({ puertoOrigen: v })}
+              opciones={puertos.map((p) => ({ valor: p, etiqueta: p }))}
+              enModal
+            />
             <div>
               <p className="mb-1.5 t-label text-ink">Puerto de llegada</p>
-              <Segmentado etiqueta="Puerto de llegada" valor={puertoDestino} alCambiar={(v) => ajustar({ puertoDestino: v })} opciones={[{ valor: 'Buenaventura', etiqueta: 'Buenaventura' }, { valor: 'Cartagena', etiqueta: 'Cartagena' }]} />
+              <Segmentado
+                etiqueta="Puerto de llegada"
+                valor={puertoDestino}
+                alCambiar={(v) => ajustar({ puertoDestino: v })}
+                opciones={[
+                  { valor: 'Buenaventura', etiqueta: 'Buenaventura' },
+                  { valor: 'Cartagena', etiqueta: 'Cartagena' },
+                ]}
+              />
             </div>
           </div>
         </div>
@@ -297,7 +401,9 @@ export function FormularioPedido({
             deshabilitado={!lineasEditables}
             error={errores.lineas}
           />
-          {!lineasEditables && <p className="t-small text-muted">Las líneas ya no se pueden cambiar: el saldo está pagado.</p>}
+          {!lineasEditables && (
+            <p className="t-small text-muted">Las líneas ya no se pueden cambiar: el saldo está pagado.</p>
+          )}
         </>
       )}
 
@@ -305,24 +411,40 @@ export function FormularioPedido({
         <div className="space-y-6">
           <fieldset>
             <legend className="mb-2 t-label text-ink">¿Quiénes siguen este pedido?</legend>
-            <p className="mb-3 t-small text-muted">Ellos son los destinatarios que aparecen en “Notificar a” cada vez que cambia el estado.</p>
+            <p className="mb-3 t-small text-muted">
+              Ellos son los destinatarios que aparecen en “Notificar a” cada vez que cambia el estado.
+            </p>
             <div className="grid grid-cols-2 gap-x-6 gap-y-1">
               {contactosVisibles.map((f) => (
                 <Checkbox
                   key={f.contacto.id}
                   marcado={contactoIds.includes(f.contacto.id)}
-                  alCambiar={(v) => ajustar({ contactoIds: v ? [...contactoIds, f.contacto.id] : contactoIds.filter((x) => x !== f.contacto.id) })}
+                  alCambiar={(v) =>
+                    ajustar({
+                      contactoIds: v
+                        ? [...contactoIds, f.contacto.id]
+                        : contactoIds.filter((x) => x !== f.contacto.id),
+                    })
+                  }
                   etiqueta={
                     <span>
                       <span className="font-semibold text-ink">{f.contacto.nombre}</span>
-                      <span className="ml-2 t-small text-muted">{ETIQUETAS_ROL_CONTACTO[f.contacto.rol]}</span>
+                      <span className="ml-2 t-small text-muted">
+                        {ETIQUETAS_ROL_CONTACTO[f.contacto.rol]}
+                      </span>
                     </span>
                   }
                 />
               ))}
             </div>
           </fieldset>
-          <Textarea etiqueta="Nota del pedido" opcional value={nota} onChange={(e) => ajustar({ nota: e.target.value })} placeholder="Algo que quieras recordar de este pedido" />
+          <Textarea
+            etiqueta="Nota del pedido"
+            opcional
+            value={nota}
+            onChange={(e) => ajustar({ nota: e.target.value })}
+            placeholder="Algo que quieras recordar de este pedido"
+          />
           <div className="border border-line bg-surface-2 p-4" data-testid="resumen-pedido">
             <p className="t-eyebrow text-ink-2">Resumen</p>
             <dl className="mt-3 grid grid-cols-3 gap-4">

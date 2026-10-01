@@ -27,7 +27,15 @@ export function ParametrosCostoDialog({
   return <ParametrosAbierto imp={imp} tasaCosteo={tasaCosteo} alCambiar={alCambiar} />;
 }
 
-function ParametrosAbierto({ imp, tasaCosteo, alCambiar }: { imp: Importacion; tasaCosteo: number; alCambiar: (a: boolean) => void }) {
+function ParametrosAbierto({
+  imp,
+  tasaCosteo,
+  alCambiar,
+}: {
+  imp: Importacion;
+  tasaCosteo: number;
+  alCambiar: (a: boolean) => void;
+}) {
   const hoy = useHoy();
   const dinero = useDinero();
   const acciones = useAcciones();
@@ -39,11 +47,27 @@ function ParametrosAbierto({ imp, tasaCosteo, alCambiar }: { imp: Importacion; t
 
   const unidades = imp.lineas.reduce((a, l) => a + unidadesLinea(l), 0);
   const calculo = useMemo(
-    () => calcularCostoAterrizado({ lineas: imp.lineas, costos, moneda: imp.moneda, metodoProrrateo: metodo, tasaCosteo, tasasOtras: { USD: tasaUsd, CNY: tasaCny } }),
+    () =>
+      calcularCostoAterrizado({
+        lineas: imp.lineas,
+        costos,
+        moneda: imp.moneda,
+        metodoProrrateo: metodo,
+        tasaCosteo,
+        tasasOtras: { USD: tasaUsd, CNY: tasaCny },
+      }),
     [imp.lineas, imp.moneda, costos, metodo, tasaCosteo, tasaUsd, tasaCny],
   );
   const base = useMemo(
-    () => calcularCostoAterrizado({ lineas: imp.lineas, costos: imp.costos, moneda: imp.moneda, metodoProrrateo: imp.metodoProrrateo, tasaCosteo, tasasOtras: { USD: tasaUsd, CNY: tasaCny } }),
+    () =>
+      calcularCostoAterrizado({
+        lineas: imp.lineas,
+        costos: imp.costos,
+        moneda: imp.moneda,
+        metodoProrrateo: imp.metodoProrrateo,
+        tasaCosteo,
+        tasasOtras: { USD: tasaUsd, CNY: tasaCny },
+      }),
     [imp, tasaCosteo, tasaUsd, tasaCny],
   );
   const sucio = JSON.stringify(costos) !== JSON.stringify(imp.costos) || metodo !== imp.metodoProrrateo;
@@ -72,7 +96,9 @@ function ParametrosAbierto({ imp, tasaCosteo, alCambiar }: { imp: Importacion; t
           alCambiar={(v) => {
             const nueva = v as MontoMoneda['moneda'];
             const valorUnidades = m.moneda === 'COP' ? m.valor : m.valor / 100;
-            cambiar({ [clave]: { moneda: nueva, valor: Math.round(valorUnidades * (nueva === 'COP' ? 1 : 100)) } });
+            cambiar({
+              [clave]: { moneda: nueva, valor: Math.round(valorUnidades * (nueva === 'COP' ? 1 : 100)) },
+            });
           }}
           opciones={[
             { valor: 'USD', etiqueta: 'US$' },
@@ -84,12 +110,26 @@ function ParametrosAbierto({ imp, tasaCosteo, alCambiar }: { imp: Importacion; t
       </div>
     );
   };
-  const pesos = (clave: 'honorariosAgente' | 'bodegajePuerto' | 'transporteInterno' | 'otros' | 'otrosTributosAduaneros', etiqueta: string, ayuda?: string) => (
-    <InputNumero etiqueta={etiqueta} prefijo="$" valor={costos[clave]} alCambiar={(v) => cambiar({ [clave]: v ?? 0 })} ayuda={ayuda} />
+  const pesos = (
+    clave: 'honorariosAgente' | 'bodegajePuerto' | 'transporteInterno' | 'otros' | 'otrosTributosAduaneros',
+    etiqueta: string,
+    ayuda?: string,
+  ) => (
+    <InputNumero
+      etiqueta={etiqueta}
+      prefijo="$"
+      valor={costos[clave]}
+      alCambiar={(v) => cambiar({ [clave]: v ?? 0 })}
+      ayuda={ayuda}
+    />
   );
 
   const guardar = () => {
-    const r = acciones.actualizarCostosImportacion({ importacionId: imp.id, costos, metodoProrrateo: metodo });
+    const r = acciones.actualizarCostosImportacion({
+      importacionId: imp.id,
+      costos,
+      metodoProrrateo: metodo,
+    });
     if (!r.ok) {
       setError(r.error.mensaje);
       return;
@@ -128,9 +168,25 @@ function ParametrosAbierto({ imp, tasaCosteo, alCambiar }: { imp: Importacion; t
         <div className="grid grid-cols-2 gap-x-6 gap-y-4">
           {monto('flete', 'Flete internacional')}
           {monto('seguro', 'Seguro')}
-          <InputNumero etiqueta="Arancel (%)" sufijo="%" valor={Math.round(costos.arancelPct * 1000) / 10} alCambiar={(v) => cambiar({ arancelPct: (v ?? 0) / 100 })} decimales={1} />
-          {pesos('otrosTributosAduaneros', 'Otros tributos aduaneros', 'El componente específico del arancel de confecciones.')}
-          <InputNumero etiqueta="IVA de importación (%)" sufijo="%" valor={Math.round(costos.ivaImportacionPct * 1000) / 10} alCambiar={(v) => cambiar({ ivaImportacionPct: (v ?? 0) / 100 })} decimales={1} />
+          <InputNumero
+            etiqueta="Arancel (%)"
+            sufijo="%"
+            valor={Math.round(costos.arancelPct * 1000) / 10}
+            alCambiar={(v) => cambiar({ arancelPct: (v ?? 0) / 100 })}
+            decimales={1}
+          />
+          {pesos(
+            'otrosTributosAduaneros',
+            'Otros tributos aduaneros',
+            'El componente específico del arancel de confecciones.',
+          )}
+          <InputNumero
+            etiqueta="IVA de importación (%)"
+            sufijo="%"
+            valor={Math.round(costos.ivaImportacionPct * 1000) / 10}
+            alCambiar={(v) => cambiar({ ivaImportacionPct: (v ?? 0) / 100 })}
+            decimales={1}
+          />
           {pesos('honorariosAgente', 'Honorarios del agente de aduanas')}
           {pesos('bodegajePuerto', 'Puerto y bodegaje')}
           {pesos('transporteInterno', 'Transporte a Bogotá')}

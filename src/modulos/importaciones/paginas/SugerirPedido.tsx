@@ -9,8 +9,26 @@ import { emitirUI, nuevoId, useAcciones, useAhora, useHoy, useMarca, useSel } fr
 import { entero, plural, porcentaje } from '@/lib/formato';
 import { textoTasas, dineroOrigen } from '@/lib/moneda';
 import { selNarrativa, selProveedores } from '@/selectores';
-import { avisar, BotonEnlace, Button, Dialog, Dinero, EmptyState, EncabezadoPagina, Fecha, Pista, Segmentado, Select } from '@/ui';
-import { borradorPedidoEn, cantidadVigente, resumenReferencia, totalesPedido, type LineaSugerida } from '../calculos';
+import {
+  avisar,
+  BotonEnlace,
+  Button,
+  Dialog,
+  Dinero,
+  EmptyState,
+  EncabezadoPagina,
+  Fecha,
+  Pista,
+  Segmentado,
+  Select,
+} from '@/ui';
+import {
+  borradorPedidoEn,
+  cantidadVigente,
+  resumenReferencia,
+  totalesPedido,
+  type LineaSugerida,
+} from '../calculos';
 import { AccionesMensaje } from '../componentes/AccionesMensaje';
 import { MatrizSugerida, type Lente } from '../componentes/MatrizSugerida';
 import { selContactosCadena, selDefectosPedido, selSugerenciaCompleta } from '../selectores';
@@ -19,9 +37,13 @@ import { TEXTOS_SUGERIR } from '../textos';
 const COBERTURAS = [60, 90, 120, 150, 180] as const;
 
 /** Referencias donde la persona editó alguna cantidad (siguen visibles aunque la sugerencia fuera cero). */
-function productosEditados(ediciones: Readonly<Record<Id, number>>, productos: readonly { productoId: Id; celdas: Record<string, { varianteId: Id }> }[]): Record<Id, true> {
+function productosEditados(
+  ediciones: Readonly<Record<Id, number>>,
+  productos: readonly { productoId: Id; celdas: Record<string, { varianteId: Id }> }[],
+): Record<Id, true> {
   const r: Record<Id, true> = {};
-  for (const p of productos) if (Object.values(p.celdas).some((c) => ediciones[c.varianteId] !== undefined)) r[p.productoId] = true;
+  for (const p of productos)
+    if (Object.values(p.celdas).some((c) => ediciones[c.varianteId] !== undefined)) r[p.productoId] = true;
   return r;
 }
 
@@ -43,9 +65,15 @@ export default function SugerirPedido() {
   const fabricas = useSel(selProveedores, { hoy, tipo: 'fabrica' });
   const contactos = useSel(selContactosCadena);
 
-  const proveedorInicial = fabricas.find((f) => f.proveedor.id === proveedorUrl)?.proveedor.id ?? fabricas.find((f) => f.proveedor.id === narrativa.proveedorSugerencia)?.proveedor.id ?? fabricas[0]?.proveedor.id ?? null;
+  const proveedorInicial =
+    fabricas.find((f) => f.proveedor.id === proveedorUrl)?.proveedor.id ??
+    fabricas.find((f) => f.proveedor.id === narrativa.proveedorSugerencia)?.proveedor.id ??
+    fabricas[0]?.proveedor.id ??
+    null;
   const [proveedorId, setProveedorId] = useState<Id | null>(proveedorInicial);
-  const [cobertura, setCobertura] = useState<number>(coberturaUrl && coberturaUrl >= 30 && coberturaUrl <= 365 ? coberturaUrl : 90);
+  const [cobertura, setCobertura] = useState<number>(
+    coberturaUrl && coberturaUrl >= 30 && coberturaUrl <= 365 ? coberturaUrl : 90,
+  );
   const [ediciones, setEdiciones] = useState<Record<Id, number>>({});
   const [lente, setLente] = useState<Lente>('sugerido');
   const [abiertasManual, setAbiertasManual] = useState<ReadonlySet<Id> | null>(null);
@@ -53,7 +81,11 @@ export default function SugerirPedido() {
   const [borrador, setBorrador] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const sug = useSel(selSugerenciaCompleta, { proveedorId: proveedorId ?? '', coberturaDias: cobertura, hoy });
+  const sug = useSel(selSugerenciaCompleta, {
+    proveedorId: proveedorId ?? '',
+    coberturaDias: cobertura,
+    hoy,
+  });
   const defectos = useSel(selDefectosPedido, { proveedorId: proveedorId ?? '' });
 
   useEffect(() => {
@@ -74,11 +106,14 @@ export default function SugerirPedido() {
     setCobertura(dias);
     reiniciar();
   };
-  const abiertas: ReadonlySet<Id> = abiertasManual ?? new Set(sug?.productos[0] ? [sug.productos[0].productoId] : []);
+  const abiertas: ReadonlySet<Id> =
+    abiertasManual ?? new Set(sug?.productos[0] ? [sug.productos[0].productoId] : []);
   const setAbiertas = (v: ReadonlySet<Id>) => setAbiertasManual(v);
 
   const [verSin, setVerSin] = useState(false);
-  const conCantidad = (sug?.productos ?? []).filter((p) => p.sugeridas > 0 || p.productoId in productosEditados(ediciones, sug?.productos ?? []));
+  const conCantidad = (sug?.productos ?? []).filter(
+    (p) => p.sugeridas > 0 || p.productoId in productosEditados(ediciones, sug?.productos ?? []),
+  );
   const sinCantidad = (sug?.productos ?? []).filter((p) => !conCantidad.includes(p));
   const visibles = verSin ? [...conCantidad, ...sinCantidad] : conCantidad;
 
@@ -114,7 +149,12 @@ export default function SugerirPedido() {
         resumenReferencia(
           Object.values(p.celdas).map((c) => {
             const color = p.colores.find((k) => k.id === c.colorId);
-            return { talla: c.talla, colorNombre: color?.nombre ?? '', colorCodigo: color?.codigo ?? '', cantidad: cantidadVigente(c.sugerida, ediciones[c.varianteId]) };
+            return {
+              talla: c.talla,
+              colorNombre: color?.nombre ?? '',
+              colorCodigo: color?.codigo ?? '',
+              cantidad: cantidadVigente(c.sugerida, ediciones[c.varianteId]),
+            };
           }),
           p.referencia,
           p.nombre,
@@ -123,9 +163,16 @@ export default function SugerirPedido() {
     [sug, ediciones],
   );
 
-  const contactoFabrica = contactos.find((f) => f.contacto.rol === 'proveedor' && f.contacto.proveedorId === proveedorId)?.contacto ?? null;
+  const contactoFabrica =
+    contactos.find((f) => f.contacto.rol === 'proveedor' && f.contacto.proveedorId === proveedorId)
+      ?.contacto ?? null;
   const textoBorrador = sug
-    ? borradorPedidoEn({ nombreContacto: contactoFabrica?.nombre.split(' ')[0] ?? 'there', proveedor: sug.proveedor.nombreCorto, marca, referencias })
+    ? borradorPedidoEn({
+        nombreContacto: contactoFabrica?.nombre.split(' ')[0] ?? 'there',
+        proveedor: sug.proveedor.nombreCorto,
+        marca,
+        referencias,
+      })
     : '';
 
   const crear = () => {
@@ -135,7 +182,11 @@ export default function SugerirPedido() {
       .map((p) => ({
         productoId: p.productoId,
         costoUnitarioOrigen: p.costoUnitarioOrigen,
-        cantidades: Object.fromEntries(Object.values(p.celdas).map((c) => [c.varianteId, cantidadVigente(c.sugerida, ediciones[c.varianteId])] as const).filter(([, n]) => n > 0)),
+        cantidades: Object.fromEntries(
+          Object.values(p.celdas)
+            .map((c) => [c.varianteId, cantidadVigente(c.sugerida, ediciones[c.varianteId])] as const)
+            .filter(([, n]) => n > 0),
+        ),
       }))
       .filter((l) => Object.keys(l.cantidades).length > 0);
     if (lineasPedido.length === 0) {
@@ -171,7 +222,13 @@ export default function SugerirPedido() {
         mensajes: [
           {
             canal: 'wechat',
-            destinatario: { tipo: 'contacto', refId: contactoFabrica.id, nombre: contactoFabrica.nombre, telefono: contactoFabrica.whatsapp, correo: contactoFabrica.correo },
+            destinatario: {
+              tipo: 'contacto',
+              refId: contactoFabrica.id,
+              nombre: contactoFabrica.nombre,
+              telefono: contactoFabrica.whatsapp,
+              correo: contactoFabrica.correo,
+            },
             idioma: 'en',
             tratamiento: 'tu',
             asunto: `New order ${numeroNuevo} · ${marca}`,
@@ -180,25 +237,57 @@ export default function SugerirPedido() {
           },
         ],
       });
-      if (!m.ok) avisar({ tipo: 'alerta', texto: 'El pedido quedó creado, pero no pudimos guardar el borrador.', detalle: m.error.mensaje });
+      if (!m.ok)
+        avisar({
+          tipo: 'alerta',
+          texto: 'El pedido quedó creado, pero no pudimos guardar el borrador.',
+          detalle: m.error.mensaje,
+        });
     }
-    setCreado({ numero: numeroNuevo, importacionId: id, borrador: textoBorrador, contacto: contactoFabrica?.nombre ?? 'la fábrica' });
-    avisar({ tipo: 'exito', texto: `Pedido ${numeroNuevo} creado en Cotizado`, detalle: 'El borrador en inglés quedó en la bandeja de salida (WeChat, simulación).', accion: { texto: 'Ver el pedido', a: rutas.importacion(numeroNuevo) } });
+    setCreado({
+      numero: numeroNuevo,
+      importacionId: id,
+      borrador: textoBorrador,
+      contacto: contactoFabrica?.nombre ?? 'la fábrica',
+    });
+    avisar({
+      tipo: 'exito',
+      texto: `Pedido ${numeroNuevo} creado en Cotizado`,
+      detalle: 'El borrador en inglés quedó en la bandeja de salida (WeChat, simulación).',
+      accion: { texto: 'Ver el pedido', a: rutas.importacion(numeroNuevo) },
+    });
   };
 
   const migas =
     desde === 'analisis'
-      ? [{ texto: 'Inicio', a: rutas.inicio() }, { texto: 'Análisis', a: rutas.analisis() }, { texto: 'Sugerir pedido' }]
+      ? [
+          { texto: 'Inicio', a: rutas.inicio() },
+          { texto: 'Análisis', a: rutas.analisis() },
+          { texto: 'Sugerir pedido' },
+        ]
       : desde === 'proveedor'
-        ? [{ texto: 'Inicio', a: rutas.inicio() }, { texto: 'Proveedores', a: rutas.proveedores() }, { texto: 'Sugerir pedido' }]
-        : [{ texto: 'Inicio', a: rutas.inicio() }, { texto: 'Importaciones', a: rutas.importaciones() }, { texto: 'Sugerir pedido' }];
+        ? [
+            { texto: 'Inicio', a: rutas.inicio() },
+            { texto: 'Proveedores', a: rutas.proveedores() },
+            { texto: 'Sugerir pedido' },
+          ]
+        : [
+            { texto: 'Inicio', a: rutas.inicio() },
+            { texto: 'Importaciones', a: rutas.importaciones() },
+            { texto: 'Sugerir pedido' },
+          ];
 
   if (fabricas.length === 0 || !sug)
     return (
       <div className="pb-16">
         <EncabezadoPagina migas={migas} titulo={TEXTOS_SUGERIR.titulo} subtitulo={TEXTOS_SUGERIR.subtitulo} />
         <div className="mt-10 border border-line bg-surface">
-          <EmptyState icono={Ship} titulo="Elige una fábrica para empezar" texto="Para sugerirte cantidades necesitamos una fábrica con historial de pedidos y de ventas." accion={<BotonEnlace to={rutas.importaciones()}>Ir a Importaciones</BotonEnlace>} />
+          <EmptyState
+            icono={Ship}
+            titulo="Elige una fábrica para empezar"
+            texto="Para sugerirte cantidades necesitamos una fábrica con historial de pedidos y de ventas."
+            accion={<BotonEnlace to={rutas.importaciones()}>Ir a Importaciones</BotonEnlace>}
+          />
         </div>
       </div>
     );
@@ -210,13 +299,19 @@ export default function SugerirPedido() {
     <div className="pb-16">
       <EncabezadoPagina migas={migas} titulo={TEXTOS_SUGERIR.titulo} subtitulo={TEXTOS_SUGERIR.subtitulo} />
 
-      <div className="mt-8 flex flex-wrap items-end gap-6 border border-line bg-surface p-5" data-testid="controles-sugerir">
+      <div
+        className="mt-8 flex flex-wrap items-end gap-6 border border-line bg-surface p-5"
+        data-testid="controles-sugerir"
+      >
         <Select
           className="w-[320px]"
           etiqueta="Fábrica"
           valor={proveedorId}
           alCambiar={elegirProveedor}
-          opciones={fabricas.map((f) => ({ valor: f.proveedor.id, etiqueta: `${f.proveedor.nombreCorto} · ${f.proveedor.moneda}` }))}
+          opciones={fabricas.map((f) => ({
+            valor: f.proveedor.id,
+            etiqueta: `${f.proveedor.nombreCorto} · ${f.proveedor.moneda}`,
+          }))}
           data-testid="select-fabrica-sugerir"
         />
         <div>
@@ -225,7 +320,11 @@ export default function SugerirPedido() {
             etiqueta="Cobertura en días"
             valor={String(cobertura)}
             alCambiar={(v) => elegirCobertura(Number(v))}
-            opciones={COBERTURAS.map((c) => ({ valor: String(c), etiqueta: `${c} días`, 'data-testid': `cobertura-${c}` }))}
+            opciones={COBERTURAS.map((c) => ({
+              valor: String(c),
+              etiqueta: `${c} días`,
+              'data-testid': `cobertura-${c}`,
+            }))}
           />
         </div>
         <p className="max-w-[44ch] pb-1 t-small text-muted">
@@ -248,17 +347,29 @@ export default function SugerirPedido() {
               ]}
             />
             <div className="flex items-center gap-4">
-              <button type="button" className="t-label font-bold text-ink underline-offset-4 hover:underline" onClick={() => setAbiertas(new Set(visibles.map((p) => p.productoId)))}>
+              <button
+                type="button"
+                className="t-label font-bold text-ink underline-offset-4 hover:underline"
+                onClick={() => setAbiertas(new Set(visibles.map((p) => p.productoId)))}
+              >
                 Abrir todas
               </button>
-              <button type="button" className="t-label font-bold text-ink underline-offset-4 hover:underline" onClick={() => setAbiertas(new Set())}>
+              <button
+                type="button"
+                className="t-label font-bold text-ink underline-offset-4 hover:underline"
+                onClick={() => setAbiertas(new Set())}
+              >
                 Cerrar todas
               </button>
             </div>
           </div>
           {sug.productos.length === 0 ? (
             <div className="border border-line bg-surface">
-              <EmptyState icono={ListPlus} titulo="Esta fábrica aún no tiene referencias" texto="Cuando le pidas prendas a esta fábrica, aquí te sugerimos cuánto repetir." />
+              <EmptyState
+                icono={ListPlus}
+                titulo="Esta fábrica aún no tiene referencias"
+                texto="Cuando le pidas prendas a esta fábrica, aquí te sugerimos cuánto repetir."
+              />
             </div>
           ) : (
             <Pista id="importaciones.sugerir" alinear="inicio">
@@ -289,9 +400,12 @@ export default function SugerirPedido() {
                     data-testid="ver-sin-cantidad"
                   >
                     <span>
-                      {verSin ? 'Ocultar' : 'Ver'} {plural(sinCantidad.length, 'referencia', 'referencias')} sin cantidad sugerida
+                      {verSin ? 'Ocultar' : 'Ver'} {plural(sinCantidad.length, 'referencia', 'referencias')}{' '}
+                      sin cantidad sugerida
                     </span>
-                    <span className="t-small font-normal text-muted">Ya hay suficiente o no se ha vendido</span>
+                    <span className="t-small font-normal text-muted">
+                      Ya hay suficiente o no se ha vendido
+                    </span>
                   </button>
                 )}
               </div>
@@ -299,7 +413,10 @@ export default function SugerirPedido() {
           )}
         </div>
 
-        <aside className="wide:sticky wide:top-(--sticky-top) wide:self-start" aria-label="Resumen del pedido">
+        <aside
+          className="wide:sticky wide:top-(--sticky-top) wide:self-start"
+          aria-label="Resumen del pedido"
+        >
           <div className="space-y-4 border border-line bg-surface p-6" data-testid="resumen-sugerencia">
             <p className="t-eyebrow text-ink-2">El pedido</p>
             <div>
@@ -311,7 +428,10 @@ export default function SugerirPedido() {
                 {editadas > 0 && (
                   <>
                     {' '}
-                    · {diferencia === 0 ? 'igual que la sugerencia' : `${diferencia > 0 ? '+' : '−'}${entero(Math.abs(diferencia))} frente a lo sugerido`}
+                    ·{' '}
+                    {diferencia === 0
+                      ? 'igual que la sugerencia'
+                      : `${diferencia > 0 ? '+' : '−'}${entero(Math.abs(diferencia))} frente a lo sugerido`}
                   </>
                 )}
               </p>
@@ -320,20 +440,25 @@ export default function SugerirPedido() {
               <div>
                 <dt className="t-small text-muted">Costo estimado de fábrica</dt>
                 <dd className="t-label font-bold text-ink" data-testid="costo-estimado">
-                  <span className="num">{dineroOrigen(totales.totalOrigen, sug.base.moneda)}</span> · unos <Dinero valor={totales.totalCop} corta />
+                  <span className="num">{dineroOrigen(totales.totalOrigen, sug.base.moneda)}</span> · unos{' '}
+                  <Dinero valor={totales.totalCop} corta />
                 </dd>
                 <dd className="mt-0.5 t-small text-muted">{tasaTexto}</dd>
               </div>
               <div>
                 <dt className="t-small text-muted">Margen esperado</dt>
                 <dd className="t-label font-bold text-ink num" data-testid="margen-esperado">
-                  {porcentaje(totales.margenEsperado, 0)} <span className="font-normal text-muted">con el último costo aterrizado</span>
+                  {porcentaje(totales.margenEsperado, 0)}{' '}
+                  <span className="font-normal text-muted">con el último costo aterrizado</span>
                 </dd>
               </div>
               <div>
-                <dt className="t-small text-muted">Anticipo a la fábrica ({sug.proveedor.condicionesPago.split(',')[0]})</dt>
+                <dt className="t-small text-muted">
+                  Anticipo a la fábrica ({sug.proveedor.condicionesPago.split(',')[0]})
+                </dt>
                 <dd className="t-label font-bold text-ink num">
-                  {dineroOrigen(anticipo, sug.base.moneda)} · <Dinero valor={copDeCentavos(anticipo, tasa)} corta />
+                  {dineroOrigen(anticipo, sug.base.moneda)} ·{' '}
+                  <Dinero valor={copDeCentavos(anticipo, tasa)} corta />
                 </dd>
               </div>
               <div>
@@ -350,12 +475,20 @@ export default function SugerirPedido() {
                   <CheckCircle2 size={18} className="text-success" aria-hidden />
                   {creado.numero} quedó en Cotizado
                 </p>
-                <p className="t-small text-muted">El borrador en inglés para {creado.contacto} está en la bandeja de salida. No se envió nada: lo copias y lo mandas tú.</p>
+                <p className="t-small text-muted">
+                  El borrador en inglés para {creado.contacto} está en la bandeja de salida. No se envió nada:
+                  lo copias y lo mandas tú.
+                </p>
                 <div className="flex flex-col gap-2">
                   <BotonEnlace to={rutas.importacion(creado.numero)} anchoCompleto>
                     Ver el pedido
                   </BotonEnlace>
-                  <BotonEnlace to={rutas.importaciones({ vista: 'tablero', resaltar: creado.numero })} variante="secondary" anchoCompleto data-testid="ver-en-tablero">
+                  <BotonEnlace
+                    to={rutas.importaciones({ vista: 'tablero', resaltar: creado.numero })}
+                    variante="secondary"
+                    anchoCompleto
+                    data-testid="ver-en-tablero"
+                  >
                     Verlo en el tablero
                   </BotonEnlace>
                   <Button variante="ghost" onClick={() => setBorrador(true)}>
@@ -365,10 +498,20 @@ export default function SugerirPedido() {
               </div>
             ) : (
               <div className="flex flex-col gap-2 border-t border-line-soft pt-4">
-                <Button anchoCompleto onClick={crear} disabled={totales.unidades === 0} data-testid="crear-pedido">
+                <Button
+                  anchoCompleto
+                  onClick={crear}
+                  disabled={totales.unidades === 0}
+                  data-testid="crear-pedido"
+                >
                   Crear pedido en Cotizado
                 </Button>
-                <Button variante="secondary" anchoCompleto onClick={() => setBorrador(true)} data-testid="ver-borrador">
+                <Button
+                  variante="secondary"
+                  anchoCompleto
+                  onClick={() => setBorrador(true)}
+                  data-testid="ver-borrador"
+                >
                   Ver el borrador en inglés
                 </Button>
                 {editadas > 0 && (
@@ -379,7 +522,8 @@ export default function SugerirPedido() {
               </div>
             )}
             <p className="t-small text-muted">
-              Cantidades: ventas de las últimas 12 semanas más lo que se pidió y no había, menos lo que tienes y lo que viene en camino, en múltiplos de 5.
+              Cantidades: ventas de las últimas 12 semanas más lo que se pidió y no había, menos lo que tienes
+              y lo que viene en camino, en múltiplos de 5.
             </p>
           </div>
         </aside>
@@ -400,10 +544,19 @@ export default function SugerirPedido() {
         }
       >
         <div className="space-y-4">
-          <p className="whitespace-pre-line border border-line bg-surface-2 p-4 t-body text-ink" lang="en" data-testid="texto-borrador">
+          <p
+            className="whitespace-pre-line border border-line bg-surface-2 p-4 t-body text-ink"
+            lang="en"
+            data-testid="texto-borrador"
+          >
             {creado ? creado.borrador : textoBorrador}
           </p>
-          <AccionesMensaje idBase="borrador" asunto={`New order · ${marca}`} cuerpo={creado ? creado.borrador : textoBorrador} canales={{ whatsapp: true, correo: true, wechat: true }} />
+          <AccionesMensaje
+            idBase="borrador"
+            asunto={`New order · ${marca}`}
+            cuerpo={creado ? creado.borrador : textoBorrador}
+            canales={{ whatsapp: true, correo: true, wechat: true }}
+          />
         </div>
       </Dialog>
     </div>

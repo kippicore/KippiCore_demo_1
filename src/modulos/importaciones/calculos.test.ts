@@ -1,6 +1,13 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { calcularCostoAterrizado, unidadesLinea } from '@/dominio/reglas/costeo';
-import { activarVerificacionDeTablas, selAvisosEstado, selCostoAterrizado, selImportaciones, selNarrativa, selSugerenciaPedido } from '@/selectores';
+import {
+  activarVerificacionDeTablas,
+  selAvisosEstado,
+  selCostoAterrizado,
+  selImportaciones,
+  selNarrativa,
+  selSugerenciaPedido,
+} from '@/selectores';
 import { AHORA, estadoDe, HOY } from '@/selectores/pruebas/construir';
 import {
   borradorPedidoEn,
@@ -36,7 +43,9 @@ afterAll(() => activarVerificacionDeTablas(false));
 
 describe('fases y ruta', () => {
   test('cada estado pertenece a una fase y las fases cubren los 13 estados', () => {
-    const todos = (['fabrica', 'viaje', 'aduana', 'entrega', 'bodega'] as const).flatMap((f) => estadosDeFase(f));
+    const todos = (['fabrica', 'viaje', 'aduana', 'entrega', 'bodega'] as const).flatMap((f) =>
+      estadosDeFase(f),
+    );
     expect(todos).toHaveLength(13);
     expect(faseDeEstado('en_puerto')).toBe('viaje');
     expect(faseDeEstado('nacionalizado')).toBe('aduana');
@@ -100,7 +109,14 @@ describe('cambio de estado', () => {
 
   test('el portal solo ofrece las novedades de carga y aduana hacia adelante', () => {
     expect(estadosParaPortal('en_nacionalizacion')).toEqual(['nacionalizado']);
-    expect(estadosParaPortal('en_produccion')).toEqual(['embarcado', 'en_transito', 'en_puerto', 'en_nacionalizacion', 'nacionalizado']);
+    expect(estadosParaPortal('en_produccion')).toEqual([]);
+    expect(estadosParaPortal('saldo_pagado')).toEqual([
+      'embarcado',
+      'en_transito',
+      'en_puerto',
+      'en_nacionalizacion',
+      'nacionalizado',
+    ]);
     expect(estadosParaPortal('en_transporte_bogota')).toEqual([]);
   });
 });
@@ -132,11 +148,20 @@ describe('costo aterrizado: desglose por prenda', () => {
     const e = estadoDe();
     const n = selNarrativa(e, { hoy: HOY });
     const imp = e.importaciones[n.importacionEnPuerto ?? '']!;
-    const res = calcularCostoAterrizado({ lineas: imp.lineas, costos: imp.costos, moneda: imp.moneda, metodoProrrateo: 'valor', tasaCosteo: 4000, tasasOtras: { USD: 4000 } });
+    const res = calcularCostoAterrizado({
+      lineas: imp.lineas,
+      costos: imp.costos,
+      moneda: imp.moneda,
+      metodoProrrateo: 'valor',
+      tasaCosteo: 4000,
+      tasasOtras: { USD: 4000 },
+    });
     const l = imp.lineas[0]!;
     const r = cascadaPorPrenda(res, imp.lineas, 'valor', l.id)!;
     expect(r.pasos[0]!.concepto).toBe('fob');
-    expect(Math.abs(r.pasos[0]!.valor - Math.round((l.costoUnitarioOrigen / 100) * 4000))).toBeLessThanOrEqual(1);
+    expect(
+      Math.abs(r.pasos[0]!.valor - Math.round((l.costoUnitarioOrigen / 100) * 4000)),
+    ).toBeLessThanOrEqual(1);
   });
 
   test('el simulador mueve la tasa y el costo sube con el dólar', () => {
@@ -146,10 +171,18 @@ describe('costo aterrizado: desglose por prenda', () => {
     const base = selCostoAterrizado(e, { importacionId: id, hoy: HOY })!;
     expect(tasaSimulada(3950, 10)).toBeCloseTo(4345, 3);
     expect(tasaSimulada(3950, 0)).toBe(3950);
-    const sube = selCostoAterrizado(e, { importacionId: id, hoy: HOY, tasaSimulada: tasaSimulada(base.tasaCosteo, 10) })!;
+    const sube = selCostoAterrizado(e, {
+      importacionId: id,
+      hoy: HOY,
+      tasaSimulada: tasaSimulada(base.tasaCosteo, 10),
+    })!;
     expect(sube.total).toBeGreaterThan(base.total);
-    expect(sube.porProductoDetalle[0]!.margenProyectado).toBeLessThan(base.porProductoDetalle[0]!.margenProyectado);
-    expect(sube.porProductoDetalle[0]!.precioSugerido).toBeGreaterThanOrEqual(base.porProductoDetalle[0]!.precioSugerido);
+    expect(sube.porProductoDetalle[0]!.margenProyectado).toBeLessThan(
+      base.porProductoDetalle[0]!.margenProyectado,
+    );
+    expect(sube.porProductoDetalle[0]!.precioSugerido).toBeGreaterThanOrEqual(
+      base.porProductoDetalle[0]!.precioSugerido,
+    );
   });
 
   test('el margen promedio se pondera por unidades y por categoría', () => {
@@ -179,8 +212,22 @@ describe('costo aterrizado: desglose por prenda', () => {
 
 describe('sugerir pedido', () => {
   const lineas: LineaSugerida[] = [
-    { varianteId: 'a', cantidad: 10, costoUnitarioOrigen: 1140, precioVenta: 219_900, tarifaIva: 0.19, costoAterrizado: 71_850 },
-    { varianteId: 'b', cantidad: 5, costoUnitarioOrigen: 1200, precioVenta: 189_900, tarifaIva: 0.19, costoAterrizado: 60_000 },
+    {
+      varianteId: 'a',
+      cantidad: 10,
+      costoUnitarioOrigen: 1140,
+      precioVenta: 219_900,
+      tarifaIva: 0.19,
+      costoAterrizado: 71_850,
+    },
+    {
+      varianteId: 'b',
+      cantidad: 5,
+      costoUnitarioOrigen: 1200,
+      precioVenta: 189_900,
+      tarifaIva: 0.19,
+      costoAterrizado: 60_000,
+    },
   ];
 
   test('los totales salen de las cantidades editadas', () => {
@@ -196,7 +243,11 @@ describe('sugerir pedido', () => {
     const e = estadoDe();
     const n = selNarrativa(e, { hoy: HOY });
     const s = selSugerenciaCompleta(e, { proveedorId: n.proveedorSugerencia!, coberturaDias: 90, hoy: HOY })!;
-    const base = selSugerenciaPedido(e, { proveedorId: n.proveedorSugerencia!, coberturaDias: 90, hoy: HOY })!;
+    const base = selSugerenciaPedido(e, {
+      proveedorId: n.proveedorSugerencia!,
+      coberturaDias: 90,
+      hoy: HOY,
+    })!;
     expect(s.base).toBe(base);
     const filas: LineaSugerida[] = s.productos.flatMap((p) =>
       Object.values(p.celdas).map((c) => ({
@@ -233,7 +284,12 @@ describe('sugerir pedido', () => {
     );
     expect(r.total).toBe(280);
     expect(r.colores).toHaveLength(1);
-    const texto = borradorPedidoEn({ nombreContacto: 'Lily', proveedor: 'Guangzhou Huameng', marca: 'HALDEN', referencias: [r] });
+    const texto = borradorPedidoEn({
+      nombreContacto: 'Lily',
+      proveedor: 'Guangzhou Huameng',
+      marca: 'HALDEN',
+      referencias: [r],
+    });
     expect(texto).toContain('Hi Lily, please find below our next order for Guangzhou Huameng.');
     expect(texto).toContain('HL-CAM-0142');
     expect(texto).toContain('M 160 · L 120');
@@ -262,7 +318,13 @@ describe('avisos de cambio de estado', () => {
   test('en nacionalización se avisa al transportador, a la bodega y a la agente, nunca a la fábrica', () => {
     const e = estadoDe();
     const n = selNarrativa(e, { hoy: HOY });
-    const a = selAvisosEstado(e, { importacionId: n.importacionEnPuerto!, estado: 'en_nacionalizacion', marca: 'HALDEN', fecha: HOY, hora: '15:30' })!;
+    const a = selAvisosEstado(e, {
+      importacionId: n.importacionEnPuerto!,
+      estado: 'en_nacionalizacion',
+      marca: 'HALDEN',
+      fecha: HOY,
+      hora: '15:30',
+    })!;
     expect(a.destinatarios.map((d) => d.tipo).sort()).toEqual(['agente_aduanas', 'bodega', 'transportador']);
     expect(a.destinatarios.some((d) => d.tipo === 'fabrica')).toBe(false);
     for (const d of a.destinatarios) expect(d.tratamiento).toBe('usted');
@@ -270,7 +332,9 @@ describe('avisos de cambio de estado', () => {
     expect(Object.values(elecciones).every((x) => x?.incluir)).toBe(true);
     const m = mensajesDeAvisos(n.importacionEnPuerto!, a.destinatarios, elecciones);
     expect(m).toHaveLength(3);
-    expect(m.every((x) => x.origen.tipo === 'importacion' && x.origen.id === n.importacionEnPuerto)).toBe(true);
+    expect(m.every((x) => x.origen.tipo === 'importacion' && x.origen.id === n.importacionEnPuerto)).toBe(
+      true,
+    );
     const bodega = m.find((x) => x.destinatario.tipo === 'empleado');
     expect(bodega?.destinatario.nombre).toContain('Wilson');
   });
@@ -278,22 +342,39 @@ describe('avisos de cambio de estado', () => {
   test('a la fábrica solo se le escribe en inglés y cuando le toca actuar', () => {
     const e = estadoDe();
     const n = selNarrativa(e, { hoy: HOY });
-    const a = selAvisosEstado(e, { importacionId: n.importacionEnPuerto!, estado: 'saldo_pagado', marca: 'HALDEN', fecha: HOY })!;
+    const a = selAvisosEstado(e, {
+      importacionId: n.importacionEnPuerto!,
+      estado: 'saldo_pagado',
+      marca: 'HALDEN',
+      fecha: HOY,
+    })!;
     const f = a.destinatarios.find((d) => d.tipo === 'fabrica')!;
     expect(f.idioma).toBe('en');
     expect(f.texto).toMatch(/release the cargo/);
-    const dueno = selAvisosEstado(e, { importacionId: n.importacionEnPuerto!, estado: 'listo_despacho', marca: 'HALDEN', fecha: HOY })!;
+    const dueno = selAvisosEstado(e, {
+      importacionId: n.importacionEnPuerto!,
+      estado: 'listo_despacho',
+      marca: 'HALDEN',
+      fecha: HOY,
+    })!;
     expect(eleccionInicial(dueno.destinatarios.find((d) => d.tipo === 'dueno')!)).toBeNull();
   });
 
   test('una elección desmarcada o vacía no genera mensaje', () => {
     const e = estadoDe();
     const n = selNarrativa(e, { hoy: HOY });
-    const a = selAvisosEstado(e, { importacionId: n.importacionEnPuerto!, estado: 'en_nacionalizacion', marca: 'HALDEN', fecha: HOY })!;
+    const a = selAvisosEstado(e, {
+      importacionId: n.importacionEnPuerto!,
+      estado: 'en_nacionalizacion',
+      marca: 'HALDEN',
+      fecha: HOY,
+    })!;
     const el = Object.fromEntries(a.destinatarios.map((d) => [d.tipo, eleccionInicial(d)]));
     el.bodega = { ...el.bodega!, incluir: false };
     el.transportador = { ...el.transportador!, texto: '   ' };
-    expect(mensajesDeAvisos(n.importacionEnPuerto!, a.destinatarios, el).map((x) => x.destinatario.nombre)).toEqual(['Carolina Mejía']);
+    expect(
+      mensajesDeAvisos(n.importacionEnPuerto!, a.destinatarios, el).map((x) => x.destinatario.nombre),
+    ).toEqual(['Carolina Mejía']);
   });
 });
 

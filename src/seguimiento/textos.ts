@@ -2,7 +2,8 @@
 export const TEXTOS_PORTAL = {
   tituloVacio: 'No encontramos ese pedido',
   textoVacio: 'Revise que el enlace esté completo. Si el problema sigue, escríbale a quien se lo envió.',
-  soloLectura: 'Usted ve el estado del pedido en tiempo real. Lo que reporte aquí queda en el sistema del importador al instante.',
+  soloLectura:
+    'Usted ve el estado del pedido en tiempo real. Lo que reporte aquí queda en el sistema del importador al instante.',
   formularioTitulo: 'Actualizar el estado',
   formularioAyuda: 'Al enviar, el importador recibe el aviso y el pedido avanza en su sistema.',
   enFabricaTitulo: 'Todavía no hay novedades para reportar',

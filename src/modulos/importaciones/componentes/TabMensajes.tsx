@@ -14,7 +14,8 @@ export function TabMensajes({ imp, alRedactar }: { imp: Importacion; alRedactar:
     <div className="space-y-4" data-testid="tab-mensajes">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <p className="max-w-[64ch] t-body text-muted">
-          Cada vez que cambia el estado, KippiCore redacta el aviso para quien le toca actuar. Aquí quedan todos, como “Enviado (simulación)”.
+          Cada vez que cambia el estado, KippiCore redacta el aviso para quien le toca actuar. Aquí quedan
+          todos, como “Enviado (simulación)”.
         </p>
         {puede('mensaje.registrar') && imp.estado !== 'recibido_bodega' && (
           <Button variante="secondary" icono={BellRing} onClick={alRedactar} data-testid="redactar-aviso">

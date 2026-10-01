@@ -14,7 +14,9 @@ export const selAgenteDelPedido = crearSelector<{ importacionId: Id }, AgenteDel
   (e, { importacionId }) => {
     const imp = e.importaciones[importacionId];
     if (!imp) return null;
-    const cadena = imp.contactoIds.map((id) => e.contactos[id]).filter((c): c is NonNullable<typeof c> => !!c && !c.eliminadoEn);
+    const cadena = imp.contactoIds
+      .map((id) => e.contactos[id])
+      .filter((c): c is NonNullable<typeof c> => !!c && !c.eliminadoEn);
     const c =
       cadena.find((x) => x.rol === 'agente_aduanas') ??
       cadena.find((x) => x.rol === 'agente_carga') ??

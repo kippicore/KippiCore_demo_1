@@ -26,7 +26,10 @@ export function TabLineas({ imp, alEditar }: { imp: Importacion; alEditar: () =>
   const resumenTallas = (l: LineaImportacion, p: ProductoPedido | undefined) => {
     if (!p) return '';
     return p.tallas
-      .map((t) => ({ t, n: p.colores.reduce((a, c) => a + (l.cantidades[p.variantes[`${t}|${c.id}`] ?? ''] ?? 0), 0) }))
+      .map((t) => ({
+        t,
+        n: p.colores.reduce((a, c) => a + (l.cantidades[p.variantes[`${t}|${c.id}`] ?? ''] ?? 0), 0),
+      }))
       .filter((x) => x.n > 0)
       .map((x) => `${x.t} ${entero(x.n)}`)
       .join(' · ');
@@ -47,14 +50,40 @@ export function TabLineas({ imp, alEditar }: { imp: Importacion; alEditar: () =>
       },
       ancho: 260,
     },
-    { id: 'fob', encabezado: 'Precio de fábrica', numerica: true, celda: (l) => <span className="num">{dineroOrigen(l.costoUnitarioOrigen, imp.moneda)}</span>, ordenar: (l) => l.costoUnitarioOrigen, ancho: 150 },
-    { id: 'unidades', encabezado: 'Prendas', numerica: true, celda: (l) => <span className="num">{entero(unidadesLinea(l))}</span>, ordenar: (l) => unidadesLinea(l), ancho: 90 },
-    { id: 'tallas', encabezado: 'Por talla', celda: (l) => <span className="t-body text-ink-2">{resumenTallas(l, porId.get(l.productoId))}</span>, truncar: true },
+    {
+      id: 'fob',
+      encabezado: 'Precio de fábrica',
+      numerica: true,
+      celda: (l) => <span className="num">{dineroOrigen(l.costoUnitarioOrigen, imp.moneda)}</span>,
+      ordenar: (l) => l.costoUnitarioOrigen,
+      ancho: 150,
+    },
+    {
+      id: 'unidades',
+      encabezado: 'Prendas',
+      numerica: true,
+      celda: (l) => <span className="num">{entero(unidadesLinea(l))}</span>,
+      ordenar: (l) => unidadesLinea(l),
+      ancho: 90,
+    },
+    {
+      id: 'tallas',
+      encabezado: 'Por talla',
+      celda: (l) => <span className="t-body text-ink-2">{resumenTallas(l, porId.get(l.productoId))}</span>,
+      truncar: true,
+    },
     {
       id: 'total',
       encabezado: 'Valor de fábrica',
       numerica: true,
-      celda: (l) => <MontoOrigen centavos={fobLinea(l)} moneda={imp.moneda} cop={copDeCentavos(fobLinea(l), tasa)} apilado />,
+      celda: (l) => (
+        <MontoOrigen
+          centavos={fobLinea(l)}
+          moneda={imp.moneda}
+          cop={copDeCentavos(fobLinea(l), tasa)}
+          apilado
+        />
+      ),
       ordenar: (l) => fobLinea(l),
       ancho: 170,
     },
@@ -80,10 +109,34 @@ export function TabLineas({ imp, alEditar }: { imp: Importacion; alEditar: () =>
         sustantivo={['línea', 'líneas']}
         porPagina={0}
         alAbrir={(l) => setAbierta(l.id)}
-        totales={{ unidades: <span className="num">{entero(totalUnidades)}</span>, total: <MontoOrigen centavos={totalFob} moneda={imp.moneda} cop={copDeCentavos(totalFob, tasa)} apilado /> }}
-        vacio={<EmptyState tamano="tabla" icono={Shirt} titulo="Este pedido aún no tiene líneas" texto="Agrega las referencias que le vas a pedir a la fábrica." />}
+        totales={{
+          unidades: <span className="num">{entero(totalUnidades)}</span>,
+          total: (
+            <MontoOrigen
+              centavos={totalFob}
+              moneda={imp.moneda}
+              cop={copDeCentavos(totalFob, tasa)}
+              apilado
+            />
+          ),
+        }}
+        vacio={
+          <EmptyState
+            tamano="tabla"
+            icono={Shirt}
+            titulo="Este pedido aún no tiene líneas"
+            texto="Agrega las referencias que le vas a pedir a la fábrica."
+          />
+        }
       />
-      <Drawer abierto={linea !== null} alCambiar={(a) => !a && setAbierta(null)} eyebrow="Línea del pedido" titulo={p?.referencia ?? ''} ancho="lg" data-testid="detalle-linea">
+      <Drawer
+        abierto={linea !== null}
+        alCambiar={(a) => !a && setAbierta(null)}
+        eyebrow="Línea del pedido"
+        titulo={p?.referencia ?? ''}
+        ancho="lg"
+        data-testid="detalle-linea"
+      >
         {linea && p && (
           <>
             <ParesDatos
@@ -91,7 +144,15 @@ export function TabLineas({ imp, alEditar }: { imp: Importacion; alEditar: () =>
                 ['Prenda', p.nombre],
                 ['Precio de fábrica', dineroOrigen(linea.costoUnitarioOrigen, imp.moneda)],
                 ['Prendas pedidas', entero(unidadesLinea(linea))],
-                ['Valor de fábrica', <MontoOrigen key="v" centavos={fobLinea(linea)} moneda={imp.moneda} cop={copDeCentavos(fobLinea(linea), tasa)} />],
+                [
+                  'Valor de fábrica',
+                  <MontoOrigen
+                    key="v"
+                    centavos={fobLinea(linea)}
+                    moneda={imp.moneda}
+                    cop={copDeCentavos(fobLinea(linea), tasa)}
+                  />,
+                ],
               ]}
             />
             <div className="overflow-x-auto">
@@ -99,25 +160,38 @@ export function TabLineas({ imp, alEditar }: { imp: Importacion; alEditar: () =>
                 <caption className="sr-only">Unidades por color y talla</caption>
                 <thead>
                   <tr>
-                    <th scope="col" className="pb-2 text-left t-eyebrow text-ink-2">Color</th>
+                    <th scope="col" className="pb-2 text-left t-eyebrow text-ink-2">
+                      Color
+                    </th>
                     {p.tallas.map((t) => (
-                      <th key={t} scope="col" className="pb-2 text-right t-eyebrow text-ink-2">{t}</th>
+                      <th key={t} scope="col" className="pb-2 text-right t-eyebrow text-ink-2">
+                        {t}
+                      </th>
                     ))}
-                    <th scope="col" className="pb-2 text-right t-eyebrow text-ink-2">Total</th>
+                    <th scope="col" className="pb-2 text-right t-eyebrow text-ink-2">
+                      Total
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {p.colores.map((c) => {
-                    const fila = p.tallas.map((t) => linea.cantidades[p.variantes[`${t}|${c.id}`] ?? ''] ?? 0);
+                    const fila = p.tallas.map(
+                      (t) => linea.cantidades[p.variantes[`${t}|${c.id}`] ?? ''] ?? 0,
+                    );
                     const sumaFila = fila.reduce((a, n) => a + n, 0);
                     if (sumaFila === 0) return null;
                     return (
                       <tr key={c.id} className="border-t border-line-soft">
                         <th scope="row" className="py-2 text-left font-normal">
-                          <span className="inline-flex items-center gap-2 t-body"><MuestraColor hex={c.hex} nombre={c.nombre} patron={c.patron} />{c.nombre}</span>
+                          <span className="inline-flex items-center gap-2 t-body">
+                            <MuestraColor hex={c.hex} nombre={c.nombre} patron={c.patron} />
+                            {c.nombre}
+                          </span>
                         </th>
                         {fila.map((n, i) => (
-                          <td key={p.tallas[i]} className="py-2 text-right t-body num text-ink">{n > 0 ? entero(n) : <span className="text-subtle">—</span>}</td>
+                          <td key={p.tallas[i]} className="py-2 text-right t-body num text-ink">
+                            {n > 0 ? entero(n) : <span className="text-subtle">—</span>}
+                          </td>
                         ))}
                         <td className="py-2 text-right t-body num font-bold text-ink">{entero(sumaFila)}</td>
                       </tr>

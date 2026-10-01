@@ -31,14 +31,24 @@ export function AccionesMensaje({ asunto, cuerpo, canales, idBase, className }: 
     avisar(
       ok
         ? { tipo: 'exito', texto: 'Mensaje copiado. Pégalo en WeChat.' }
-        : { tipo: 'alerta', texto: 'No pudimos copiarlo automáticamente.', detalle: 'Selecciona el texto del mensaje y cópialo a mano.' },
+        : {
+            tipo: 'alerta',
+            texto: 'No pudimos copiarlo automáticamente.',
+            detalle: 'Selecciona el texto del mensaje y cópialo a mano.',
+          },
     );
   };
   const clase = clasesBoton({ variante: 'secondary', tamano: 'sm' });
   return (
     <div className={className ?? 'flex flex-wrap items-center gap-2'}>
       {canales.whatsapp && (
-        <a className={clase} href={enlaceWhatsapp(cuerpo)} target="_blank" rel="noreferrer" data-testid={`${idBase}-whatsapp`}>
+        <a
+          className={clase}
+          href={enlaceWhatsapp(cuerpo)}
+          target="_blank"
+          rel="noreferrer"
+          data-testid={`${idBase}-whatsapp`}
+        >
           <Icono icono={MessageCircle} tamano={14} />
           Abrir en WhatsApp
         </a>
@@ -50,7 +60,12 @@ export function AccionesMensaje({ asunto, cuerpo, canales, idBase, className }: 
         </a>
       )}
       {canales.wechat && (
-        <button type="button" className={clase} onClick={() => void copiar()} data-testid={`${idBase}-wechat`}>
+        <button
+          type="button"
+          className={clase}
+          onClick={() => void copiar()}
+          data-testid={`${idBase}-wechat`}
+        >
           <Icono icono={Copy} tamano={14} />
           Copiar para WeChat
         </button>

@@ -1,4 +1,12 @@
-import type { Centavos, COP, EstadoImportacion, FechaISO, Id, Importacion, LineaImportacion } from '@/dominio/tipos';
+import type {
+  Centavos,
+  COP,
+  EstadoImportacion,
+  FechaISO,
+  Id,
+  Importacion,
+  LineaImportacion,
+} from '@/dominio/tipos';
 import { ESTADOS_IMPORTACION } from '@/dominio/tipos';
 import { FASES_IMPORTACION } from '@/config/aduanas';
 import { PLANTILLAS_FABRICA_EN } from '@/config/textos/mensajes';
@@ -38,7 +46,8 @@ export function textoCargaCorta(carga: Importacion['carga']): string {
 export type FaseId = (typeof FASES_IMPORTACION)[number]['id'];
 
 export function faseDeEstado(estado: EstadoImportacion): FaseId {
-  return (FASES_IMPORTACION.find((f) => (f.estados as readonly string[]).includes(estado))?.id ?? 'fabrica') as FaseId;
+  return (FASES_IMPORTACION.find((f) => (f.estados as readonly string[]).includes(estado))?.id ??
+    'fabrica') as FaseId;
 }
 
 export function indiceFase(fase: FaseId): number {
@@ -69,9 +78,13 @@ export function posicionRuta(imp: Pick<Importacion, 'estado' | 'hitos'>, hoy: Fe
   const i = indiceEstado(imp.estado);
   if (imp.estado === 'recibido_bodega') return { progreso: 1, tramo: 'bodega' };
   if (i < indiceEstado('embarcado')) return { progreso: 0, tramo: 'fabrica' };
-  if (i < indiceEstado('en_puerto')) return { progreso: avanceRuta(imp, hoy) * PROGRESO_PUERTO, tramo: 'mar' };
+  if (i < indiceEstado('en_puerto'))
+    return { progreso: avanceRuta(imp, hoy) * PROGRESO_PUERTO, tramo: 'mar' };
   if (i < indiceEstado('en_transporte_bogota')) return { progreso: PROGRESO_PUERTO, tramo: 'puerto' };
-  const salida = imp.hitos.en_transporte_bogota.real ?? imp.hitos.nacionalizado.real ?? imp.hitos.en_transporte_bogota.estimada;
+  const salida =
+    imp.hitos.en_transporte_bogota.real ??
+    imp.hitos.nacionalizado.real ??
+    imp.hitos.en_transporte_bogota.estimada;
   const llegada = imp.hitos.recibido_bodega.estimada;
   const total = diferenciaDias(salida, llegada);
   const f = total <= 0 ? 0.5 : Math.min(0.9, Math.max(0.1, diferenciaDias(salida, hoy) / total));
@@ -133,9 +146,17 @@ export function estadosDisponibles(actual: EstadoImportacion, esDueno: boolean):
 }
 
 /** Estados que la agente de aduanas y el agente de carga pueden reportar desde el portal (solo hacia adelante). */
-export const ESTADOS_PORTAL: readonly EstadoImportacion[] = ['embarcado', 'en_transito', 'en_puerto', 'en_nacionalizacion', 'nacionalizado'];
+export const ESTADOS_PORTAL: readonly EstadoImportacion[] = [
+  'embarcado',
+  'en_transito',
+  'en_puerto',
+  'en_nacionalizacion',
+  'nacionalizado',
+];
 
 export function estadosParaPortal(actual: EstadoImportacion): EstadoImportacion[] {
+  // Mientras el pedido sigue en fábrica (antes de pagar el saldo) no hay nada que la cadena de carga pueda reportar.
+  if (indiceEstado(actual) < indiceEstado('saldo_pagado')) return [];
   return ESTADOS_PORTAL.filter((e) => indiceEstado(e) > indiceEstado(actual));
 }
 
@@ -167,7 +188,11 @@ export function cascadaPorPrenda(
   const suma = lineas.reduce((a, l) => a + peso(l), 0);
   const parte = suma > 0 ? peso(linea) / suma : 1 / Math.max(1, lineas.length);
   const pasos = res.cascada
-    .map((p) => ({ concepto: p.concepto as string, etiqueta: p.etiqueta, valor: unidades > 0 ? redondear((p.valor * parte) / unidades) : 0 }))
+    .map((p) => ({
+      concepto: p.concepto as string,
+      etiqueta: p.etiqueta,
+      valor: unidades > 0 ? redondear((p.valor * parte) / unidades) : 0,
+    }))
     .filter((p) => p.valor !== 0 || p.concepto === 'fob');
   return { pasos, costoUnitario: costo.costoUnitario, unidades };
 }
@@ -185,7 +210,9 @@ export interface FilaMargen {
 }
 
 /** Margen promedio ponderado por unidades, por categoría: "Margen promedio de camisas: 62 % → 61 %". */
-export function margenPromedioPorCategoria(filas: readonly FilaMargen[]): { categoria: string; antes: number; despues: number; unidades: number }[] {
+export function margenPromedioPorCategoria(
+  filas: readonly FilaMargen[],
+): { categoria: string; antes: number; despues: number; unidades: number }[] {
   const grupos = new Map<string, { u: number; a: number; d: number }>();
   for (const f of filas) {
     const g = grupos.get(f.categoria) ?? { u: 0, a: 0, d: 0 };
@@ -195,7 +222,12 @@ export function margenPromedioPorCategoria(filas: readonly FilaMargen[]): { cate
     grupos.set(f.categoria, g);
   }
   return [...grupos.entries()]
-    .map(([categoria, g]) => ({ categoria, unidades: g.u, antes: g.u > 0 ? g.a / g.u : 0, despues: g.u > 0 ? g.d / g.u : 0 }))
+    .map(([categoria, g]) => ({
+      categoria,
+      unidades: g.u,
+      antes: g.u > 0 ? g.a / g.u : 0,
+      despues: g.u > 0 ? g.d / g.u : 0,
+    }))
     .sort((a, b) => b.unidades - a.unidades);
 }
 
@@ -233,7 +265,12 @@ export function totalesPedido(lineas: readonly LineaSugerida[], tasa: number): T
     venta += (l.cantidad * l.precioVenta) / (1 + l.tarifaIva);
     costo += l.cantidad * l.costoAterrizado;
   }
-  return { unidades, totalOrigen, totalCop: copDeCentavos(totalOrigen, tasa), margenEsperado: venta > 0 ? (venta - costo) / venta : 0 };
+  return {
+    unidades,
+    totalOrigen,
+    totalCop: copDeCentavos(totalOrigen, tasa),
+    margenEsperado: venta > 0 ? (venta - costo) / venta : 0,
+  };
 }
 
 /** Cantidad vigente de una variante: lo editado por el usuario o, si no hay edición, lo sugerido. */
@@ -271,7 +308,9 @@ export function resumenReferencia(
     nombre,
     total,
     tallas: [...tallas.entries()].map(([talla, unidades]) => ({ talla, unidades })),
-    colores: [...colores.entries()].map(([n, k]) => ({ nombre: n, codigo: k.codigo, unidades: k.unidades })).sort((a, b) => b.unidades - a.unidades),
+    colores: [...colores.entries()]
+      .map(([n, k]) => ({ nombre: n, codigo: k.codigo, unidades: k.unidades }))
+      .sort((a, b) => b.unidades - a.unidades),
   };
 }
 
@@ -279,7 +318,12 @@ export function resumenReferencia(
  * Borrador en inglés para la fábrica (W12): parte de la plantilla de `config/textos/mensajes.ts`, agrega el
  * detalle por referencia, talla y color, y se cierra pidiendo precio y tiempo de producción. Nada se envía.
  */
-export function borradorPedidoEn(o: { nombreContacto: string; proveedor: string; marca: string; referencias: readonly ReferenciaDelPedido[] }): string {
+export function borradorPedidoEn(o: {
+  nombreContacto: string;
+  proveedor: string;
+  marca: string;
+  referencias: readonly ReferenciaDelPedido[];
+}): string {
   const plantilla = rellenarPlantilla(PLANTILLAS_FABRICA_EN.cotizado ?? '', {
     nombre: o.nombreContacto,
     proveedor: o.proveedor,
@@ -291,10 +335,22 @@ export function borradorPedidoEn(o: { nombreContacto: string; proveedor: string;
     .filter((r) => r.total > 0)
     .map((r, i) => {
       const tallas = r.tallas.map((t) => `${t.talla} ${t.unidades}`).join(' · ');
-      const colores = r.colores.slice(0, 6).map((c) => `${c.nombre} (${c.codigo}) ${c.unidades}`).join(' · ');
+      const colores = r.colores
+        .slice(0, 6)
+        .map((c) => `${c.nombre} (${c.codigo}) ${c.unidades}`)
+        .join(' · ');
       return `${i + 1}. ${r.referencia} · ${r.nombre}: ${r.total} units\n   Sizes: ${tallas}\n   Colours: ${colores}`;
     });
-  return [`${encabezado.trim()}`, '', ...lineas, '', `Total: ${total} units.`, '', CIERRE_BORRADOR_EN, o.marca].join('\n');
+  return [
+    `${encabezado.trim()}`,
+    '',
+    ...lineas,
+    '',
+    `Total: ${total} units.`,
+    '',
+    CIERRE_BORRADOR_EN,
+    o.marca,
+  ].join('\n');
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -309,7 +365,9 @@ export interface EleccionAviso {
 }
 
 /** Canales con los que se puede avisar a un destinatario según los datos que tiene. */
-export function canalesDisponibles(d: Pick<DestinatarioAvisoVista, 'telefono' | 'correo' | 'wechat' | 'tipo'>): CanalAviso[] {
+export function canalesDisponibles(
+  d: Pick<DestinatarioAvisoVista, 'telefono' | 'correo' | 'wechat' | 'tipo'>,
+): CanalAviso[] {
   const r: CanalAviso[] = [];
   if (d.telefono) r.push('whatsapp');
   if (d.correo) r.push('correo');
@@ -320,7 +378,9 @@ export function canalesDisponibles(d: Pick<DestinatarioAvisoVista, 'telefono' | 
 export function eleccionInicial(d: DestinatarioAvisoVista): EleccionAviso | null {
   if (d.tipo === 'dueno' || d.texto === null) return null;
   const disponibles = canalesDisponibles(d);
-  const canal = disponibles.includes(d.canal as CanalAviso) ? (d.canal as CanalAviso) : (disponibles[0] ?? 'whatsapp');
+  const canal = disponibles.includes(d.canal as CanalAviso)
+    ? (d.canal as CanalAviso)
+    : (disponibles[0] ?? 'whatsapp');
   return { incluir: d.preseleccionado, canal, texto: d.texto };
 }
 

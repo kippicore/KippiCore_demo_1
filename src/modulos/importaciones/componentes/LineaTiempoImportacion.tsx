@@ -8,7 +8,15 @@ import { detalleHitos } from '../calculos';
  * lo ya alcanzado, el retraso de lo que está vencido y quién lo reportó (por ejemplo, la agente desde el portal).
  * "Nacionalizado (levante)" y el aforo se dicen como los dice el importador.
  */
-export function LineaTiempoImportacion({ imp, hoy, retraso }: { imp: Pick<Importacion, 'estado' | 'hitos' | 'aforo'>; hoy: FechaISO; retraso: number }) {
+export function LineaTiempoImportacion({
+  imp,
+  hoy,
+  retraso,
+}: {
+  imp: Pick<Importacion, 'estado' | 'hitos' | 'aforo'>;
+  hoy: FechaISO;
+  retraso: number;
+}) {
   const detalle = detalleHitos(imp, hoy);
   const porEstado = new Map<EstadoImportacion, (typeof detalle)[number]>(detalle.map((d) => [d.estado, d]));
   const pasos = pasosImportacion(imp.estado, { retrasado: retraso > 0 }).map((p) => {
@@ -41,7 +49,11 @@ export function LineaTiempoImportacion({ imp, hoy, retraso }: { imp: Pick<Import
           Retraso de {plural(d.vencidoDias, 'día', 'días')}
         </Badge>
       );
-    const conAforo = imp.aforo && imp.aforo.tipo !== 'automatico' && (d.estado === 'en_nacionalizacion' || d.estado === 'nacionalizado') && alcanzado;
+    const conAforo =
+      imp.aforo &&
+      imp.aforo.tipo !== 'automatico' &&
+      (d.estado === 'en_nacionalizacion' || d.estado === 'nacionalizado') &&
+      alcanzado;
     return {
       ...p,
       detalle: (
@@ -57,7 +69,10 @@ export function LineaTiempoImportacion({ imp, hoy, retraso }: { imp: Pick<Import
         </>
       ),
       insignia,
-      autor: d.actualizadoPor === 'portal-aduanas' ? 'Reportado por la agente de aduanas desde el portal de seguimiento' : undefined,
+      autor:
+        d.actualizadoPor === 'portal-aduanas'
+          ? 'Reportado por la agente de aduanas desde el portal de seguimiento'
+          : undefined,
     };
   });
   return <Timeline pasos={pasos} />;

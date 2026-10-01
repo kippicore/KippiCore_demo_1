@@ -38,7 +38,11 @@ export const ETIQUETAS_DOCUMENTO: Record<TipoDocumentoImportacion, string> = {
   declaracion_valor: 'Declaración andina del valor',
 };
 
-export const ETIQUETAS_ESTADO_DOCUMENTO = { pendiente: 'Pendiente', recibido: 'Recibido', aprobado: 'Aprobado' } as const;
+export const ETIQUETAS_ESTADO_DOCUMENTO = {
+  pendiente: 'Pendiente',
+  recibido: 'Recibido',
+  aprobado: 'Aprobado',
+} as const;
 
 export const ETIQUETAS_ROL_CONTACTO: Record<RolContacto, string> = {
   proveedor: 'Fábrica',
@@ -75,19 +79,22 @@ export const TEXTOS_COSTO = {
   simulador: '¿Y si el dólar sube?',
   simuladorAyuda: 'Mueve la tasa y mira cómo cambian el costo, el margen y el precio que conviene.',
   ivaDescontable: 'IVA descontable (no suma al costo)',
-  ivaDescontableAyuda: 'Si tu contador lo descuenta, el IVA de importación se gira pero no encarece la prenda.',
+  ivaDescontableAyuda:
+    'Si tu contador lo descuenta, el IVA de importación se gira pero no encarece la prenda.',
   prorrateo: 'Cómo se reparte entre las prendas',
   prorrateoValor: 'Por valor de fábrica',
   prorrateoCantidad: 'Por cantidad de prendas',
   aplicar: 'Aplicar al inventario',
-  aplicarDescripcion: 'El costo de estas referencias queda como el último costo de reposición y alimenta márgenes y reportes.',
+  aplicarDescripcion:
+    'El costo de estas referencias queda como el último costo de reposición y alimenta márgenes y reportes.',
 } as const;
 
 /** Qué se le pide a la fábrica en cada etapa de "Sugerir pedido". */
 export const TEXTOS_SUGERIR = {
   titulo: 'Sugerir pedido',
   subtitulo: 'Cantidades por talla y color según lo que rota, lo que tienes y lo que ya viene en camino.',
-  coberturaAyuda: 'Cuántos días de venta quieres cubrir con este pedido, contados desde que llegue a la bodega.',
+  coberturaAyuda:
+    'Cuántos días de venta quieres cubrir con este pedido, contados desde que llegue a la bodega.',
   borradorTitulo: 'Borrador en inglés para la fábrica',
   borradorNota: 'No se envía nada: lo copias y lo pegas en WeChat o en el correo.',
 } as const;
@@ -95,7 +102,11 @@ export const TEXTOS_SUGERIR = {
 /** Mensaje de la fábrica en inglés: cierre del borrador del pedido sugerido. */
 export const CIERRE_BORRADOR_EN = 'Please confirm unit price and production time. Best regards,';
 
-export const ESTADOS_QUE_AVISAN_AL_DUENO: readonly EstadoImportacion[] = ['listo_despacho', 'en_puerto', 'nacionalizado'];
+export const ESTADOS_QUE_AVISAN_AL_DUENO: readonly EstadoImportacion[] = [
+  'listo_despacho',
+  'en_puerto',
+  'nacionalizado',
+];
 
 export const TEXTOS_PORTAL = {
   tituloVacio: 'No encontramos ese pedido',

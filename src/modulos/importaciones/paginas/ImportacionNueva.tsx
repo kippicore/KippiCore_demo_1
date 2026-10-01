@@ -9,7 +9,11 @@ export default function ImportacionNueva() {
   return (
     <div className="pb-16">
       <EncabezadoPagina
-        migas={[{ texto: 'Inicio', a: rutas.inicio() }, { texto: 'Importaciones', a: rutas.importaciones() }, { texto: 'Nuevo pedido' }]}
+        migas={[
+          { texto: 'Inicio', a: rutas.inicio() },
+          { texto: 'Importaciones', a: rutas.importaciones() },
+          { texto: 'Nuevo pedido' },
+        ]}
         titulo="Nuevo pedido"
         subtitulo="Arma el pedido a la fábrica: queda en Cotizado y desde ahí lo sigues hasta la bodega."
       />

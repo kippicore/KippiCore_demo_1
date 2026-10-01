@@ -23,9 +23,15 @@ export function TarjetaImportacion({
   const recibida = imp.estado === 'recibido_bodega';
   const pagado = fila.fobOrigen > 0 ? fila.pagadoOrigen / fila.fobOrigen : 0;
   return (
-    <TarjetaTablero className={cn('space-y-3', resaltada && 'border-accent shadow-[inset_2px_0_0_var(--c-accent)]')}>
+    <TarjetaTablero
+      className={cn('space-y-3', resaltada && 'border-accent shadow-[inset_2px_0_0_var(--c-accent)]')}
+    >
       <div>
-        <Link to={rutas.importacion(imp.numero)} className="t-h3 font-extrabold num text-ink hover:underline hover:underline-offset-4" data-testid={`tarjeta-${imp.numero}`}>
+        <Link
+          to={rutas.importacion(imp.numero)}
+          className="t-h3 font-extrabold num text-ink hover:underline hover:underline-offset-4"
+          data-testid={`tarjeta-${imp.numero}`}
+        >
           {imp.numero}
         </Link>
         <p className="t-small text-muted">
@@ -56,11 +62,28 @@ export function TarjetaImportacion({
         )}
       </dl>
       {verPagos && !recibida && fila.fobOrigen > 0 && (
-        <BarraProgreso valor={pagado} etiqueta="Pagado" detalle={fila.saldoOrigen > 0 ? <>Saldo <MontoOrigen centavos={fila.saldoOrigen} moneda={imp.moneda} /></> : 'Al día'} />
+        <BarraProgreso
+          valor={pagado}
+          etiqueta="Pagado"
+          detalle={
+            fila.saldoOrigen > 0 ? (
+              <>
+                Saldo <MontoOrigen centavos={fila.saldoOrigen} moneda={imp.moneda} />
+              </>
+            ) : (
+              'Al día'
+            )
+          }
+        />
       )}
       {alCambiarEstado && !recibida && (
         <div className="-mb-1 flex justify-end border-t border-line-soft pt-2">
-          <Button variante="ghost" tamano="sm" icono={ArrowRightLeft} onClick={() => alCambiarEstado(imp.numero)}>
+          <Button
+            variante="ghost"
+            tamano="sm"
+            icono={ArrowRightLeft}
+            onClick={() => alCambiarEstado(imp.numero)}
+          >
             Cambiar estado
           </Button>
         </div>

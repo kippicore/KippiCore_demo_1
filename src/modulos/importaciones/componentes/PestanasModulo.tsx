@@ -8,7 +8,9 @@ export function PestanasModulo({ conContactos }: { conContactos: boolean }) {
       etiqueta="Importaciones"
       pestanas={[
         { a: rutas.importaciones(), etiqueta: 'Pedidos', fin: true },
-        ...(conContactos ? [{ a: rutas.contactosCadena(), etiqueta: 'Contactos de la cadena', fin: true }] : []),
+        ...(conContactos
+          ? [{ a: rutas.contactosCadena(), etiqueta: 'Contactos de la cadena', fin: true }]
+          : []),
       ]}
     />
   );

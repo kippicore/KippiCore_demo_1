@@ -7,7 +7,15 @@ import { diferenciaDias } from '@/dominio/reglas/fechas';
 import { unidadesLinea } from '@/dominio/reglas/costeo';
 import { emitirUI, useAcciones, useHoy, useMarca, useSel } from '@/estado';
 import { entero, fecha as formatoFecha, plural } from '@/lib/formato';
-import { InsigniaEstado, InsigniaRetraso, LineaTiempoImportacion, estadosParaPortal, posicionRuta, RutaChina, textoCarga } from '@/modulos/importaciones/publico';
+import {
+  InsigniaEstado,
+  InsigniaRetraso,
+  LineaTiempoImportacion,
+  estadosParaPortal,
+  posicionRuta,
+  RutaChina,
+  textoCarga,
+} from '@/modulos/importaciones/publico';
 import { selImportacionPorNumero, selImportaciones } from '@/selectores';
 import { Button, Card, EmptyState, Fecha, Input, Pista, Select, SelectorFecha, Textarea } from '@/ui';
 import { selAgenteDelPedido } from '../selectores';
@@ -53,14 +61,16 @@ export default function Seguimiento() {
         <InsigniaRetraso dias={retraso} />
       </div>
       <p className="mt-2 t-body text-muted">
-        {fila?.proveedorNombre} · {entero(imp.lineas.reduce((a, l) => a + unidadesLinea(l), 0))} prendas · {textoCarga(imp.carga)}
+        {fila?.proveedorNombre} · {entero(imp.lineas.reduce((a, l) => a + unidadesLinea(l), 0))} prendas ·{' '}
+        {textoCarga(imp.carga)}
       </p>
       <p className="mt-4 max-w-[60ch] t-body text-ink" data-testid="portal-estado-actual">
         {imp.estado === 'recibido_bodega' ? (
           <>Recibido en la bodega el {formatoFecha(imp.recepcion?.fecha ?? llegada)}.</>
         ) : (
           <>
-            {ETIQUETAS_ESTADO_IMPORTACION[imp.estado]} desde el {formatoFecha(desde)}. Se espera en la bodega el {formatoFecha(llegada)}
+            {ETIQUETAS_ESTADO_IMPORTACION[imp.estado]} desde el {formatoFecha(desde)}. Se espera en la bodega
+            el {formatoFecha(llegada)}
             {dias > 0 ? ` (en ${plural(dias, 'día', 'días')})` : ''}.
           </>
         )}
@@ -71,13 +81,37 @@ export default function Seguimiento() {
         <Card titulo="Dónde va" padding="compacta">
           <RutaChina
             className="px-12"
-            barcos={[{ id: imp.numero, numero: imp.numero, progreso: posicion.progreso, tramo: posicion.tramo, etiqueta: ETIQUETAS_ESTADO_IMPORTACION[imp.estado] }]}
+            barcos={[
+              {
+                id: imp.numero,
+                numero: imp.numero,
+                progreso: posicion.progreso,
+                tramo: posicion.tramo,
+                etiqueta: ETIQUETAS_ESTADO_IMPORTACION[imp.estado],
+              },
+            ]}
             origen={imp.puertoOrigen}
             puertoDestino={imp.puertoDestino}
             fechas={{
-              origen: imp.hitos.embarcado.real ? <>Zarpe <Fecha valor={imp.hitos.embarcado.real} /></> : undefined,
-              puerto: imp.hitos.en_puerto.real ? <>Llegó <Fecha valor={imp.hitos.en_puerto.real} /></> : <>Est. <Fecha valor={imp.hitos.en_puerto.estimada} /></>,
-              bodega: <>Est. <Fecha valor={imp.hitos.recibido_bodega.estimada} /></>,
+              origen: imp.hitos.embarcado.real ? (
+                <>
+                  Zarpe <Fecha valor={imp.hitos.embarcado.real} />
+                </>
+              ) : undefined,
+              puerto: imp.hitos.en_puerto.real ? (
+                <>
+                  Llegó <Fecha valor={imp.hitos.en_puerto.real} />
+                </>
+              ) : (
+                <>
+                  Est. <Fecha valor={imp.hitos.en_puerto.estimada} />
+                </>
+              ),
+              bodega: (
+                <>
+                  Est. <Fecha valor={imp.hitos.recibido_bodega.estimada} />
+                </>
+              ),
             }}
           />
         </Card>
@@ -94,7 +128,17 @@ export default function Seguimiento() {
   );
 }
 
-function FormularioPortal({ numero, importacionId, estado, hoy }: { numero: string; importacionId: string; estado: EstadoImportacion; hoy: FechaISO }) {
+function FormularioPortal({
+  numero,
+  importacionId,
+  estado,
+  hoy,
+}: {
+  numero: string;
+  importacionId: string;
+  estado: EstadoImportacion;
+  hoy: FechaISO;
+}) {
   const acciones = useAcciones({ actor: 'portal' });
   const marca = useMarca().nombre;
   const agente = useSel(selAgenteDelPedido, { importacionId });
@@ -104,13 +148,27 @@ function FormularioPortal({ numero, importacionId, estado, hoy }: { numero: stri
   const [nota, setNota] = useState('');
   const [nombreEscrito, setNombre] = useState<string | null>(null);
   // Tras reportar (aquí o desde otra pestaña) el siguiente estado disponible cambia: se parte de él si lo elegido ya no aplica.
-  const nuevo: EstadoImportacion | null = elegido && opciones.includes(elegido) ? elegido : (opciones[0] ?? null);
+  const nuevo: EstadoImportacion | null =
+    elegido && opciones.includes(elegido) ? elegido : (opciones[0] ?? null);
   const nombre = nombreEscrito ?? agente?.nombre ?? '';
-  const [errores, setErrores] = useState<{ estado?: string; fecha?: string; nota?: string; nombre?: string }>({});
-  const [enviado, setEnviado] = useState<{ estado: EstadoImportacion; fecha: FechaISO; nombre: string } | null>(null);
+  const [errores, setErrores] = useState<{ estado?: string; fecha?: string; nota?: string; nombre?: string }>(
+    {},
+  );
+  const [enviado, setEnviado] = useState<{
+    estado: EstadoImportacion;
+    fecha: FechaISO;
+    nombre: string;
+  } | null>(null);
 
   if (opciones.length === 0 && !enviado) {
-    const enFabrica = ['cotizado', 'pedido_confirmado', 'anticipo_pagado', 'en_produccion', 'listo_despacho', 'saldo_pagado'].includes(estado);
+    const enFabrica = [
+      'cotizado',
+      'pedido_confirmado',
+      'anticipo_pagado',
+      'en_produccion',
+      'listo_despacho',
+      'saldo_pagado',
+    ].includes(estado);
     return (
       <Card titulo={TEXTOS_PORTAL.formularioTitulo}>
         <EmptyState
@@ -126,9 +184,19 @@ function FormularioPortal({ numero, importacionId, estado, hoy }: { numero: stri
   const enviar = () => {
     if (!nuevo) return setErrores({ estado: 'Elige el estado que va a reportar.' });
     if (!nombre.trim()) return setErrores({ nombre: 'Escriba su nombre para que sepamos quién reporta.' });
-    const r = acciones.cambiarEstadoImportacion({ importacionId, estado: nuevo, fecha, nota: nota.trim() || null, origen: 'portal', autor: nombre.trim() });
+    const r = acciones.cambiarEstadoImportacion({
+      importacionId,
+      estado: nuevo,
+      fecha,
+      nota: nota.trim() || null,
+      origen: 'portal',
+      autor: nombre.trim(),
+    });
     if (!r.ok) {
-      const campo = r.error.campo === 'estado' || r.error.campo === 'fecha' || r.error.campo === 'nota' ? r.error.campo : 'estado';
+      const campo =
+        r.error.campo === 'estado' || r.error.campo === 'fecha' || r.error.campo === 'nota'
+          ? r.error.campo
+          : 'estado';
       return setErrores({ [campo]: r.error.mensaje });
     }
     emitirUI('portal_enviado', { numero });
@@ -140,13 +208,19 @@ function FormularioPortal({ numero, importacionId, estado, hoy }: { numero: stri
   return (
     <Card titulo={TEXTOS_PORTAL.formularioTitulo} data-testid="portal-formulario">
       {enviado && (
-        <div className="mb-6 border border-ink bg-surface-2 p-4" role="status" data-testid="portal-confirmacion">
+        <div
+          className="mb-6 border border-ink bg-surface-2 p-4"
+          role="status"
+          data-testid="portal-confirmacion"
+        >
           <p className="inline-flex items-center gap-2 t-label font-bold text-ink">
             <CheckCircle2 size={18} className="text-success" aria-hidden />
             {TEXTOS_PORTAL.enviado}
           </p>
           <p className="mt-2 t-body text-ink">
-            {marca} ya sabe que {numero} está en <strong className="font-bold">{ETIQUETAS_ESTADO_IMPORTACION[enviado.estado]}</strong> desde el {formatoFecha(enviado.fecha)}. Gracias, {enviado.nombre.split(' ')[0]}.
+            {marca} ya sabe que {numero} está en{' '}
+            <strong className="font-bold">{ETIQUETAS_ESTADO_IMPORTACION[enviado.estado]}</strong> desde el{' '}
+            {formatoFecha(enviado.fecha)}. Gracias, {enviado.nombre.split(' ')[0]}.
           </p>
         </div>
       )}
@@ -165,10 +239,32 @@ function FormularioPortal({ numero, importacionId, estado, hoy }: { numero: stri
               error={errores.estado}
               data-testid="portal-estado"
             />
-            <SelectorFecha etiqueta="Fecha en que ocurrió" hoy={hoy} valor={fecha} alCambiar={setFecha} hasta={hoy} error={errores.fecha} />
-            <Input etiqueta="Su nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} error={errores.nombre} data-testid="portal-nombre" autoComplete="name" />
+            <SelectorFecha
+              etiqueta="Fecha en que ocurrió"
+              hoy={hoy}
+              valor={fecha}
+              alCambiar={setFecha}
+              hasta={hoy}
+              error={errores.fecha}
+            />
+            <Input
+              etiqueta="Su nombre"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              error={errores.nombre}
+              data-testid="portal-nombre"
+              autoComplete="name"
+            />
             <div className="sm:col-span-2">
-              <Textarea etiqueta="Nota" opcional value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Por ejemplo: levante autorizado, recogen mañana" error={errores.nota} data-testid="portal-nota" />
+              <Textarea
+                etiqueta="Nota"
+                opcional
+                value={nota}
+                onChange={(e) => setNota(e.target.value)}
+                placeholder="Por ejemplo: levante autorizado, recogen mañana"
+                error={errores.nota}
+                data-testid="portal-nota"
+              />
             </div>
           </div>
           <div className="mt-6 flex justify-end">

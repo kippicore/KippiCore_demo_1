@@ -35,9 +35,20 @@ export function MatrizSugerida({
     colorNombre: producto.colores.find((k) => k.id === c.colorId)?.nombre ?? '',
     colorCodigo: producto.colores.find((k) => k.id === c.colorId)?.codigo ?? '',
   }));
-  const resumen = resumenReferencia(celdasLista.map((c) => ({ talla: c.talla, colorNombre: c.colorNombre, colorCodigo: c.colorCodigo, cantidad: c.cantidad })), producto.referencia, producto.nombre);
+  const resumen = resumenReferencia(
+    celdasLista.map((c) => ({
+      talla: c.talla,
+      colorNombre: c.colorNombre,
+      colorCodigo: c.colorCodigo,
+      cantidad: c.cantidad,
+    })),
+    producto.referencia,
+    producto.nombre,
+  );
   const mejorColor = resumen.colores[0];
-  const editadas = celdasLista.filter((c) => ediciones[c.varianteId] !== undefined && ediciones[c.varianteId] !== c.sugerida).length;
+  const editadas = celdasLista.filter(
+    (c) => ediciones[c.varianteId] !== undefined && ediciones[c.varianteId] !== c.sugerida,
+  ).length;
   const idCuerpo = `matriz-${producto.productoId}`;
 
   const valor = (talla: string, colorId: Id) => producto.celdas[`${talla}|${colorId}`];
@@ -45,7 +56,14 @@ export function MatrizSugerida({
     producto.colores.reduce((a, c) => {
       const x = valor(talla, c.id);
       if (!x) return a;
-      return a + (lente === 'sugerido' ? cantidadVigente(x.sugerida, ediciones[x.varianteId]) : lente === 'rotacion' ? x.rotacionSemanal : x.existencias + x.enCamino);
+      return (
+        a +
+        (lente === 'sugerido'
+          ? cantidadVigente(x.sugerida, ediciones[x.varianteId])
+          : lente === 'rotacion'
+            ? x.rotacionSemanal
+            : x.existencias + x.enCamino)
+      );
     }, 0);
   const formato = (n: number) => (lente === 'rotacion' ? numero(n, 1) : entero(n));
 
@@ -63,26 +81,45 @@ export function MatrizSugerida({
           <span className="block t-h3 font-bold text-ink">{producto.nombre}</span>
           <span className="mt-1 block t-small text-muted" data-testid={`resumen-${producto.referencia}`}>
             {resumen.tallas.map((t) => `${t.talla} ${entero(t.unidades)}`).join(' · ')}
-            {mejorColor && resumen.total > 0 && ` · ${mejorColor.nombre.toLowerCase()} ${porcentaje(mejorColor.unidades / resumen.total, 0)}`}
-            {producto.enCaminoPorPedido.length > 0 && ` · ya vienen ${entero(producto.enCamino)} en ${producto.enCaminoPorPedido.map((p) => p.numero).join(', ')}`}
+            {mejorColor &&
+              resumen.total > 0 &&
+              ` · ${mejorColor.nombre.toLowerCase()} ${porcentaje(mejorColor.unidades / resumen.total, 0)}`}
+            {producto.enCaminoPorPedido.length > 0 &&
+              ` · ya vienen ${entero(producto.enCamino)} en ${producto.enCaminoPorPedido.map((p) => p.numero).join(', ')}`}
           </span>
         </span>
         <span className="flex items-center gap-4">
-          {editadas > 0 && <span className="t-small text-accent-ink">{editadas === 1 ? '1 cantidad editada' : `${editadas} cantidades editadas`}</span>}
+          {editadas > 0 && (
+            <span className="t-small text-accent-ink">
+              {editadas === 1 ? '1 cantidad editada' : `${editadas} cantidades editadas`}
+            </span>
+          )}
           <span className="text-right">
             <span className="block t-kpi-sm num text-ink" data-testid={`total-${producto.referencia}`}>
               {entero(resumen.total)}
             </span>
             <span className="block t-small text-muted">{resumen.total === 1 ? 'unidad' : 'unidades'}</span>
           </span>
-          <Icono icono={ChevronDown} tamano={18} className={cn('transition-transform duration-(--dur-slow) ease-standard', abierta && 'rotate-180')} />
+          <Icono
+            icono={ChevronDown}
+            tamano={18}
+            className={cn(
+              'transition-transform duration-(--dur-slow) ease-standard',
+              abierta && 'rotate-180',
+            )}
+          />
         </span>
       </button>
       {abierta && (
         <div id={idCuerpo} className="overflow-x-auto border-t border-line-soft px-5 pb-5 pt-3">
           <table className="w-full border-collapse">
             <caption className="sr-only">
-              {lente === 'sugerido' ? 'Cantidad a pedir' : lente === 'rotacion' ? 'Unidades vendidas por semana' : 'Existencias y unidades en camino'} de {producto.nombre} por color y talla
+              {lente === 'sugerido'
+                ? 'Cantidad a pedir'
+                : lente === 'rotacion'
+                  ? 'Unidades vendidas por semana'
+                  : 'Existencias y unidades en camino'}{' '}
+              de {producto.nombre} por color y talla
             </caption>
             <thead>
               <tr>
@@ -102,7 +139,18 @@ export function MatrizSugerida({
             <tbody>
               {producto.colores.map((c) => {
                 const fila = producto.tallas.map((t) => valor(t, c.id));
-                const totalFila = fila.reduce((a, x) => (x ? a + (lente === 'sugerido' ? cantidadVigente(x.sugerida, ediciones[x.varianteId]) : lente === 'rotacion' ? x.rotacionSemanal : x.existencias + x.enCamino) : a), 0);
+                const totalFila = fila.reduce(
+                  (a, x) =>
+                    x
+                      ? a +
+                        (lente === 'sugerido'
+                          ? cantidadVigente(x.sugerida, ediciones[x.varianteId])
+                          : lente === 'rotacion'
+                            ? x.rotacionSemanal
+                            : x.existencias + x.enCamino)
+                      : a,
+                  0,
+                );
                 return (
                   <tr key={c.id} className="border-t border-line-soft">
                     <th scope="row" className="py-1.5 text-left font-normal">
@@ -130,7 +178,12 @@ export function MatrizSugerida({
                               valor={cantidadVigente(x.sugerida, ediciones[x.varianteId])}
                               alCambiar={(v) => alEditar(x.varianteId, v)}
                               disabled={deshabilitada}
-                              claseCampo={ediciones[x.varianteId] !== undefined && ediciones[x.varianteId] !== x.sugerida ? 'border-accent!' : undefined}
+                              claseCampo={
+                                ediciones[x.varianteId] !== undefined &&
+                                ediciones[x.varianteId] !== x.sugerida
+                                  ? 'border-accent!'
+                                  : undefined
+                              }
                               data-testid={`celda-${x.varianteId}`}
                             />
                           </td>
@@ -138,17 +191,27 @@ export function MatrizSugerida({
                       return (
                         <td key={t} className="px-1 py-1 text-center t-body num text-ink">
                           {lente === 'rotacion' ? (
-                            <span className={x.rotacionSemanal >= 1.5 ? 'font-bold' : undefined}>{x.rotacionSemanal > 0 ? numero(x.rotacionSemanal, 1) : <span className="text-subtle">0</span>}</span>
+                            <span className={x.rotacionSemanal >= 1.5 ? 'font-bold' : undefined}>
+                              {x.rotacionSemanal > 0 ? (
+                                numero(x.rotacionSemanal, 1)
+                              ) : (
+                                <span className="text-subtle">0</span>
+                              )}
+                            </span>
                           ) : (
                             <span title={`Hay ${x.existencias} y vienen ${x.enCamino}`}>
-                              <span className={x.existencias === 0 ? 'font-bold text-danger' : undefined}>{entero(x.existencias)}</span>
+                              <span className={x.existencias === 0 ? 'font-bold text-danger' : undefined}>
+                                {entero(x.existencias)}
+                              </span>
                               {x.enCamino > 0 && <span className="text-muted"> +{entero(x.enCamino)}</span>}
                             </span>
                           )}
                         </td>
                       );
                     })}
-                    <td className="py-1.5 text-right t-body num font-semibold text-ink">{formato(totalFila)}</td>
+                    <td className="py-1.5 text-right t-body num font-semibold text-ink">
+                      {formato(totalFila)}
+                    </td>
                   </tr>
                 );
               })}
@@ -163,14 +226,19 @@ export function MatrizSugerida({
                     {formato(sumaTalla(t))}
                   </td>
                 ))}
-                <td className="py-2 text-right t-body num font-bold text-ink">{formato(producto.tallas.reduce((a, t) => a + sumaTalla(t), 0))}</td>
+                <td className="py-2 text-right t-body num font-bold text-ink">
+                  {formato(producto.tallas.reduce((a, t) => a + sumaTalla(t), 0))}
+                </td>
               </tr>
             </tfoot>
           </table>
           <p className="mt-2 t-small text-muted">
-            {lente === 'sugerido' && 'Edita cualquier cantidad: el costo y el margen del pedido se recalculan al instante.'}
-            {lente === 'rotacion' && 'Unidades vendidas por semana en las últimas 12 semanas, incluyendo lo que se pidió y no había.'}
-            {lente === 'stock' && 'Existencias en los tres locales y la bodega, y lo que ya viene en camino (+). En rojo, lo que está agotado.'}
+            {lente === 'sugerido' &&
+              'Edita cualquier cantidad: el costo y el margen del pedido se recalculan al instante.'}
+            {lente === 'rotacion' &&
+              'Unidades vendidas por semana en las últimas 12 semanas, incluyendo lo que se pidió y no había.'}
+            {lente === 'stock' &&
+              'Existencias en los tres locales y la bodega, y lo que ya viene en camino (+). En rojo, lo que está agotado.'}
           </p>
         </div>
       )}

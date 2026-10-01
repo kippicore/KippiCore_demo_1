@@ -17,7 +17,15 @@ import type {
 import { estadoCxP, saldoCxP, saldoCxPCop, type EstadoCxP } from '@/dominio/reglas/cuentas';
 import { fobImportacion, unidadesLinea } from '@/dominio/reglas/costeo';
 import { copDeCentavos } from '@/dominio/reglas/dinero';
-import { crearSelector, selCostoAterrizado, selEnCaminoPorVariante, selSugerenciaPedido, selTasaVigente, type CostoAterrizadoVista, type SugerenciaPedido } from '@/selectores';
+import {
+  crearSelector,
+  selCostoAterrizado,
+  selEnCaminoPorVariante,
+  selSugerenciaPedido,
+  selTasaVigente,
+  type CostoAterrizadoVista,
+  type SugerenciaPedido,
+} from '@/selectores';
 
 /**
  * Selectores LOCALES de Importaciones (B1): componen los compartidos y leen tablas que ningún selector expone
@@ -28,30 +36,38 @@ import { crearSelector, selCostoAterrizado, selEnCaminoPorVariante, selSugerenci
 // ---------------------------------------------------------------------------------------------------------
 // Bandeja de salida
 // ---------------------------------------------------------------------------------------------------------
-export const selMensajesImportacion = crearSelector<{ importacionId: Id }, MensajeSaliente[]>('selMensajesImportacion', ['mensajes'], (e, { importacionId }) =>
-  e.mensajes
-    .filter((m) => m.origen.id === importacionId && (m.origen.tipo === 'importacion' || m.origen.tipo === 'pedido_sugerido'))
-    .sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0)),
+export const selMensajesImportacion = crearSelector<{ importacionId: Id }, MensajeSaliente[]>(
+  'selMensajesImportacion',
+  ['mensajes'],
+  (e, { importacionId }) =>
+    e.mensajes
+      .filter(
+        (m) =>
+          m.origen.id === importacionId &&
+          (m.origen.tipo === 'importacion' || m.origen.tipo === 'pedido_sugerido'),
+      )
+      .sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0)),
 );
 
 /**
  * Avisos que quedaron listos porque la agente reportó desde el portal (W3): la última notificación del portal de
  * esta importación, mientras no se haya enviado ningún aviso después de ella.
  */
-export const selAvisosPendientes = crearSelector<{ importacionId: Id }, { notificacion: Notificacion; estado: EstadoImportacion } | null>(
-  'selAvisosPendientes',
-  ['notificaciones', 'mensajes', 'importaciones'],
-  (e, { importacionId }) => {
-    const imp = e.importaciones[importacionId];
-    if (!imp) return null;
-    const ultima = Object.values(e.notificaciones)
-      .filter((n) => n.tipo === 'portal_actualizacion' && n.origen?.id === importacionId)
-      .sort((a, b) => (a.ts < b.ts ? 1 : -1))[0];
-    if (!ultima) return null;
-    const yaAvisado = e.mensajes.some((m) => m.origen.tipo === 'importacion' && m.origen.id === importacionId && m.ts >= ultima.ts);
-    return yaAvisado ? null : { notificacion: ultima, estado: imp.estado };
-  },
-);
+export const selAvisosPendientes = crearSelector<
+  { importacionId: Id },
+  { notificacion: Notificacion; estado: EstadoImportacion } | null
+>('selAvisosPendientes', ['notificaciones', 'mensajes', 'importaciones'], (e, { importacionId }) => {
+  const imp = e.importaciones[importacionId];
+  if (!imp) return null;
+  const ultima = Object.values(e.notificaciones)
+    .filter((n) => n.tipo === 'portal_actualizacion' && n.origen?.id === importacionId)
+    .sort((a, b) => (a.ts < b.ts ? 1 : -1))[0];
+  if (!ultima) return null;
+  const yaAvisado = e.mensajes.some(
+    (m) => m.origen.tipo === 'importacion' && m.origen.id === importacionId && m.ts >= ultima.ts,
+  );
+  return yaAvisado ? null : { notificacion: ultima, estado: imp.estado };
+});
 
 // ---------------------------------------------------------------------------------------------------------
 // Pagos a la fábrica y a la cadena
@@ -95,7 +111,10 @@ export interface PagosImportacion {
   tasaVigente: number;
 }
 
-export const selPagosImportacion = crearSelector<{ importacionId: Id; hoy: FechaISO }, PagosImportacion | null>(
+export const selPagosImportacion = crearSelector<
+  { importacionId: Id; hoy: FechaISO },
+  PagosImportacion | null
+>(
   'selPagosImportacion',
   ['importaciones', 'cuentasPorPagar', 'cuentas', 'tasas'],
   (e, { importacionId, hoy }) => {
@@ -169,22 +188,30 @@ export interface FilaContacto {
   importaciones: { id: Id; numero: string; estado: EstadoImportacion }[];
 }
 
-export const selContactosCadena = crearSelector<void, FilaContacto[]>('selContactosCadena', ['contactos', 'importaciones', 'proveedores'], (e) => {
-  const por = new Map<Id, FilaContacto['importaciones']>();
-  for (const i of Object.values(e.importaciones)) {
-    if (i.eliminadoEn) continue;
-    for (const c of i.contactoIds) por.set(c, [...(por.get(c) ?? []), { id: i.id, numero: i.numero, estado: i.estado }]);
-  }
-  const orden = { proveedor: 0, agente_carga: 1, agente_aduanas: 2, transportador: 3, otro: 4 } as const;
-  return Object.values(e.contactos)
-    .filter((c) => !c.eliminadoEn)
-    .map((c) => ({
-      contacto: c,
-      proveedorNombre: c.proveedorId ? (e.proveedores[c.proveedorId]?.nombreCorto ?? null) : null,
-      importaciones: (por.get(c.id) ?? []).sort((a, b) => (a.numero < b.numero ? 1 : -1)),
-    }))
-    .sort((a, b) => orden[a.contacto.rol] - orden[b.contacto.rol] || (a.contacto.nombre < b.contacto.nombre ? -1 : 1));
-});
+export const selContactosCadena = crearSelector<void, FilaContacto[]>(
+  'selContactosCadena',
+  ['contactos', 'importaciones', 'proveedores'],
+  (e) => {
+    const por = new Map<Id, FilaContacto['importaciones']>();
+    for (const i of Object.values(e.importaciones)) {
+      if (i.eliminadoEn) continue;
+      for (const c of i.contactoIds)
+        por.set(c, [...(por.get(c) ?? []), { id: i.id, numero: i.numero, estado: i.estado }]);
+    }
+    const orden = { proveedor: 0, agente_carga: 1, agente_aduanas: 2, transportador: 3, otro: 4 } as const;
+    return Object.values(e.contactos)
+      .filter((c) => !c.eliminadoEn)
+      .map((c) => ({
+        contacto: c,
+        proveedorNombre: c.proveedorId ? (e.proveedores[c.proveedorId]?.nombreCorto ?? null) : null,
+        importaciones: (por.get(c.id) ?? []).sort((a, b) => (a.numero < b.numero ? 1 : -1)),
+      }))
+      .sort(
+        (a, b) =>
+          orden[a.contacto.rol] - orden[b.contacto.rol] || (a.contacto.nombre < b.contacto.nombre ? -1 : 1),
+      );
+  },
+);
 
 // ---------------------------------------------------------------------------------------------------------
 // Catálogo y valores por defecto para armar un pedido
@@ -242,11 +269,19 @@ export const selCatalogoPedido = crearSelector<{ proveedorId: Id | null }, Produ
       if (!p.tallas.includes(v.talla)) p.tallas.push(v.talla);
       if (!p.colores.some((c) => c.id === v.colorId)) {
         const c = e.colores[v.colorId];
-        p.colores.push({ id: v.colorId, nombre: c?.nombre ?? v.colorId, codigo: c?.codigo ?? '', hex: c?.hex ?? '#999999', patron: c?.patron ?? 'liso' });
+        p.colores.push({
+          id: v.colorId,
+          nombre: c?.nombre ?? v.colorId,
+          codigo: c?.codigo ?? '',
+          hex: c?.hex ?? '#999999',
+          patron: c?.patron ?? 'liso',
+        });
       }
       p.variantes[`${v.talla}|${v.colorId}`] = v.id;
     }
-    return [...porProducto.values()].filter((p) => p.tallas.length > 0).sort((a, b) => (a.referencia < b.referencia ? -1 : 1));
+    return [...porProducto.values()]
+      .filter((p) => p.tallas.length > 0)
+      .sort((a, b) => (a.referencia < b.referencia ? -1 : 1));
   },
 );
 
@@ -287,7 +322,14 @@ export const selDefectosPedido = crearSelector<{ proveedorId: Id }, DefectosPedi
     }
     const a = e.parametros.aduanas;
     const cadena = Object.values(e.contactos)
-      .filter((c) => !c.eliminadoEn && (c.proveedorId === proveedorId || c.rol === 'agente_carga' || c.rol === 'agente_aduanas' || c.rol === 'transportador'))
+      .filter(
+        (c) =>
+          !c.eliminadoEn &&
+          (c.proveedorId === proveedorId ||
+            c.rol === 'agente_carga' ||
+            c.rol === 'agente_aduanas' ||
+            c.rol === 'transportador'),
+      )
       .map((c) => c.id);
     return {
       moneda,
@@ -346,7 +388,10 @@ export interface VistaCosto {
   variantesAfectadas: number;
 }
 
-export const selVistaCosto = crearSelector<{ importacionId: Id; hoy: FechaISO; tasaSimulada: number | null }, VistaCosto | null>(
+export const selVistaCosto = crearSelector<
+  { importacionId: Id; hoy: FechaISO; tasaSimulada: number | null },
+  VistaCosto | null
+>(
   'selVistaCosto',
   ['importaciones', 'cuentasPorPagar', 'tasas', 'productos', 'variantes'],
   (e, { importacionId, hoy, tasaSimulada }) => {
@@ -356,7 +401,8 @@ export const selVistaCosto = crearSelector<{ importacionId: Id; hoy: FechaISO; t
     const costo = tasaSimulada ? selCostoAterrizado(e, { importacionId, hoy, tasaSimulada }) : base;
     if (!base || !costo) return null;
     const variantes = new Map<Id, number>();
-    for (const v of Object.values(e.variantes)) if (!v.eliminadoEn) variantes.set(v.productoId, (variantes.get(v.productoId) ?? 0) + 1);
+    for (const v of Object.values(e.variantes))
+      if (!v.eliminadoEn) variantes.set(v.productoId, (variantes.get(v.productoId) ?? 0) + 1);
     const productos = costo.porProductoDetalle.map((d) => {
       const p = e.productos[d.productoId];
       return {
@@ -376,7 +422,13 @@ export const selVistaCosto = crearSelector<{ importacionId: Id; hoy: FechaISO; t
         costoVigente: p?.costoVigente ?? 0,
       };
     });
-    return { imp, costo, tasaBase: base.tasaCosteo, productos, variantesAfectadas: productos.reduce((a, p) => a + p.variantes, 0) };
+    return {
+      imp,
+      costo,
+      tasaBase: base.tasaCosteo,
+      productos,
+      variantesAfectadas: productos.reduce((a, p) => a + p.variantes, 0),
+    };
   },
 );
 
@@ -417,13 +469,35 @@ export interface ProductoSugerido {
 
 export interface SugerenciaCompleta {
   base: SugerenciaPedido;
-  proveedor: { id: Id; nombre: string; nombreCorto: string; moneda: MonedaExtranjera; condicionesPago: string };
+  proveedor: {
+    id: Id;
+    nombre: string;
+    nombreCorto: string;
+    moneda: MonedaExtranjera;
+    condicionesPago: string;
+  };
   productos: ProductoSugerido[];
 }
 
-export const selSugerenciaCompleta = crearSelector<{ proveedorId: Id; coberturaDias: number; hoy: FechaISO }, SugerenciaCompleta | null>(
+export const selSugerenciaCompleta = crearSelector<
+  { proveedorId: Id; coberturaDias: number; hoy: FechaISO },
+  SugerenciaCompleta | null
+>(
   'selSugerenciaCompleta',
-  ['proveedores', 'productos', 'variantes', 'ventas', 'devoluciones', 'agregados', 'importaciones', 'tasas', 'parametros', 'meta', 'locales', 'colores'],
+  [
+    'proveedores',
+    'productos',
+    'variantes',
+    'ventas',
+    'devoluciones',
+    'agregados',
+    'importaciones',
+    'tasas',
+    'parametros',
+    'meta',
+    'locales',
+    'colores',
+  ],
   (e, params) => {
     const base = selSugerenciaPedido(e, params);
     if (!base) return null;
@@ -460,7 +534,13 @@ export const selSugerenciaCompleta = crearSelector<{ proveedorId: Id; coberturaD
       if (!ps.tallas.includes(f.talla)) ps.tallas.push(f.talla);
       if (!ps.colores.some((c) => c.id === f.colorId)) {
         const c = e.colores[f.colorId];
-        ps.colores.push({ id: f.colorId, nombre: c?.nombre ?? f.colorId, codigo: c?.codigo ?? '', hex: c?.hex ?? '#999999', patron: c?.patron ?? 'liso' });
+        ps.colores.push({
+          id: f.colorId,
+          nombre: c?.nombre ?? f.colorId,
+          codigo: c?.codigo ?? '',
+          hex: c?.hex ?? '#999999',
+          patron: c?.patron ?? 'liso',
+        });
       }
       ps.celdas[`${f.talla}|${f.colorId}`] = {
         varianteId: f.varianteId,
@@ -482,7 +562,9 @@ export const selSugerenciaCompleta = crearSelector<{ proveedorId: Id; coberturaD
         else ps.enCaminoPorPedido.push({ numero: c.numero, unidades: f.enCamino });
       }
     }
-    const productos = [...por.values()].sort((a, b) => b.sugeridas - a.sugeridas || (a.referencia < b.referencia ? -1 : 1));
+    const productos = [...por.values()].sort(
+      (a, b) => b.sugeridas - a.sugeridas || (a.referencia < b.referencia ? -1 : 1),
+    );
     return {
       base,
       proveedor: {

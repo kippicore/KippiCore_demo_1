@@ -51,19 +51,33 @@ export function EditorLineas({
   const porId = useMemo(() => new Map(catalogo.map((p) => [p.productoId, p])), [catalogo]);
   const usados = new Set(lineas.map((l) => l.productoId));
 
-  const actualizar = (clave: string, parcial: Partial<LineaBorrador>) => alCambiar(lineas.map((l) => (l.clave === clave ? { ...l, ...parcial } : l)));
-  const agregar = () => alCambiar([...lineas, { clave: claveLinea(), productoId: null, fob: null, cantidades: {} }]);
+  const actualizar = (clave: string, parcial: Partial<LineaBorrador>) =>
+    alCambiar(lineas.map((l) => (l.clave === clave ? { ...l, ...parcial } : l)));
+  const agregar = () =>
+    alCambiar([...lineas, { clave: claveLinea(), productoId: null, fob: null, cantidades: {} }]);
   const quitar = (clave: string) => alCambiar(lineas.filter((l) => l.clave !== clave));
 
   const opciones = (actual: Id | null): OpcionSelect[] =>
-    catalogo.filter((p) => p.productoId === actual || !usados.has(p.productoId)).map((p) => ({ valor: p.productoId, etiqueta: `${p.referencia} · ${p.nombre}` }));
+    catalogo
+      .filter((p) => p.productoId === actual || !usados.has(p.productoId))
+      .map((p) => ({ valor: p.productoId, etiqueta: `${p.referencia} · ${p.nombre}` }));
 
   return (
     <div className="space-y-4" data-testid="editor-lineas">
       {error && <p className="border-l-2 border-danger pl-3 t-small text-ink">{error}</p>}
       {lineas.length === 0 && (
         <div className="border border-line bg-surface">
-          <EmptyState tamano="tabla" icono={Package} titulo="Agrega las referencias del pedido" texto="Elige la prenda, el precio de fábrica y cuántas unidades por talla y color." accion={<Button variante="secondary" icono={Plus} onClick={agregar} disabled={deshabilitado}>Agregar referencia</Button>} />
+          <EmptyState
+            tamano="tabla"
+            icono={Package}
+            titulo="Agrega las referencias del pedido"
+            texto="Elige la prenda, el precio de fábrica y cuántas unidades por talla y color."
+            accion={
+              <Button variante="secondary" icono={Plus} onClick={agregar} disabled={deshabilitado}>
+                Agregar referencia
+              </Button>
+            }
+          />
         </div>
       )}
       {lineas.map((l, idx) => {
@@ -79,7 +93,11 @@ export function EditorLineas({
                 valor={l.productoId}
                 alCambiar={(v) => {
                   const nuevo = porId.get(v);
-                  actualizar(l.clave, { productoId: v, cantidades: {}, fob: nuevo?.fobUltimo ? nuevo.fobUltimo / 100 : null });
+                  actualizar(l.clave, {
+                    productoId: v,
+                    cantidades: {},
+                    fob: nuevo?.fobUltimo ? nuevo.fobUltimo / 100 : null,
+                  });
                 }}
                 opciones={opciones(l.productoId)}
                 deshabilitado={deshabilitado}
@@ -98,7 +116,15 @@ export function EditorLineas({
               <div className="pb-2.5 t-body num text-ink">
                 <span className="font-bold">{entero(total)}</span> <span className="text-muted">prendas</span>
               </div>
-              <Button variante="ghost" tamano="sm" icono={Trash2} onClick={() => quitar(l.clave)} disabled={deshabilitado} aria-label={`Quitar la referencia ${p?.referencia ?? ''}`} className="mb-1">
+              <Button
+                variante="ghost"
+                tamano="sm"
+                icono={Trash2}
+                onClick={() => quitar(l.clave)}
+                disabled={deshabilitado}
+                aria-label={`Quitar la referencia ${p?.referencia ?? ''}`}
+                className="mb-1"
+              >
                 Quitar
               </Button>
             </div>
@@ -123,7 +149,10 @@ export function EditorLineas({
                   </thead>
                   <tbody>
                     {p.colores.map((c) => {
-                      const totalColor = p.tallas.reduce((a, t) => a + (l.cantidades[p.variantes[`${t}|${c.id}`] ?? ''] ?? 0), 0);
+                      const totalColor = p.tallas.reduce(
+                        (a, t) => a + (l.cantidades[p.variantes[`${t}|${c.id}`] ?? ''] ?? 0),
+                        0,
+                      );
                       return (
                         <tr key={c.id} className="border-t border-line-soft">
                           <th scope="row" className="py-1.5 text-left font-normal">
@@ -142,7 +171,9 @@ export function EditorLineas({
                                     etiqueta={`${c.nombre}, talla ${t}`}
                                     etiquetaOculta
                                     valor={l.cantidades[vid] ?? null}
-                                    alCambiar={(v) => actualizar(l.clave, { cantidades: { ...l.cantidades, [vid]: v ?? 0 } })}
+                                    alCambiar={(v) =>
+                                      actualizar(l.clave, { cantidades: { ...l.cantidades, [vid]: v ?? 0 } })
+                                    }
                                     disabled={deshabilitado}
                                     placeholder="0"
                                   />
@@ -164,7 +195,12 @@ export function EditorLineas({
         );
       })}
       {lineas.length > 0 && (
-        <Button variante="secondary" icono={Plus} onClick={agregar} disabled={deshabilitado || usados.size >= catalogo.length}>
+        <Button
+          variante="secondary"
+          icono={Plus}
+          onClick={agregar}
+          disabled={deshabilitado || usados.size >= catalogo.length}
+        >
           Agregar otra referencia
         </Button>
       )}

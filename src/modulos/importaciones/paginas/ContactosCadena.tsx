@@ -1,17 +1,15 @@
-import { Pencil, Plus, Trash2, Users } from 'lucide-react';
+import { MoreHorizontal, Pencil, Plus, Trash2, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { rutas } from '@/app/rutas';
 import type { Contacto, RolContacto } from '@/dominio/tipos';
 import { PREFIJOS } from '@/dominio/motor/ids';
 import { nuevoId, useAcciones, useHoy, useSel } from '@/estado';
-import { celular } from '@/lib/formato';
 import { selProveedores } from '@/selectores';
 import {
   avisar,
   Avatar,
   Badge,
-  BotonAccionesFila,
   BotonPildora,
   Button,
   ConfirmarEliminacion,
@@ -33,7 +31,18 @@ import { PestanasModulo } from '../componentes/PestanasModulo';
 import { selContactosCadena, type FilaContacto } from '../selectores';
 import { ETIQUETAS_CANAL, ETIQUETAS_ROL_CONTACTO } from '../textos';
 
-type Borrador = Omit<Contacto, 'id' | 'creadoEn' | 'creadoPor' | 'actualizadoEn' | 'actualizadoPor' | 'origen' | 'eliminadoEn' | 'eliminadoPor' | 'motivoEliminacion'>;
+type Borrador = Omit<
+  Contacto,
+  | 'id'
+  | 'creadoEn'
+  | 'creadoPor'
+  | 'actualizadoEn'
+  | 'actualizadoPor'
+  | 'origen'
+  | 'eliminadoEn'
+  | 'eliminadoPor'
+  | 'motivoEliminacion'
+>;
 
 const VACIO: Borrador = {
   nombre: '',
@@ -60,7 +69,11 @@ export default function ContactosCadena() {
   const acciones = useAcciones();
 
   const t = texto.trim().toLowerCase();
-  const visibles = filas.filter((f) => (rol === 'todos' || f.contacto.rol === rol) && (!t || `${f.contacto.nombre} ${f.contacto.empresa} ${f.contacto.pais}`.toLowerCase().includes(t)));
+  const visibles = filas.filter(
+    (f) =>
+      (rol === 'todos' || f.contacto.rol === rol) &&
+      (!t || `${f.contacto.nombre} ${f.contacto.empresa} ${f.contacto.pais}`.toLowerCase().includes(t)),
+  );
 
   const columnas: ColumnaTabla<FilaContacto>[] = [
     {
@@ -76,27 +89,45 @@ export default function ContactosCadena() {
         </span>
       ),
       ordenar: (f) => f.contacto.nombre,
-      ancho: 330,
+      ancho: 280,
     },
-    { id: 'rol', encabezado: 'Rol', celda: (f) => <Badge tono="outline" tamano="sm">{ETIQUETAS_ROL_CONTACTO[f.contacto.rol]}</Badge>, ordenar: (f) => f.contacto.rol, ancho: 170 },
-    { id: 'pais', encabezado: 'País', celda: (f) => f.contacto.pais, ordenar: (f) => f.contacto.pais, ancho: 110 },
+    {
+      id: 'rol',
+      encabezado: 'Rol',
+      celda: (f) => (
+        <Badge tono="outline" tamano="sm">
+          {ETIQUETAS_ROL_CONTACTO[f.contacto.rol]}
+        </Badge>
+      ),
+      ordenar: (f) => f.contacto.rol,
+      ancho: 160,
+    },
+    {
+      id: 'pais',
+      encabezado: 'País',
+      celda: (f) => f.contacto.pais,
+      ordenar: (f) => f.contacto.pais,
+      ancho: 90,
+    },
     {
       id: 'trato',
       encabezado: 'Cómo se le escribe',
       celda: (f) => (
         <span>
           {f.contacto.idioma === 'en' ? 'Inglés' : f.contacto.tratamiento === 'usted' ? 'En usted' : 'En tú'}
-          <span className="block t-small text-muted">Prefiere {ETIQUETAS_CANAL[f.contacto.canalPreferido]}</span>
+          <span className="block t-small text-muted">
+            Prefiere {ETIQUETAS_CANAL[f.contacto.canalPreferido]}
+          </span>
         </span>
       ),
-      ancho: 190,
+      ancho: 150,
     },
     {
       id: 'datos',
       encabezado: 'WhatsApp y correo',
       celda: (f) => (
         <span className="t-small">
-          <span className="block num text-ink">{f.contacto.whatsapp ? celular(f.contacto.whatsapp) : '—'}</span>
+          <span className="block num text-ink">{f.contacto.whatsapp || '—'}</span>
           <span className="block truncate text-muted">{f.contacto.correo}</span>
         </span>
       ),
@@ -112,15 +143,16 @@ export default function ContactosCadena() {
           <span className="t-small">
             {activos.length > 0 ? (
               <>
-                {activos.slice(0, 2).map((i, k) => (
-                  <span key={i.id}>
-                    {k > 0 && ', '}
-                    <Link to={rutas.importacion(i.numero)} className="font-semibold text-ink underline underline-offset-4" onClick={(e) => e.stopPropagation()}>
-                      {i.numero}
-                    </Link>
-                  </span>
-                ))}
-                {activos.length > 2 && ` y ${activos.length - 2} más`}
+                <Link
+                  to={rutas.importacion(activos[0]?.numero ?? '')}
+                  className="whitespace-nowrap font-semibold text-ink underline underline-offset-4"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {activos[0]?.numero}
+                </Link>
+                {activos.length > 1 && (
+                  <span className="whitespace-nowrap text-muted"> +{activos.length - 1}</span>
+                )}
               </>
             ) : (
               <span className="text-muted">{f.importaciones.length} ya recibidos</span>
@@ -128,13 +160,24 @@ export default function ContactosCadena() {
           </span>
         );
       },
-      ancho: 190,
+      ancho: 150,
     },
   ];
 
   const abrirNuevo = () => setEdicion({ id: null, borrador: { ...VACIO } });
   const abrirEditar = (f: FilaContacto) => {
-    const { id: _id, creadoEn: _a, creadoPor: _b, actualizadoEn: _c, actualizadoPor: _d, origen: _e, eliminadoEn: _f, eliminadoPor: _g, motivoEliminacion: _h, ...datos } = f.contacto;
+    const {
+      id: _id,
+      creadoEn: _a,
+      creadoPor: _b,
+      actualizadoEn: _c,
+      actualizadoPor: _d,
+      origen: _e,
+      eliminadoEn: _f,
+      eliminadoPor: _g,
+      motivoEliminacion: _h,
+      ...datos
+    } = f.contacto;
     setEdicion({ id: f.contacto.id, borrador: datos });
   };
 
@@ -150,7 +193,11 @@ export default function ContactosCadena() {
   return (
     <div className="pb-16">
       <EncabezadoPagina
-        migas={[{ texto: 'Inicio', a: rutas.inicio() }, { texto: 'Importaciones', a: rutas.importaciones() }, { texto: 'Contactos de la cadena' }]}
+        migas={[
+          { texto: 'Inicio', a: rutas.inicio() },
+          { texto: 'Importaciones', a: rutas.importaciones() },
+          { texto: 'Contactos de la cadena' },
+        ]}
         titulo="Contactos de la cadena"
         subtitulo="La fábrica, el agente de carga, el agente de aduanas y el transportador: a ellos les llegan los avisos de cada pedido."
         acciones={
@@ -180,11 +227,27 @@ export default function ContactosCadena() {
                   etiquetaOculta
                   valor={rol}
                   alCambiar={(v) => setRol(v as RolContacto | 'todos')}
-                  opciones={[{ valor: 'todos', etiqueta: 'Todos los roles' }, ...(Object.keys(ETIQUETAS_ROL_CONTACTO) as RolContacto[]).map((r) => ({ valor: r, etiqueta: ETIQUETAS_ROL_CONTACTO[r] }))]}
+                  opciones={[
+                    { valor: 'todos', etiqueta: 'Todos los roles' },
+                    ...(Object.keys(ETIQUETAS_ROL_CONTACTO) as RolContacto[]).map((r) => ({
+                      valor: r,
+                      etiqueta: ETIQUETAS_ROL_CONTACTO[r],
+                    })),
+                  ]}
                 />
               </BotonPildora>
             }
-            chips={rol !== 'todos' ? [{ id: 'rol', texto: `Rol: ${ETIQUETAS_ROL_CONTACTO[rol]}`, alQuitar: () => setRol('todos') }] : []}
+            chips={
+              rol !== 'todos'
+                ? [
+                    {
+                      id: 'rol',
+                      texto: `Rol: ${ETIQUETAS_ROL_CONTACTO[rol]}`,
+                      alQuitar: () => setRol('todos'),
+                    },
+                  ]
+                : []
+            }
             alLimpiar={() => {
               setRol('todos');
               setTexto('');
@@ -192,7 +255,18 @@ export default function ContactosCadena() {
           />
         }
         accionesFila={(f) => (
-          <Menu disparador={<BotonAccionesFila aria-label={`Acciones de ${f.contacto.nombre}`} />} etiqueta="Acciones del contacto">
+          <Menu
+            disparador={
+              <Button
+                variante="ghost"
+                tamano="sm"
+                soloIcono
+                icono={MoreHorizontal}
+                aria-label={`Acciones de ${f.contacto.nombre}`}
+              />
+            }
+            etiqueta="Acciones del contacto"
+          >
             <ItemMenu icono={Pencil} onSelect={() => abrirEditar(f)}>
               Editar
             </ItemMenu>
@@ -206,13 +280,22 @@ export default function ContactosCadena() {
           <EmptyState
             tamano="tabla"
             icono={Users}
-            titulo={filas.length === 0 ? 'Aún no hay contactos en la cadena' : 'Ningún contacto con este filtro'}
+            titulo={
+              filas.length === 0 ? 'Aún no hay contactos en la cadena' : 'Ningún contacto con este filtro'
+            }
             texto="Agrega a la fábrica, al agente de carga, al agente de aduanas y al transportador para que cada aviso llegue a quien le toca."
             accion={<Button onClick={abrirNuevo}>Nuevo contacto</Button>}
           />
         }
       />
-      {edicion && <FormularioContacto key={edicion.id ?? 'nuevo'} inicial={edicion.borrador} id={edicion.id} alCerrar={() => setEdicion(null)} />}
+      {edicion && (
+        <FormularioContacto
+          key={edicion.id ?? 'nuevo'}
+          inicial={edicion.borrador}
+          id={edicion.id}
+          alCerrar={() => setEdicion(null)}
+        />
+      )}
       <ConfirmarEliminacion
         abierto={eliminando !== null}
         alCambiar={(a) => !a && setEliminando(null)}
@@ -229,7 +312,15 @@ export default function ContactosCadena() {
   );
 }
 
-function FormularioContacto({ inicial, id, alCerrar }: { inicial: Borrador; id: string | null; alCerrar: () => void }) {
+function FormularioContacto({
+  inicial,
+  id,
+  alCerrar,
+}: {
+  inicial: Borrador;
+  id: string | null;
+  alCerrar: () => void;
+}) {
   const hoy = useHoy();
   const acciones = useAcciones();
   const fabricas = useSel(selProveedores, { hoy, tipo: 'fabrica' });
@@ -242,11 +333,22 @@ function FormularioContacto({ inicial, id, alCerrar }: { inicial: Borrador; id: 
   const e = (campo: string) => (error?.campo === campo ? error.mensaje : undefined);
 
   const guardar = () => {
-    const datos: Borrador = { ...d, nombre: d.nombre.trim(), empresa: d.empresa.trim(), correo: d.correo.trim(), whatsapp: d.whatsapp.trim(), proveedorId: d.rol === 'proveedor' ? d.proveedorId : null, wechat: d.wechat?.trim() || null };
+    const datos: Borrador = {
+      ...d,
+      nombre: d.nombre.trim(),
+      empresa: d.empresa.trim(),
+      correo: d.correo.trim(),
+      whatsapp: d.whatsapp.trim(),
+      proveedorId: d.rol === 'proveedor' ? d.proveedorId : null,
+      wechat: d.wechat?.trim() || null,
+    };
     if (!datos.nombre) return setError({ campo: 'nombre', mensaje: 'Escribe el nombre del contacto.' });
     if (!datos.empresa) return setError({ campo: 'empresa', mensaje: 'Escribe la empresa.' });
-    if (datos.rol === 'proveedor' && !datos.proveedorId) return setError({ campo: 'proveedorId', mensaje: 'Elige a qué fábrica pertenece.' });
-    const r = id ? acciones.editarContacto({ contactoId: id, cambios: datos }) : acciones.crearContacto({ contactoId: nuevoId(PREFIJOS.contacto), datos });
+    if (datos.rol === 'proveedor' && !datos.proveedorId)
+      return setError({ campo: 'proveedorId', mensaje: 'Elige a qué fábrica pertenece.' });
+    const r = id
+      ? acciones.editarContacto({ contactoId: id, cambios: datos })
+      : acciones.crearContacto({ contactoId: nuevoId(PREFIJOS.contacto), datos });
     if (!r.ok) return setError({ campo: r.error.campo ?? 'general', mensaje: r.error.mensaje });
     avisar({ tipo: 'exito', texto: id ? 'Contacto actualizado' : 'Contacto agregado a la cadena' });
     alCerrar();
@@ -273,16 +375,41 @@ function FormularioContacto({ inicial, id, alCerrar }: { inicial: Borrador; id: 
       }
     >
       <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-        <Input etiqueta="Nombre" value={d.nombre} onChange={(ev) => cambiar({ nombre: ev.target.value })} error={e('nombre')} data-testid="contacto-nombre" />
-        <Input etiqueta="Empresa" value={d.empresa} onChange={(ev) => cambiar({ empresa: ev.target.value })} error={e('empresa')} />
+        <Input
+          etiqueta="Nombre"
+          value={d.nombre}
+          onChange={(ev) => cambiar({ nombre: ev.target.value })}
+          error={e('nombre')}
+          data-testid="contacto-nombre"
+        />
+        <Input
+          etiqueta="Empresa"
+          value={d.empresa}
+          onChange={(ev) => cambiar({ empresa: ev.target.value })}
+          error={e('empresa')}
+        />
         <Select
           etiqueta="Rol"
           valor={d.rol}
           alCambiar={(v) => {
             const rol = v as RolContacto;
-            cambiar({ rol, idioma: rol === 'proveedor' ? 'en' : 'es', tratamiento: rol === 'proveedor' ? 'tu' : 'usted', canalPreferido: rol === 'proveedor' ? 'wechat' : d.canalPreferido === 'wechat' ? 'whatsapp' : d.canalPreferido, pais: rol === 'proveedor' ? 'China' : 'Colombia' });
+            cambiar({
+              rol,
+              idioma: rol === 'proveedor' ? 'en' : 'es',
+              tratamiento: rol === 'proveedor' ? 'tu' : 'usted',
+              canalPreferido:
+                rol === 'proveedor'
+                  ? 'wechat'
+                  : d.canalPreferido === 'wechat'
+                    ? 'whatsapp'
+                    : d.canalPreferido,
+              pais: rol === 'proveedor' ? 'China' : 'Colombia',
+            });
           }}
-          opciones={(Object.keys(ETIQUETAS_ROL_CONTACTO) as RolContacto[]).map((r) => ({ valor: r, etiqueta: ETIQUETAS_ROL_CONTACTO[r] }))}
+          opciones={(Object.keys(ETIQUETAS_ROL_CONTACTO) as RolContacto[]).map((r) => ({
+            valor: r,
+            etiqueta: ETIQUETAS_ROL_CONTACTO[r],
+          }))}
           enModal
         />
         {d.rol === 'proveedor' ? (
@@ -298,15 +425,45 @@ function FormularioContacto({ inicial, id, alCerrar }: { inicial: Borrador; id: 
         ) : (
           <Input etiqueta="País" value={d.pais} onChange={(ev) => cambiar({ pais: ev.target.value })} />
         )}
-        <Input etiqueta="WhatsApp" placeholder="+57 310 123 4567" value={d.whatsapp} onChange={(ev) => cambiar({ whatsapp: ev.target.value })} error={e('whatsapp')} inputMode="tel" ayuda="Con indicativo del país." />
-        <Input etiqueta="Correo" type="email" value={d.correo} onChange={(ev) => cambiar({ correo: ev.target.value })} error={e('correo')} />
+        <Input
+          etiqueta="WhatsApp"
+          placeholder="+57 310 123 4567"
+          value={d.whatsapp}
+          onChange={(ev) => cambiar({ whatsapp: ev.target.value })}
+          error={e('whatsapp')}
+          inputMode="tel"
+          ayuda="Con indicativo del país."
+        />
+        <Input
+          etiqueta="Correo"
+          type="email"
+          value={d.correo}
+          onChange={(ev) => cambiar({ correo: ev.target.value })}
+          error={e('correo')}
+        />
         <div>
           <p className="mb-1.5 t-label text-ink">Idioma de los avisos</p>
-          <Segmentado etiqueta="Idioma de los avisos" valor={d.idioma} alCambiar={(v) => cambiar({ idioma: v })} opciones={[{ valor: 'es', etiqueta: 'Español' }, { valor: 'en', etiqueta: 'Inglés' }]} />
+          <Segmentado
+            etiqueta="Idioma de los avisos"
+            valor={d.idioma}
+            alCambiar={(v) => cambiar({ idioma: v })}
+            opciones={[
+              { valor: 'es', etiqueta: 'Español' },
+              { valor: 'en', etiqueta: 'Inglés' },
+            ]}
+          />
         </div>
         <div>
           <p className="mb-1.5 t-label text-ink">Tratamiento</p>
-          <Segmentado etiqueta="Tratamiento" valor={d.tratamiento} alCambiar={(v) => cambiar({ tratamiento: v })} opciones={[{ valor: 'usted', etiqueta: 'Usted' }, { valor: 'tu', etiqueta: 'Tú' }]} />
+          <Segmentado
+            etiqueta="Tratamiento"
+            valor={d.tratamiento}
+            alCambiar={(v) => cambiar({ tratamiento: v })}
+            opciones={[
+              { valor: 'usted', etiqueta: 'Usted' },
+              { valor: 'tu', etiqueta: 'Tú' },
+            ]}
+          />
         </div>
         <div>
           <p className="mb-1.5 t-label text-ink">Canal preferido</p>
@@ -314,12 +471,24 @@ function FormularioContacto({ inicial, id, alCerrar }: { inicial: Borrador; id: 
             etiqueta="Canal preferido"
             valor={d.canalPreferido}
             alCambiar={(v) => cambiar({ canalPreferido: v })}
-            opciones={[{ valor: 'whatsapp', etiqueta: 'WhatsApp' }, { valor: 'correo', etiqueta: 'Correo' }, { valor: 'wechat', etiqueta: 'WeChat' }]}
+            opciones={[
+              { valor: 'whatsapp', etiqueta: 'WhatsApp' },
+              { valor: 'correo', etiqueta: 'Correo' },
+              { valor: 'wechat', etiqueta: 'WeChat' },
+            ]}
           />
         </div>
-        <Input etiqueta="Usuario de WeChat" opcional value={d.wechat ?? ''} onChange={(ev) => cambiar({ wechat: ev.target.value })} ayuda="WeChat es simulado: se copia el mensaje." />
+        <Input
+          etiqueta="Usuario de WeChat"
+          opcional
+          value={d.wechat ?? ''}
+          onChange={(ev) => cambiar({ wechat: ev.target.value })}
+          ayuda="WeChat es simulado: se copia el mensaje."
+        />
       </div>
-      {error && !['nombre', 'empresa', 'proveedorId', 'whatsapp', 'correo'].includes(error.campo) && <p className="mt-4 border-l-2 border-danger pl-3 t-small text-ink">{error.mensaje}</p>}
+      {error && !['nombre', 'empresa', 'proveedorId', 'whatsapp', 'correo'].includes(error.campo) && (
+        <p className="mt-4 border-l-2 border-danger pl-3 t-small text-ink">{error.mensaje}</p>
+      )}
     </Dialog>
   );
 }
