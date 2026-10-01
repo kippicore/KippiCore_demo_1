@@ -361,7 +361,9 @@
 
   --animate-*: initial;
   --animate-spin: kc-spin 0.8s linear infinite;
-  --animate-page-in: kc-page-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* `backwards` (no `both`): al terminar no queda un `transform` retenido; si quedara, Chrome trataría el contenedor de
+     página como bloque contenedor de los `position: fixed` (DragOverlay del Kanban, popovers) y los correría. */
+  --animate-page-in: kc-page-in 200ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
   --animate-fade-in: kc-fade-in 140ms cubic-bezier(0.2, 0, 0, 1) both;
   --animate-fade-in-slow: kc-fade-in 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-pop-in: kc-pop-in 140ms cubic-bezier(0.16, 1, 0.3, 1) both;

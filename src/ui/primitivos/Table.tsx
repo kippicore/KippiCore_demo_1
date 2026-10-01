@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
-import { useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { forwardRef, useEffect, useLayoutEffect, useMemo, useRef, useState, type ButtonHTMLAttributes, type KeyboardEvent, type ReactNode } from 'react';
 import { entero } from '@/lib/formato';
 import { cn } from '../cn';
 import { Checkbox } from './Controles';
@@ -149,16 +149,37 @@ export function Table<F>({
   const paginaReal = Math.min(paginaManual ?? paginaResaltada, paginas - 1);
   const visibles = tamPagina ? ordenadas.slice(paginaReal * tamPagina, (paginaReal + 1) * tamPagina) : ordenadas;
 
-  // Sticky de la cabecera: el contenedor solo desplaza en horizontal si la tabla no cabe (si no, `clip`).
+  // Sticky de la cabecera. Si la tabla cabe, el contenedor es `overflow-x: clip` (no es contenedor de scroll) y la
+  // cabecera se pega bajo la barra superior (`--sticky-top`). Si no cabe, el contenedor pasa a `overflow-x: auto`,
+  // que SÍ es contenedor de scroll: la cabecera se pegaría a ese contenedor, no a la página, y con `top: --sticky-top`
+  // quedaría corrida sobre las filas. En ese caso la cabecera usa `top: 0` (queda en su sitio, sin pegarse al hacer
+  // scroll vertical de la página). Se mide el contenedor y también la `<table>`: el ancho de la tabla cambia sin que
+  // cambie el del contenedor (fuentes que cargan tarde, filas de otra página, columnas que aparecen).
   useLayoutEffect(() => {
     const el = contenedor.current;
     if (!el) return;
-    const medir = () => setDesborda(el.scrollWidth > el.clientWidth + 1);
+    const medir = () => {
+      const tabla = el.firstElementChild as HTMLElement | null;
+      const ancho = tabla ? tabla.getBoundingClientRect().width : el.scrollWidth;
+      setDesborda(Math.max(ancho, el.scrollWidth) > el.clientWidth + 1);
+    };
     medir();
     const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(medir) : null;
     ro?.observe(el);
+    if (el.firstElementChild) ro?.observe(el.firstElementChild);
     return () => ro?.disconnect();
   }, [columnas.length]);
+  const fija = desborda ? 'sticky top-0' : 'sticky top-(--sticky-top)';
+
+  // Fila resaltada (`?resaltar=`): se desplaza a la vista solo cuando cambia la fila (o su página), no en cada render.
+  const filaResaltada = resaltada ? visibles.find(resaltada) : undefined;
+  const claveResaltada = filaResaltada === undefined ? null : clave(filaResaltada);
+  useEffect(() => {
+    if (claveResaltada === null) return;
+    const filas = contenedor.current?.querySelectorAll<HTMLElement>('tr[data-fila]') ?? [];
+    const fila = Array.from(filas).find((tr) => tr.dataset.fila === claveResaltada);
+    fila?.scrollIntoView?.({ block: 'center' });
+  }, [claveResaltada]);
 
   const conSeleccion = !!alSeleccionar;
   const sel = seleccion ?? new Set<string>();
@@ -202,7 +223,7 @@ export function Table<F>({
           <thead>
             <tr>
               {conSeleccion && (
-                <th scope="col" className="sticky top-(--sticky-top) z-(--z-sticky) h-10 w-10 border-b border-ink bg-surface pl-4">
+                <th scope="col" className={cn(fija, 'z-(--z-sticky) h-10 w-10 border-b border-ink bg-surface pl-4')}>
                   <Checkbox
                     aria-label="Seleccionar todas las filas visibles"
                     marcado={todasMarcadas ? true : algunas ? 'indeterminate' : false}
@@ -227,7 +248,8 @@ export function Table<F>({
                     aria-sort={activa ? (orden?.dir === 'asc' ? 'ascending' : 'descending') : c.ordenar ? 'none' : undefined}
                     style={c.ancho !== undefined ? { width: c.ancho } : undefined}
                     className={cn(
-                      'sticky top-(--sticky-top) z-(--z-sticky) h-10 whitespace-nowrap border-b border-ink bg-surface px-3 t-eyebrow',
+                      fija,
+                      'z-(--z-sticky) h-10 whitespace-nowrap border-b border-ink bg-surface px-3 t-eyebrow',
                       i === 0 && !conSeleccion && 'pl-4',
                       der ? 'text-right' : ALINEAR[c.alinear ?? 'izq'],
                       activa ? 'text-ink' : 'text-ink-2',
@@ -252,7 +274,7 @@ export function Table<F>({
                   </th>
                 );
               })}
-              {accionesFila && <th scope="col" className="sticky top-(--sticky-top) z-(--z-sticky) h-10 w-12 border-b border-ink bg-surface"><span className="sr-only">Acciones</span></th>}
+              {accionesFila && <th scope="col" className={cn(fija, 'z-(--z-sticky) h-10 w-12 border-b border-ink bg-surface')}><span className="sr-only">Acciones</span></th>}
             </tr>
           </thead>
           <tbody>
@@ -279,7 +301,6 @@ export function Table<F>({
                     tabIndex={alAbrir ? 0 : undefined}
                     onClick={alAbrir ? () => alAbrir(f) : undefined}
                     onKeyDown={alAbrir ? (e) => teclaFila(e, f) : undefined}
-                    ref={res ? (el) => el?.scrollIntoView({ block: 'center' }) : undefined}
                     className={cn(
                       'group/fila border-b border-line-soft transition-colors duration-(--dur-instant)',
                       ALTO_FILA[densidad],
@@ -406,14 +427,30 @@ export function Table<F>({
   );
 }
 
-/** Botón de acciones de fila (MoreHorizontal ghost 28): úsalo como disparador de `<Menu>`. */
-export function BotonAccionesFila(props: { 'aria-label'?: string; onClick?: () => void }) {
+/**
+ * Botón de acciones de fila (MoreHorizontal ghost 28): úsalo como disparador de `<Menu>`. Reenvía `ref` y todas las
+ * propiedades (Radix inyecta `onPointerDown`, `aria-expanded`, `data-state`… en su disparador).
+ *   <Menu disparador={<BotonAccionesFila aria-label={`Acciones de ${v.numero}`} />}>…</Menu>
+ */
+export const BotonAccionesFila = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement>>(function BotonAccionesFila(
+  { className, 'aria-label': etiqueta, type, ...resto },
+  ref,
+) {
   return (
-    <button type="button" aria-label={props['aria-label'] ?? 'Más acciones'} onClick={props.onClick} className="inline-flex size-7 items-center justify-center text-ink hover:bg-surface-2 data-[state=open]:bg-selected">
+    <button
+      ref={ref}
+      type={type ?? 'button'}
+      aria-label={etiqueta ?? 'Más acciones'}
+      className={cn(
+        'inline-flex size-7 items-center justify-center text-ink hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-focus data-[state=open]:bg-selected',
+        className,
+      )}
+      {...resto}
+    >
       <Icono icono={MoreHorizontal} tamano={16} />
     </button>
   );
-}
+});
 
 /**
  * Franja de resumen sobre la tabla (8.7.12, PRD 7.3): 4 cifras t-kpi-sm que se recalculan con cada filtro.

@@ -1,5 +1,5 @@
 import { CircleAlert, Search, type LucideIcon } from 'lucide-react';
-import { forwardRef, useId, useState, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react';
+import { forwardRef, useId, useLayoutEffect, useRef, useState, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react';
 import { cn } from '../cn';
 import { Icono } from './Icono';
 
@@ -114,27 +114,64 @@ export interface PropsInputNumero extends Omit<PropsInput, 'value' | 'defaultVal
 
 const formateador = (d: number) => new Intl.NumberFormat('es-CO', { maximumFractionDigits: d, minimumFractionDigits: 0 });
 
-/** Número o dinero: se formatea al perder el foco (1.250.000) y se muestra crudo al enfocar (8.7.2). */
-export function InputNumero({ valor, alCambiar, decimales = 0, onBlur, onFocus, ...resto }: PropsInputNumero) {
+/**
+ * Número o dinero: se formatea al perder el foco (1.250.000) y se muestra crudo al enfocar (8.7.2). Al enfocar se
+ * selecciona todo el valor (también tras el cambio de formato), así lo que se teclea REEMPLAZA el valor prellenado
+ * en vez de sumarse al final (80.000 + "95000" → 95.000, no 8.000.095.000).
+ */
+export const InputNumero = forwardRef<HTMLInputElement, PropsInputNumero>(function InputNumero(
+  { valor, alCambiar, decimales = 0, onBlur, onFocus, onMouseUp, ...resto },
+  ref,
+) {
   const [enfocado, setEnfocado] = useState(false);
   const [crudo, setCrudo] = useState('');
+  const campo = useRef<HTMLInputElement | null>(null);
+  // Pendiente de seleccionar todo tras el render que cambia "80.000" por "80000" (React mueve el cursor al final).
+  const porSeleccionar = useRef(false);
+  // El clic que enfoca termina con un mouseup que dejaría el cursor donde se hizo clic: se ignora ese primero.
+  const ignorarMouseUp = useRef(false);
   const mostrado = enfocado ? crudo : valor === null ? '' : formateador(decimales).format(valor);
+
+  useLayoutEffect(() => {
+    if (!enfocado || !porSeleccionar.current) return;
+    porSeleccionar.current = false;
+    const el = campo.current;
+    if (el && document.activeElement === el) el.select();
+  }, [enfocado]);
+
   return (
     <Input
       {...resto}
+      ref={(el) => {
+        campo.current = el;
+        if (typeof ref === 'function') ref(el);
+        else if (ref) ref.current = el;
+      }}
       numerico
       inputMode={decimales ? 'decimal' : 'numeric'}
       value={mostrado}
       onFocus={(e) => {
         setCrudo(valor === null ? '' : String(valor).replace('.', ','));
+        porSeleccionar.current = true;
+        ignorarMouseUp.current = true;
         setEnfocado(true);
+        e.currentTarget.select();
         onFocus?.(e);
+      }}
+      onMouseUp={(e) => {
+        if (ignorarMouseUp.current) {
+          ignorarMouseUp.current = false;
+          if (e.currentTarget.selectionStart !== e.currentTarget.selectionEnd) e.preventDefault();
+        }
+        onMouseUp?.(e);
       }}
       onBlur={(e) => {
         setEnfocado(false);
+        ignorarMouseUp.current = false;
         onBlur?.(e);
       }}
       onChange={(e) => {
+        porSeleccionar.current = false;
         const limpio = e.target.value.replace(/[^\d,]/g, '');
         setCrudo(limpio);
         if (limpio === '') return alCambiar(null);
@@ -143,7 +180,7 @@ export function InputNumero({ valor, alCambiar, decimales = 0, onBlur, onFocus, 
       }}
     />
   );
-}
+});
 
 export interface PropsTextarea extends TextareaHTMLAttributes<HTMLTextAreaElement>, PropsCampo {}
 

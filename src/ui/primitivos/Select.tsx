@@ -12,6 +12,9 @@ import { Icono } from './Icono';
  *
  *   <Select etiqueta="Local" placeholder="Elige un local" valor={l} alCambiar={setL}
  *     opciones={[{ valor: 'p93', etiqueta: 'Parque 93' }, { valor: 'usq', etiqueta: 'Usaquén' }]} />
+ *
+ * `alCambiar` nunca recibe `''` (Radix lo emite en algunos cambios de opciones; se filtra aquí). Ninguna opción puede
+ * tener `valor: ''`: para "todos" o "ninguno" usa una clave explícita ('todos', 'ninguno').
  */
 export interface OpcionSelect {
   valor: string;
@@ -44,7 +47,15 @@ export function Select({ valor, alCambiar, opciones, placeholder = 'Elige una op
   }
   return (
     <Campo id={id} etiqueta={etiqueta} opcional={opcional} ayuda={ayuda} error={error} etiquetaOculta={etiquetaOculta} className={className}>
-      <RS.Root value={valor ?? undefined} onValueChange={alCambiar} disabled={deshabilitado}>
+      <RS.Root
+        value={valor ?? undefined}
+        // Radix puede llamar `onValueChange('')` (p. ej. al cambiar las opciones o al reiniciar un formulario nativo):
+        // ningún Select tiene una opción con valor vacío, así que se ignora aquí y no en cada formulario.
+        onValueChange={(v) => {
+          if (v !== '') alCambiar(v);
+        }}
+        disabled={deshabilitado}
+      >
         <RS.Trigger
           id={id}
           data-testid={resto['data-testid']}

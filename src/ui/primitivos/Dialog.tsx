@@ -14,7 +14,12 @@ import { Icono } from './Icono';
  *     …campos…
  *   </Dialog>
  *
- * `confirmarAlCerrar`: si hay cambios sin guardar, Esc y la X preguntan "¿Descartar los cambios?".
+ * `confirmarAlCerrar`: Esc, la X y el clic fuera preguntan "¿Descartar los cambios?" MIENTRAS sea `true`. El Dialog
+ * no detecta cambios por su cuenta: pásale un booleano calculado ("hay algo distinto de lo inicial"), nunca `true`
+ * fijo, o preguntará también con el formulario intacto:
+ *   const sucio = JSON.stringify(borrador) !== JSON.stringify(inicial);
+ *   <Dialog … confirmarAlCerrar={sucio}>
+ * Cerrar con un botón propio (Cancelar, Guardar) no pregunta: llama a `alCambiar(false)` directamente.
  */
 export type AnchoDialog = 'sm' | 'md' | 'lg' | 'xl';
 const ANCHOS: Record<AnchoDialog, string> = {
@@ -33,7 +38,7 @@ export interface PropsDialog {
   children?: ReactNode;
   pie?: ReactNode;
   ancho?: AnchoDialog;
-  /** Pregunta antes de cerrar si hay cambios sin guardar. */
+  /** `true` solo cuando hay cambios sin guardar (calculado por el formulario): entonces pregunta antes de cerrar. */
   confirmarAlCerrar?: boolean;
   /** Disparador opcional (si el modal no se controla desde fuera). */
   disparador?: ReactNode;

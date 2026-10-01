@@ -62,16 +62,25 @@ export function Cifra({ valor, formatear, contarDesdeCero, claveSesion, incremen
   const [desdeCero] = useState(() => !estatica && !!contarDesdeCero && !yaContada(claveSesion) && !prefiereMenosMovimiento());
   const [mostrado, setMostrado] = useState(desdeCero ? 0 : valor);
   const [efecto, setEfecto] = useState<{ n: number; delta: number; reducido: boolean } | null>(null);
+  // Valor desde el que arranca la próxima animación (lo que se ve) y último valor objetivo (para el incremento).
   const anterior = useRef(desdeCero ? 0 : valor);
+  const objetivo = useRef(desdeCero ? 0 : valor);
+  const visible = useRef(desdeCero ? 0 : valor);
   const raf = useRef<number | null>(null);
   const primera = useRef(true);
+  // StrictMode (desarrollo) monta, limpia y vuelve a montar con los mismos valores: la limpieza deja aquí el valor que
+  // se estaba animando para que el segundo efecto se reconozca como la misma primera vez y vuelva a contar desde 0.
+  const reintento = useRef<number | null>(null);
 
   useEffect(() => {
     const desde = anterior.current;
-    const esPrimera = primera.current;
+    const previo = objetivo.current;
+    const esPrimera = primera.current || reintento.current === valor;
     primera.current = false;
+    reintento.current = null;
     if (desde === valor) return;
     anterior.current = valor;
+    objetivo.current = valor;
     if (estatica) return;
     if (esPrimera && desdeCero) marcarContada(claveSesion);
     const reducido = prefiereMenosMovimiento();
@@ -79,19 +88,26 @@ export function Cifra({ valor, formatear, contarDesdeCero, claveSesion, incremen
     // Todas las actualizaciones van en el cuadro de animación (nunca sincrónicas dentro del efecto).
     const paso = (t: number) => {
       if (t === -1 || reducido) {
+        visible.current = valor;
         setMostrado(valor);
         return;
       }
       const p = Math.min(1, (t - inicio) / DURACION);
-      setMostrado(desde + (valor - desde) * curva(p));
+      visible.current = desde + (valor - desde) * curva(p);
+      setMostrado(visible.current);
       if (p < 1) raf.current = requestAnimationFrame(paso);
     };
-    if (!esPrimera)
-      requestAnimationFrame(() => setEfecto((e) => ({ n: (e?.n ?? 0) + 1, delta: valor - desde, reducido })));
+    const rafEfecto = esPrimera
+      ? null
+      : requestAnimationFrame(() => setEfecto((e) => ({ n: (e?.n ?? 0) + 1, delta: valor - previo, reducido })));
     if (raf.current) cancelAnimationFrame(raf.current);
     raf.current = requestAnimationFrame(paso);
     return () => {
       if (raf.current) cancelAnimationFrame(raf.current);
+      if (rafEfecto !== null) cancelAnimationFrame(rafEfecto);
+      // La próxima animación sale de lo que se ve (a media animación, o 0 si nunca arrancó).
+      anterior.current = visible.current;
+      if (esPrimera) reintento.current = valor;
     };
   }, [valor, estatica, desdeCero, claveSesion]);
 
