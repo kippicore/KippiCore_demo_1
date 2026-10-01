@@ -29,6 +29,7 @@ const sel = <T>(page: Page, nombre: string, params?: unknown): Promise<T> =>
 
 interface AlertaDatos {
   id: string;
+  tipo: string;
   titulo: string;
   accion: { texto: string; ruta: string };
   nueva: boolean;
