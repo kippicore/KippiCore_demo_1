@@ -18,17 +18,19 @@ export async function esperarDatos(page: Page, timeout = 30_000): Promise<void> 
         const g = globalThis as unknown as {
           __kcDatos?: { getState: () => { fase: string } };
           __kcInstalacion?: string;
-          location: Location;
+          location: { href: string };
+          document: { readyState: string; visibilityState: string };
+          performance: { getEntriesByType: (t: string) => { name: string; duration: number }[] };
         };
         return {
           kc: g.__kcInstalacion ?? 'sin pedir',
-          recursos: performance
+          recursos: g.performance
             .getEntriesByType('resource')
             .filter((r) => /\/(kc|generador|selectores|acciones)-/.test(r.name))
             .map((r) => `${r.name.split('/').pop()}:${Math.round(r.duration)}ms`),
           url: g.location.href,
-          listo: document.readyState,
-          visible: document.visibilityState,
+          listo: g.document.readyState,
+          visible: g.document.visibilityState,
           fase: g.__kcDatos?.getState().fase ?? null,
         };
       })
