@@ -207,6 +207,45 @@ export class Plan {
 
     this.narrativa = this.planNarrativo();
     for (const s of this.narrativa.separados) this.separadosNarrativos.set(claveVenta(s.dia, s.localId, s.indice), s);
+    this.asignarComprasGarantizadas();
+  }
+
+  /** Venta concreta (clave de intención) → cliente de una compra garantizada (P11). */
+  readonly compraGarantizada = new Map<string, Id>();
+  /** Fracción de las ventas de la ventana que son compras garantizadas (se descuenta del ≈ 15 % identificado). */
+  fraccionGarantizada = 0;
+
+  /**
+   * Cada compra garantizada va a una venta de ese día en el local habitual del cliente (o en otro local abierto,
+   * o al día siguiente), la primera libre empezando por la mitad del día; nunca a un separado narrativo.
+   */
+  private asignarComprasGarantizadas(): void {
+    const usados = new Set<string>(this.separadosNarrativos.keys());
+    for (const c of this.clientes) {
+      for (const fecha of c.garantizadas) {
+        let hecho = false;
+        for (let k = 0; k < 5 && !hecho; k++) {
+          const dia = masDias(fecha, k);
+          if (dia >= this.ancla) break;
+          const ventas = this.ventasDelDia(dia);
+          const orden = [...ventas].sort((a, b) => (a.localId === c.localHabitual ? -1 : b.localId === c.localHabitual ? 1 : 0));
+          for (const v of orden) {
+            for (let j = 0; j < v.n && !hecho; j++) {
+              const i = (Math.floor(v.n / 3) + j) % v.n;
+              const clave = claveVenta(dia, v.localId, i);
+              if (usados.has(clave)) continue;
+              usados.add(clave);
+              this.compraGarantizada.set(clave, c.id);
+              hecho = true;
+            }
+            if (hecho) break;
+          }
+        }
+      }
+    }
+    let total = 0;
+    for (let f = this.inicio; f < this.ancla; f = masDias(f, 1)) for (const v of this.ventasDelDia(f)) total += v.n;
+    this.fraccionGarantizada = total > 0 ? this.compraGarantizada.size / total : 0;
   }
 
   ventasDelDia(fecha: FechaISO): { localId: Id; n: number }[] {

@@ -41,7 +41,7 @@ export function* materializarRecibirTraslados(g: Gen, it: IntencionGen, estado: 
 
 /**
  * Miércoles 08:00: de la bodega a los locales lo que esté bajo el mínimo, hasta ≈ 2 semanas de demanda esperada.
- * Descuenta lo que ya viene en camino (traslados del usuario o del generador) y, los 10 días previos al ancla,
+ * Descuenta lo que ya viene en camino (traslados del usuario o del generador) y, los 21 días previos al ancla,
  * excluye la Oxford azul cielo M (N1).
  */
 export function* materializarReposicion(g: Gen, it: IntencionGen, estado: EstadoDominio): Generator<SobreComando> {
@@ -51,7 +51,8 @@ export function* materializarReposicion(g: Gen, it: IntencionGen, estado: Estado
   const A = g.plan.ancla;
   const [oxProd, oxTalla, oxColor] = HISTORIA_IMPORTACIONES.oxfordM.clave.split('|');
   const oxfordM = g.plan.productoPorId.get(oxProd ?? '')?.variantes[`${oxTalla}|${oxColor}`];
-  const excluirOxford = fecha >= masDias(A, -10) && fecha < A;
+  // Las 3 semanas previas al ancla la Oxford azul cielo M no se repone (N1, N16: se agota en los locales).
+  const excluirOxford = fecha >= masDias(A, -21) && fecha < A;
   // En camino a cada local.
   const enCamino = new Map<string, number>();
   for (const t of Object.values(estado.traslados)) {

@@ -47,7 +47,7 @@ export function* materializarNarrativa(g: Gen, it: IntencionGen, estado: EstadoD
       yield* conteoZonaRosa(g, emitir, estado, fechaDe(it.ts));
       break;
     case 'flujo':
-      yield* calibrarFlujo(g, emitir, estado, fechaDe(it.ts));
+      yield* calibrarFlujo(g, emitir, estado, fechaDe(it.ts), it.ts.slice(11, 16));
       break;
     case 'solicitudes':
       yield* solicitudes(g, emitir, estado, it);
@@ -82,14 +82,16 @@ function* conteoZonaRosa(g: Gen, emitir: Emitir, estado: EstadoDominio, fecha: F
 
 /**
  * N13, P19: la proyección de 90 días (la misma función que usa el selector) debe tener su punto más bajo en
- * ≈ $ 18 millones (rango 10–30). Se ajusta con un retiro o un aporte del socio.
+ * ≈ $ 18 millones (rango 10–30). Se ajusta con un retiro o un aporte del socio a ancla − 3 (8:00 a. m.) y la
+ * víspera (10:00 p. m.); si la cuenta corriente no alcanza (el fin de semana la plata está en el datáfono, las
+ * billeteras y las cajas), se completa el día del ancla a las 7:40 a. m. (pista de calibración).
  */
-function* calibrarFlujo(g: Gen, emitir: Emitir, estado: EstadoDominio, fecha: FechaISO): Generator<SobreComando> {
+function* calibrarFlujo(g: Gen, emitir: Emitir, estado: EstadoDominio, fecha: FechaISO, hora: string): Generator<SobreComando> {
   const A = g.plan.ancla;
   const dias = 90 + Math.max(0, diferenciaDias(fecha, A));
   const f = proyeccionFlujoEstado(estado, {
     hoy: fecha,
-    hora: '22:00',
+    hora,
     dias,
     indiceMes: INDICE_MES,
     diasCerrados: DIAS_CERRADOS,
@@ -97,21 +99,33 @@ function* calibrarFlujo(g: Gen, emitir: Emitir, estado: EstadoDominio, fecha: Fe
   });
   let minimo = Infinity;
   for (const p of f.serie) if (p.fecha >= A && p.saldo < minimo) minimo = p.saldo;
+  // El día del ancla cuenta también el saldo de este momento (como el punto bajo del selector).
+  if (fecha === A) minimo = Math.min(minimo, f.puntoBajo.saldo);
   if (!Number.isFinite(minimo)) return;
+  // El segundo paso (día del ancla) solo actúa si el primero no dejó el punto bajo cerca del objetivo.
+  if (fecha === A && Math.abs(minimo - BANDAS_SALDO.objetivoPuntoBajo) <= 3_000_000) return;
   const delta = Math.round((minimo - BANDAS_SALDO.objetivoPuntoBajo) / 100_000) * 100_000;
   if (delta === 0) return;
   const saldo = estado.agregados.saldosCuentas[CUENTA_CORRIENTE] ?? 0;
   if (delta > 0) {
-    const valor = Math.min(delta, Math.max(0, saldo - 5_000_000));
-    if (valor <= 0) return;
-    yield emitir('cuenta.movimiento', {
-      movimientoId: idGenerado('mc', 'calibracion', fecha),
-      cuentaId: CUENTA_CORRIENTE,
-      valor,
-      tipo: 'retiro_socio',
-      fecha,
-      descripcion: 'Retiro del socio',
-    });
+    // De la cuenta corriente (dejando $ 5 M) y, si no alcanza, de las billeteras (Nequi, Daviplata), que se
+    // consignan solo los lunes.
+    let falta = delta;
+    for (const [cuentaId, piso] of [[CUENTA_CORRIENTE, 5_000_000], ['cta_nequi', 0], ['cta_daviplata', 0]] as const) {
+      const disponible = (cuentaId === CUENTA_CORRIENTE ? saldo : (estado.agregados.saldosCuentas[cuentaId] ?? 0)) - piso;
+      const valor = Math.floor(Math.min(falta, Math.max(0, disponible)) / 100_000) * 100_000;
+      if (valor <= 0 || !estado.cuentas[cuentaId]) continue;
+      yield emitir('cuenta.movimiento', {
+        movimientoId: idGenerado('mc', 'calibracion', fecha, ...(cuentaId === CUENTA_CORRIENTE ? [] : [cuentaId.slice(4)])),
+        cuentaId,
+        valor,
+        tipo: 'retiro_socio',
+        fecha,
+        descripcion: 'Retiro del socio',
+      });
+      falta -= valor;
+      if (falta <= 0) break;
+    }
   } else {
     yield emitir('cuenta.movimiento', {
       movimientoId: idGenerado('mc', 'calibracion', fecha),
@@ -265,16 +279,23 @@ function* dirigir(
       falta = (objetivo[destino] ?? 0) - hay(destino);
     }
   }
-  // 2. La bodega no vende: su excedente pasa a un local con objetivo.
-  if (objetivo.bod !== undefined && hay('bod') > (objetivo.bod ?? 0)) {
-    const destino = lugares.find((l) => l !== 'bod') ?? 'zr';
-    yield* trasladar('bod', destino, hay('bod') - (objetivo.bod ?? 0));
+  // 2. La bodega no vende: su excedente pasa al local que más vende (Zona Rosa) si tiene objetivo.
+  const deposito = lugares.includes('zr') ? 'zr' : (lugares.find((l) => l !== 'bod') ?? 'zr');
+  if (objetivo.bod !== undefined && hay('bod') > (objetivo.bod ?? 0)) yield* trasladar('bod', deposito, hay('bod') - (objetivo.bod ?? 0));
+  // 3. Excedentes de los demás locales: también a Zona Rosa, hasta el doble de su objetivo (pista de calibración:
+  // así casi nunca hace falta vender de golpe a consumidor final).
+  const tope = lugares.length > 1 ? 2 * (objetivo[deposito] ?? 0) : (objetivo[deposito] ?? 0);
+  for (const l of lugares) {
+    if (l === 'bod' || l === deposito) continue;
+    const q = Math.min(hay(l) - (objetivo[l] ?? 0), tope - hay(deposito));
+    if (q > 0) yield* trasladar(l, deposito, q);
   }
-  // 3. Excedentes que quedan en los locales: ventas de una unidad a consumidor final.
+  // 4. Lo que aún sobre: ventas de una unidad a consumidor final.
   let k = 0;
   for (const l of lugares) {
     if (l === 'bod') continue;
     let sobra = hay(l) - (objetivo[l] ?? 0);
+    if (l === deposito) sobra = Math.max(0, hay(l) - tope);
     while (sobra > 0 && k < 30) {
       k += 1;
       const rng = g.rng(`${it.clave}:${sufijo}:${k}`);
@@ -301,10 +322,10 @@ function* dirigir(
         nota: null,
       });
       if (!estado.ventas[ventaId]) break;
-      sobra = hay(l) - (objetivo[l] ?? 0);
+      sobra = l === deposito ? Math.max(0, hay(l) - tope) : hay(l) - (objetivo[l] ?? 0);
     }
   }
-  // 4. Si no alcanzó (nunca debería), ajuste documentado.
+  // 5. Si no alcanzó (nunca debería), ajuste documentado.
   for (const l of lugares) {
     const falta = (objetivo[l] ?? 0) - hay(l);
     if (falta <= 0) continue;

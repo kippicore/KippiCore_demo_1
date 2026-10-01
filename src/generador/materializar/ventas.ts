@@ -38,7 +38,7 @@ import {
   sesionParaEfectivo,
   varianteVendible,
 } from '../contexto';
-import { acumular, elegirAcumulada, type Rng } from '../prng';
+import { acumular, elegirAcumulada, type Rng, rngPlan } from '../prng';
 import type { ClientePlan, IntencionGen, ProductoPlan } from '../tipos';
 
 /**
@@ -64,7 +64,7 @@ const ORDEN_TALLAS: Record<string, readonly string[]> = {
 
 
 /** Vendedor de turno del local a esa hora (7.8): plantilla + guarda de retirados; Valentina pesa × 1,3. */
-export function vendedorPara(g: Gen, estado: EstadoDominio, localId: Id, ts: string, rng: Rng): Id | null {
+export function vendedorPara(g: Gen, estado: EstadoDominio, localId: Id, ts: string, rng: Rng, u: number | null = null): Id | null {
   const fecha = fechaDe(ts);
   const minuto = minutosDeHora(ts.slice(11, 16));
   const plantilla = g.plan.plantillaDe(localId, fecha);
@@ -90,7 +90,40 @@ export function vendedorPara(g: Gen, estado: EstadoDominio, localId: Id, ts: str
   }
   if (!candidatos.length) return null;
   const pesos = candidatos.map((id) => (id === VENDEDORA_ESTRELLA.empleadoId ? VENDEDORA_ESTRELLA.pesoAsignacion : 1));
-  return candidatos[rng.elegirPonderado(pesos)] ?? null;
+  if (u === null) return candidatos[rng.elegirPonderado(pesos)] ?? null;
+  // Elección estratificada (secuencia de baja discrepancia del día): el reparto entre vendedores sigue los pesos
+  // sin el ruido de un sorteo independiente por venta (P2).
+  const acumulada = acumular(pesos);
+  const x = u * (acumulada[acumulada.length - 1] ?? 0);
+  const i = acumulada.findIndex((a) => a > x);
+  return candidatos[i >= 0 ? i : candidatos.length - 1] ?? null;
+}
+
+const PHI = 0.6180339887498949;
+const RAIZ2_MENOS_1 = 0.4142135623730951;
+const RAIZ3_MENOS_1 = 0.7320508075688772;
+/** Uniforme estratificado de la venta `indice` del día en un local (secuencia de Weyl con desfase sembrado). */
+export function uEstratificado(g: Gen, que: 'vend' | 'medio' | 'acc', fecha: FechaISO, localId: Id, indice: number): number {
+  const desfase = rngPlanDia(g, `${que}:${fecha}:${localId}`);
+  // Pasos irracionales distintos por uso, para que vendedor y medio de pago no queden correlacionados.
+  const x = desfase + indice * (que === 'vend' ? PHI : que === 'acc' ? RAIZ3_MENOS_1 : RAIZ2_MENOS_1);
+  return x - Math.floor(x);
+}
+
+const desfases = new WeakMap<Gen, Map<string, number>>();
+/** Desfase sembrado por día, local y uso (independiente entre usos y días). */
+function rngPlanDia(g: Gen, clave: string): number {
+  let m = desfases.get(g);
+  if (!m) {
+    m = new Map();
+    desfases.set(g, m);
+  }
+  let x = m.get(clave);
+  if (x === undefined) {
+    x = rngPlan(g.plan.semilla, clave).decimal();
+    m.set(clave, x);
+  }
+  return x;
 }
 
 /** Cliente de la venta (7.7): ≈ 15 % identificado; peso = frecuencia latente × activo × 1,8 si es su local. */
@@ -104,7 +137,9 @@ export function elegirCliente(
   filtro: ((c: ClientePlan) => boolean) | null = null,
 ): ClientePlan | null {
   // Separados y créditos llevan cliente siempre (≈ 2,5 % de las ventas): el resto se descuenta del 15 % (P11).
-  if (!forzar && !rng.chance(g.plan.config.clientes.proporcionVentasConCliente - 0.022)) return null;
+  // Antes del ancla, las compras garantizadas (P11) también se descuentan.
+  const garantizadas = fecha < g.plan.ancla ? g.plan.fraccionGarantizada : 0;
+  if (!forzar && !rng.chance(g.plan.config.clientes.proporcionVentasConCliente - 0.022 - garantizadas)) return null;
   const candidatos: ClientePlan[] = [];
   const pesos: number[] = [];
   for (const c of g.plan.clientes) {
@@ -193,6 +228,8 @@ export interface OpcionesLineas {
   categorias?: Categoria[];
   /** Agregar un accesorio con esta probabilidad si no hay (P2). */
   accesorio?: number;
+  /** Uniforme estratificado para la decisión del accesorio (P2); sin él, sorteo independiente. */
+  uAccesorio?: number;
 }
 
 export function elegirLineas(
@@ -225,7 +262,7 @@ export function elegirLineas(
     }
   }
   if (o.accesorio && r.length && !r.some((x) => g.plan.productoPorId.get(x.productoId)?.categoria === 'accesorios')) {
-    if (rng.chance(o.accesorio)) {
+    if (o.uAccesorio !== undefined ? o.uAccesorio < o.accesorio : rng.chance(o.accesorio)) {
       const l = elegirVariante(g, estado, rng, localId, fecha, 'accesorios', o.cliente, usadas, false);
       if (l) r.push(l);
     }
@@ -279,10 +316,14 @@ export function construirPagos(
   fecha: FechaISO,
   valor: number,
   permitirMixto = true,
+  u: number | null = null,
 ): DatosPago[] {
   const sesion = sesionParaEfectivo(estado, localId, fecha);
   const m = medios(g, fecha);
-  let medio = m.medios[elegirAcumulada(rng, m.acumulada)] ?? 'datafono_debito';
+  // Con `u` (estratificado por venta del día, P9) el reparto de medios sigue los pesos sin ruido de sorteo.
+  const total = m.acumulada[m.acumulada.length - 1] ?? 0;
+  const iu = u === null ? -1 : m.acumulada.findIndex((a) => a > u * total);
+  let medio = (u === null ? m.medios[elegirAcumulada(rng, m.acumulada)] : m.medios[iu >= 0 ? iu : m.medios.length - 1]) ?? 'datafono_debito';
   if (medio === 'efectivo' && !sesion) medio = 'datafono_debito';
   if (permitirMixto && sesion && valor >= 40_000 && rng.chance(TIPOS_VENTA.pagoMixto)) {
     const efectivo = Math.max(10_000, Math.round((valor * rng.rango(0.3, 0.6)) / 10_000) * 10_000);
@@ -390,7 +431,9 @@ function armarVenta(
 function programarSeparado(g: Gen, rng: Rng, ventaId: Id, localId: Id, fecha: FechaISO, limite: FechaISO, narrativo: boolean): void {
   const A = g.plan.ancla;
   const k = rng.entero(...SEPARADOS.abonos);
-  const completa = narrativo || rng.chance(SEPARADOS.completados);
+  // Los que se cancelarían después del ancla se completan antes (N7: solo los 14 narrativos quedan activos).
+  const cancelaDespues = !narrativo && fecha < A && masDias(limite, 5) >= A;
+  const completa = narrativo || rng.chance(SEPARADOS.completados) || cancelaDespues;
   // Fuera de la narrativa, los separados de las 5 semanas previas al ancla se cierran antes del ancla (N7: 14).
   let ultimo = limite;
   if (!narrativo && fecha >= masDias(A, -35) && fecha < A && limite >= A) ultimo = masDias(A, -1);
@@ -424,30 +467,41 @@ export function* materializarVenta(g: Gen, it: IntencionGen, estado: EstadoDomin
   const fecha = fechaDe(it.ts);
   if (!localVivo(estado, localId)) return;
   const local = g.plan.local(localId) as ConfigLocal;
-  const vendedorId = vendedorPara(g, estado, localId, it.ts, rng);
+  const vendedorId = vendedorPara(g, estado, localId, it.ts, rng, uEstratificado(g, 'vend', fecha, localId, Number(it.datos.indice ?? 0)));
   if (!vendedorId) return;
   const narrativo = g.plan.separadosNarrativos.get(it.clave);
   const A = g.plan.ancla;
   // Tipo de venta.
-  const fueraVentanaSeparados = fecha >= masDias(A, -21) && fecha < A;
+  const fueraVentanaSeparados = fecha >= masDias(A, -21) && fecha <= A;
   const pSeparado =
     (Number(fecha.slice(5, 7)) >= 11 ? SEPARADOS_ALTO : TIPOS_VENTA.separado) * (fueraVentanaSeparados ? 0 : 1);
   let tipo: 'contado' | 'separado' | 'credito' = 'contado';
   if (narrativo || rng.chance(pSeparado)) tipo = 'separado';
   else if (rng.chance(TIPOS_VENTA.creditoVip)) tipo = 'credito';
-  const cliente = elegirCliente(g, estado, rng, localId, fecha, tipo !== 'contado', tipo === 'credito' ? (c) => c.tipo === 'vip' : null);
+  const garantizadoId = g.plan.compraGarantizada.get(it.clave);
+  const garantizado = garantizadoId && clienteVivo(estado, garantizadoId) ? (g.plan.clientePorId.get(garantizadoId) ?? null) : null;
+  if (garantizado && tipo === 'credito' && garantizado.tipo !== 'vip') tipo = 'contado';
+  const cliente =
+    garantizado ??
+    elegirCliente(g, estado, rng, localId, fecha, tipo !== 'contado', tipo === 'credito' ? (c) => c.tipo === 'vip' : null);
   if (tipo !== 'contado' && !cliente) tipo = 'contado';
   // Líneas.
   const estrella = vendedorId === VENDEDORA_ESTRELLA.empleadoId;
   const upv = local.perfil?.unidadesPorVenta ?? 1.4;
   const n = Math.min(4, 1 + rng.poisson(Math.max(0.05, upv - (estrella ? 1.25 : 1.05))));
-  const lineas = elegirLineas(g, estado, rng, localId, fecha, {
+  let lineas = elegirLineas(g, estado, rng, localId, fecha, {
     n: narrativo ? 1 : n,
     cliente,
     ajuste: estrella ? AJUSTE_ESTRELLA : null,
     categorias: narrativo ? [narrativo.porVencer ? 'blazers' : (['blazers', 'abrigos_chaquetas', 'trajes'] as Categoria[])[narrativo.indice % 3] ?? 'blazers'] : undefined,
-    accesorio: estrella ? VENDEDORA_ESTRELLA.accesorio - 0.12 : 0,
+    accesorio: estrella ? VENDEDORA_ESTRELLA.accesorio - 0.02 : 0,
+    uAccesorio: uEstratificado(g, 'acc', fecha, localId, Number(it.datos.indice ?? 0)),
   });
+  // Separado narrativo (N7): si en el local no hay de esa categoría, otra prenda de las que se separan.
+  for (const cat of ['blazers', 'abrigos_chaquetas', 'trajes', 'punto', 'pantalones'] as Categoria[]) {
+    if (lineas.length || !narrativo) break;
+    lineas = elegirLineas(g, estado, rng, localId, fecha, { n: 1, cliente, ajuste: null, categorias: [cat] });
+  }
   if (!lineas.length) return;
   const ventaId = idGenerado('vt', fecha, localId, String(Number(it.datos.indice ?? 0)).padStart(3, '0'));
   const descuento = tipo === 'contado' ? descuentoDeVenta(g, rng, fecha) : null;
@@ -466,6 +520,22 @@ export function* materializarVenta(g: Gen, it: IntencionGen, estado: EstadoDomin
     const fraccion = narrativo ? rng.rango(0.25, 0.4) : rng.rango(...SEPARADOS.abonoInicial);
     const minimo = Math.ceil(v.total * estado.parametros.ventas.abonoMinimoSeparado);
     let abono = Math.max(minimo, Math.round((v.total * fraccion) / 1000) * 1000);
+    // P17: el saldo de los 14 separados narrativos suma ≈ $ 6,2 M (≈ $ 1,87 M los 3 que vencen esta semana).
+    if (narrativo) {
+      // Lo que falta del objetivo del grupo (los 3 que vencen esta semana o los otros 11), repartido entre los
+      // que faltan por crear: así el total no depende de qué prenda tocó en cada uno.
+      const grupo = g.plan.narrativa.separados.filter((x) => x.porVencer === narrativo.porVencer);
+      const k = grupo.indexOf(narrativo);
+      let previo = 0;
+      for (const x of grupo.slice(0, Math.max(0, k))) {
+        const vx = estado.ventas[idGenerado('vt', x.dia, x.localId, String(x.indice).padStart(3, '0'))];
+        if (vx) previo += vx.total - totalPagado(vx);
+      }
+      const meta = narrativo.porVencer ? SEPARADOS.saldoNarrativo.porVencer : SEPARADOS.saldoNarrativo.resto;
+      const restantes = Math.max(1, grupo.length - Math.max(0, k));
+      const saldo = Math.max(150_000, (meta - previo) / restantes) * rng.rango(0.95, 1.05);
+      abono = Math.max(minimo, Math.round((v.total - saldo) / 10_000) * 10_000);
+    }
     if (abono >= v.total) abono = minimo;
     v.datos.pagos = construirPagos(g, estado, rng, localId, fecha, abono, false);
     const limite = narrativo
@@ -481,7 +551,7 @@ export function* materializarVenta(g: Gen, it: IntencionGen, estado: EstadoDomin
       v.datos.pagos = [pago('bono_regalo', usar, { bonoId: bono.id })];
       if (usar < v.total) v.datos.pagos.push(pago('datafono_debito', v.total - usar));
     } else if (v.datos.canal === 'web') v.datos.pagos = [pago('pasarela_web', v.total)];
-    else v.datos.pagos = construirPagos(g, estado, rng, localId, fecha, v.total);
+    else v.datos.pagos = construirPagos(g, estado, rng, localId, fecha, v.total, true, uEstratificado(g, 'medio', fecha, localId, Number(it.datos.indice ?? 0)));
     for (const p of v.datos.pagos) if (p.medio === 'credito_financiera') financiera += p.valor;
   }
   v.datos.facturaInmediata = documentoDe(g, rng, ventaId, fecha, cliente);

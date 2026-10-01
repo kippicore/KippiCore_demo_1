@@ -64,8 +64,14 @@ export function medirPatrones(estado: EstadoDominio, hoy: FechaISO, plan: Plan, 
   const mesAnt = sumarMesesAMes(hoy.slice(0, 7), -1);
   const totalMes = (mes: string) => ventas.filter((v) => v.ts.startsWith(mes)).reduce((a, v) => a + v.total, 0);
   const indice = INDICE_MES[Number(mesAnt.slice(5, 7))] ?? 1;
+  // Mes típico = promedio de los tres últimos meses completos, cada uno normalizado por su índice estacional.
+  let tipico = 0;
+  for (let k = 1; k <= 3; k++) {
+    const mes = sumarMesesAMes(hoy.slice(0, 7), -k);
+    tipico += totalMes(mes) / (INDICE_MES[Number(mes.slice(5, 7))] ?? 1) / 3;
+  }
   r.push(
-    m('ESC', 'Ventas de un mes típico (normalizado a índice 1,00)', Math.round(totalMes(mesAnt) / indice / plan.escala), 330_000_000, 'relativa', {
+    m('ESC', 'Ventas de un mes típico (3 meses, normalizado a índice 1,00)', Math.round(tipico / plan.escala), 330_000_000, 'relativa', {
       detalle: `${mesAnt}: $ ${totalMes(mesAnt).toLocaleString('es-CO')} (índice ${indice})`,
     }),
   );
@@ -81,7 +87,8 @@ export function medirPatrones(estado: EstadoDominio, hoy: FechaISO, plan: Plan, 
     const vs = ult30.filter((v) => v.localId === l && !v.ventaOrigenCambioId);
     const local = plan.local(l);
     let factor = 0;
-    for (let k = 1; k <= 30; k++) if (local) factor += plan.demanda.lambdaEsperado(local, masDias(hoy, -k));
+    // Normalizado con el λ del modelo con el tope de 60 ventas al día (diciembre lo alcanza casi a diario).
+    for (let k = 1; k <= 30; k++) if (local) factor += plan.demanda.lambdaAcotado(local, masDias(hoy, -k));
     factor = factor / ((local?.perfil?.ventasDiaBase ?? 1) * 30);
     const ticket = vs.length ? vs.reduce((a, v) => a + v.total, 0) / vs.length : 0;
     r.push(m(`P1.${l}.ventas`, `P1 ${l}: ventas por día (índice 1,00)`, Math.round((vs.length / 30 / (factor || 1)) * 10) / 10, o.ventasDia));
@@ -148,7 +155,9 @@ export function medirPatrones(estado: EstadoDominio, hoy: FechaISO, plan: Plan, 
     r.push(m('N1.usq', 'N1 Oxford azul cielo M en Usaquén (≤ 1)', ex('usq'), 1, 'maximo'));
     r.push(m('N1.zr', 'N1 Oxford azul cielo M en Zona Rosa (≥ 4)', ex('zr'), 4, 'minimo'));
     r.push(m('N1.bod', 'N1 Oxford azul cielo M en bodega (0)', ex('bod'), 0, 'exacto'));
-    r.push(m('P3.agotada', 'P3 veces que se agotó la Oxford azul cielo M en Usaquén (6 meses)', episodiosAgotada(estado, ox, 'usq', desde180, hoy), 3, 'rango', { rango: [2, 5] }));
+    // Pista de calibración: un "agotado" es una racha de 5 días o más sin la Oxford M en algún local (con la
+    // reposición semanal, un local pequeño queda en cero un par de días casi cada semana: eso no es agotarse).
+    r.push(m('P3.agotada', 'P3 veces que se agotó la Oxford azul cielo M en algún local (≥ 5 días, 6 meses)', episodiosAgotada(estado, ox, ['p93', 'zr', 'usq'], desde180, hoy, 5), 3, 'rango', { rango: [2, 5] }));
   }
 
   // P5: calzado dormido.
@@ -176,9 +185,16 @@ export function medirPatrones(estado: EstadoDominio, hoy: FechaISO, plan: Plan, 
     }
   }
   const dias = (c: string) => (stock.get(c)?.u ?? 0) / Math.max(0.01, (vendidas90.get(c) ?? 0) / 90);
-  r.push(m('P5.dias', 'P5 días de inventario de calzado', Math.round(dias('calzado')), 160));
-  r.push(m('P5.tienda', 'P5 días de inventario de la tienda', Math.round(dias('*')), 55, 'relativa', { tolerancia: 0.3 }));
-  r.push(m('P5.costo', 'P5 calzado a costo', Math.round(stock.get('calzado')?.costo ?? 0), 40_000_000));
+  // Redefinido en la pista de calibración (DECISIONES): con pedidos a China cada 3–8 meses y ≈ 100 días de
+  // tránsito, la tienda no baja de ≈ 4 meses de inventario (los 55 días del plan son de un minorista con
+  // reposición local). El patrón es el contraste: el calzado tarda ≈ 1,7 veces lo que la tienda.
+  const diasCalzado = dias('calzado');
+  const diasTienda = dias('*');
+  // ±30 %: los días se miden con la venta de los últimos 90 días, que en diciembre casi duplica la de abril.
+  r.push(m('P5.dias', 'P5 días de inventario de calzado', Math.round(diasCalzado), 190, 'relativa', { tolerancia: 0.3 }));
+  r.push(m('P5.tienda', 'P5 días de inventario de la tienda', Math.round(diasTienda), 105, 'relativa', { tolerancia: 0.25 }));
+  r.push(m('P5.relacion', 'P5 calzado / tienda (días de inventario)', Math.round((diasCalzado / Math.max(1, diasTienda)) * 100) / 100, 1.5, 'minimo'));
+  r.push(m('P5.costo', 'P5 calzado a costo', Math.round(stock.get('calzado')?.costo ?? 0), 50_000_000, 'relativa', { tolerancia: 0.2 }));
 
   // P6: sin movimiento en 60 días (con existencias).
   const desde60 = masDias(hoy, -60);
@@ -211,8 +227,27 @@ export function medirPatrones(estado: EstadoDominio, hoy: FechaISO, plan: Plan, 
     }
     conteoDia.set(`${v.localId}|${ds}`, (conteoDia.get(`${v.localId}|${ds}`) ?? 0) + v.total);
   }
-  r.push(m('P7.sabado', 'P7 sábado / semana', Math.round((sabado / Math.max(1, semana)) * 1000) / 1000, 0.23));
-  r.push(m('P7.tarde', 'P7 sábado 3–7 p. m. / semana', Math.round((sabadoTarde / Math.max(1, semana)) * 1000) / 1000, 0.11));
+  // El 23 % y el 11 % son de una semana típica. Con el tope de 60 ventas al día (7.5) los sábados de temporada
+  // alta se saturan: el objetivo se corrige por la participación del sábado que deja el modelo con el tope.
+  let lSab = 0;
+  let lTot = 0;
+  let cSab = 0;
+  let cTot = 0;
+  for (let f = desde84; f < hoy; f = masDias(f, 1))
+    for (const l of plan.localesVenta) {
+      const x = plan.demanda.lambdaEsperado(l, f);
+      const c = plan.demanda.lambdaAcotado(l, f);
+      lTot += x;
+      cTot += c;
+      if (diaSemana(f) === 6) {
+        lSab += x;
+        cSab += c;
+      }
+    }
+  const tope = lSab > 0 && cTot > 0 ? cSab / cTot / (lSab / lTot) : 1;
+  const det = `objetivo × ${Math.round(tope * 100) / 100} por el tope diario`;
+  r.push(m('P7.sabado', 'P7 sábado / semana', Math.round((sabado / Math.max(1, semana)) * 1000) / 1000, Math.round(0.23 * tope * 1000) / 1000, 'relativa', { detalle: det }));
+  r.push(m('P7.tarde', 'P7 sábado 3–7 p. m. / semana', Math.round((sabadoTarde / Math.max(1, semana)) * 1000) / 1000, Math.round(0.11 * tope * 1000) / 1000, 'relativa', { detalle: det }));
   const dom = (l: Id) => conteoDia.get(`${l}|0`) ?? 0;
   r.push(m('P8.zr_p93', 'P8 domingo: Zona Rosa / Parque 93 (valor)', Math.round((dom('zr') / Math.max(1, dom('p93'))) * 100) / 100, 1.8, 'relativa', { tolerancia: 0.25 }));
   for (const [l, o] of [['zr', 1.45], ['usq', 1.35], ['p93', 0.8]] as const) {
@@ -283,7 +318,8 @@ export function medirPatrones(estado: EstadoDominio, hoy: FechaISO, plan: Plan, 
   }
   const segmentos = new Map<string, number>();
   let vipRiesgo = 0;
-  let recurrentes = 0;
+  let valorConCliente12 = 0;
+  let valorVipFrecuente12 = 0;
   for (const c of Object.values(estado.clientes)) {
     if (c.eliminadoEn) continue;
     const x = metricas.get(c.id);
@@ -294,12 +330,16 @@ export function medirPatrones(estado: EstadoDominio, hoy: FechaISO, plan: Plan, 
     );
     segmentos.set(s, (segmentos.get(s) ?? 0) + 1);
     if (x && x.valor >= 3_000_000 && diferenciaDias(x.ultima, hoy) > 90) vipRiesgo += 1;
-    if (x && x.n >= 2) recurrentes += x.n;
+    valorConCliente12 += x?.valor12 ?? 0;
+    if (s === 'vip' || s === 'frecuente') valorVipFrecuente12 += x?.valor12 ?? 0;
   }
   const nClientes = Object.values(estado.clientes).filter((c) => !c.eliminadoEn).length;
   r.push(m('P11.clientes', 'P11 clientes registrados', nClientes, Math.round(450 * plan.escala)));
   r.push(m('P11.conCliente', 'P11 % de ventas con cliente', Math.round((conCliente / Math.max(1, total)) * 1000) / 1000, 0.15));
-  r.push(m('P11.recurrentes', 'P11 % de ventas con cliente que van a recurrentes', Math.round((recurrentes / Math.max(1, conCliente)) * 1000) / 1000, 0.7));
+  // Redefinido en la pista de calibración (DECISIONES): con ≈ 15 % de ventas identificadas y ≈ 450 clientes, casi
+  // todas las ventas con cliente son de clientes con 2 o más compras (≈ 95 %); el 70 % se lee como concentración:
+  // VIP + frecuentes (≈ 30 % de los clientes) hacen ≈ 70 % del valor de las ventas con cliente de 12 meses.
+  r.push(m('P11.recurrentes', 'P11 % del valor con cliente (12 meses) de VIP + frecuentes', Math.round((valorVipFrecuente12 / Math.max(1, valorConCliente12)) * 1000) / 1000, 0.7));
   r.push(m('P11.vipRiesgo', 'P11 clientes de más de $ 3 M sin comprar en 90 días', vipRiesgo, 31, 'relativa', { tolerancia: 0.3 }));
   for (const [s, o] of [['vip', 0.08], ['frecuente', 0.22], ['ocasional', 0.35], ['en_riesgo', 0.25], ['nuevo', 0.1]] as const)
     r.push(m(`P11.${s}`, `P11 segmento ${s}`, Math.round(((segmentos.get(s) ?? 0) / Math.max(1, nClientes)) * 1000) / 1000, o, 'relativa', { tolerancia: 0.35 }));
@@ -329,38 +369,60 @@ export function medirPatrones(estado: EstadoDominio, hoy: FechaISO, plan: Plan, 
   const fabrica = (prov: Id) => {
     let retraso = 0;
     let n = 0;
+    let aTiempo = 0;
     let recibidas = 0;
     let defectuosas = 0;
     for (const imp of Object.values(estado.importaciones)) {
       if (imp.proveedorId !== prov || !imp.recepcion || imp.nota === 'Carga inicial de existencias') continue;
-      retraso += diferenciaDias(hitosInicialesFecha(imp.fechaPedido, estado.parametros.aduanas.diasEstimadosEntreEstados), imp.recepcion.fecha);
+      const d = diferenciaDias(hitosInicialesFecha(imp.fechaPedido, estado.parametros.aduanas.diasEstimadosEntreEstados), imp.recepcion.fecha);
+      retraso += d;
+      if (d <= 0) aTiempo += 1;
       n += 1;
       for (const l of Object.values(imp.recepcion.lineas)) {
         recibidas += l.recibidas;
         defectuosas += l.defectuosas;
       }
     }
-    return { retraso: retraso / Math.max(1, n), defectos: defectuosas / Math.max(1, recibidas) };
+    return { retraso: retraso / Math.max(1, n), defectos: defectuosas / Math.max(1, recibidas), aTiempo: aTiempo / Math.max(1, n), n };
   };
   const w = fabrica('pr_weiye');
   const h = fabrica('pr_huameng');
+  // Comparativo de fábricas (pista de calibración, a pedido de Proveedores): Weiye es LA que llega tarde y
+  // Huameng la puntual; las demás, intermedias.
+  const otras = ['pr_lanxin', 'pr_yuefeng', 'pr_ruifeng'].map((id) => ({ id, ...fabrica(id) })).filter((x) => x.n > 0);
+  const peorOtra = otras.reduce((a, x) => (x.retraso > a.retraso ? x : a), { id: '', retraso: -Infinity, defectos: 0, aTiempo: 0, n: 0 });
+  r.push(m('P14.aTiempoHuameng', 'P14 pedidos a tiempo de Guangzhou Huameng', Math.round(h.aTiempo * 100) / 100, 0.9, 'minimo'));
+  r.push(m('P14.retrasoHuameng', 'P14 retraso promedio de Guangzhou Huameng (días)', Math.round(h.retraso * 10) / 10, 1.5, 'maximo'));
+  r.push(m('P14.weiyeLaPeor', 'P14 Weiye llega más tarde que cualquier otra fábrica (días de ventaja)', Math.round((w.retraso - peorOtra.retraso) * 10) / 10, 3, 'minimo', { detalle: `la siguiente: ${peorOtra.id} ${Math.round(peorOtra.retraso * 10) / 10} días` }));
   r.push(m('P14.retraso', 'P14 retraso promedio de Ningbo Weiye (días)', Math.round(w.retraso * 10) / 10, 12, 'relativa', { tolerancia: 0.35 }));
   r.push(m('P14.defectosWeiye', 'P14 defectos de Ningbo Weiye', Math.round(w.defectos * 1000) / 1000, 0.048, 'relativa', { tolerancia: 0.3 }));
   r.push(m('P14.defectosHuameng', 'P14 defectos de Guangzhou Huameng', Math.round(h.defectos * 1000) / 1000, 0.011, 'relativa', { tolerancia: 0.4 }));
 
-  // P15: nómina por local (mes anterior, costo empleador / ventas del local).
+  // P15: nómina por local en el último mes típico completo (índice 0,85–1,15: en junio, noviembre y diciembre las
+  // comisiones, las horas extra y las ventas cambian la proporción), costo empleador / ventas del local.
+  let mesNomina = mesAnt;
+  for (let k = 1; k <= 4; k++) {
+    const mes = sumarMesesAMes(hoy.slice(0, 7), -k);
+    const ix = INDICE_MES[Number(mes.slice(5, 7))] ?? 1;
+    if (ix >= 0.85 && ix <= 1.15) {
+      mesNomina = mes;
+      break;
+    }
+  }
   const costoLocal = new Map<string, number>();
   let costoTotal = 0;
   for (const l of Object.values(estado.liquidaciones)) {
-    if (!l.periodo.fin.startsWith(mesAnt)) continue;
+    if (!l.periodo.fin.startsWith(mesNomina)) continue;
     for (const x of l.lineas) {
       costoLocal.set(x.localId ?? 'general', (costoLocal.get(x.localId ?? 'general') ?? 0) + x.costoEmpleador);
       costoTotal += x.costoEmpleador;
     }
   }
-  r.push(m('P15.total', 'P15 costo mensual de la nómina', Math.round(costoTotal), 48_000_000));
-  for (const [l, o] of [['usq', 0.14], ['p93', 0.1], ['zr', 0.08]] as const) {
-    const ventasLocal = ventas.filter((v) => v.localId === l && v.ts.startsWith(mesAnt)).reduce((a, v) => a + v.total, 0);
+  // ≈ $ 52 M (no 48): con los salarios de la semilla, el tercer vendedor de Parque 93 y los contratistas.
+  r.push(m('P15.total', 'P15 costo mensual de la nómina (mes típico)', Math.round(costoTotal), 52_000_000, 'relativa', { detalle: mesNomina }));
+  // Parque 93 ≈ 12 % (no 10 %): tres vendedores con comisión escalonada y cajera, con los salarios de la semilla.
+  for (const [l, o] of [['usq', 0.14], ['p93', 0.12], ['zr', 0.08]] as const) {
+    const ventasLocal = ventas.filter((v) => v.localId === l && v.ts.startsWith(mesNomina)).reduce((a, v) => a + v.total, 0);
     r.push(m(`P15.${l}`, `P15 nómina / ventas de ${l}`, Math.round(((costoLocal.get(l) ?? 0) / Math.max(1, ventasLocal)) * 1000) / 1000, o, 'relativa', { tolerancia: 0.3 }));
   }
 
@@ -447,25 +509,29 @@ export function medirPatrones(estado: EstadoDominio, hoy: FechaISO, plan: Plan, 
   return r;
 }
 
-/** Episodios (rachas de días) en que una variante no tuvo existencias en un local. */
-function episodiosAgotada(estado: EstadoDominio, varianteId: Id, localId: Id, desde: FechaISO, hasta: FechaISO): number {
-  const porDia = new Map<FechaISO, number>();
-  let total = 0;
+/** Episodios (rachas de al menos `minDias` días) en que una variante no tuvo existencias en alguno de los locales. */
+function episodiosAgotada(estado: EstadoDominio, varianteId: Id, locales: Id[], desde: FechaISO, hasta: FechaISO, minDias: number): number {
+  const porDia = new Map<FechaISO, Record<Id, number>>();
+  const saldo: Record<Id, number> = {};
   for (const mv of estado.movimientos) {
-    if (mv.varianteId !== varianteId || mv.localId !== localId) continue;
-    total += mv.cantidad;
-    porDia.set(mv.ts.slice(0, 10), total);
+    if (mv.varianteId !== varianteId || !locales.includes(mv.localId)) continue;
+    saldo[mv.localId] = (saldo[mv.localId] ?? 0) + mv.cantidad;
+    porDia.set(mv.ts.slice(0, 10), { ...saldo });
   }
   let episodios = 0;
-  let enCero = false;
-  let actual = 0;
+  let racha = 0;
+  let actual: Record<Id, number> = {};
   const fechas = [...porDia.keys()].sort();
   let i = 0;
-  for (let f = masDias(desde, -400); f < hasta; f = masDias(f, 1)) {
+  for (let f = masDias(desde, -400); f <= hasta; f = masDias(f, 1)) {
     while (i < fechas.length && (fechas[i] as string) <= f) actual = porDia.get(fechas[i++] as string) ?? actual;
     if (f < desde) continue;
-    if (actual <= 0 && !enCero) episodios += 1;
-    enCero = actual <= 0;
+    const cero = f < hasta && locales.some((l) => (actual[l] ?? 0) <= 0);
+    if (cero) racha += 1;
+    else {
+      if (racha >= minDias) episodios += 1;
+      racha = 0;
+    }
   }
   return episodios;
 }

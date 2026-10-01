@@ -36,7 +36,7 @@ export const INDICE_DIA: Record<number, number> = {
 export const PESO_FRANJA: { desde: number; hasta: number; peso: number }[] = [
   { desde: 10, hasta: 12, peso: 0.6 },
   { desde: 12, hasta: 15, peso: 0.9 },
-  { desde: 15, hasta: 19, peso: 1.8 },
+  { desde: 15, hasta: 19, peso: 1.4 },
   { desde: 19, hasta: 21, peso: 0.9 },
 ];
 export const PESO_FRANJA_USQ_DOMINGO: { desde: number; hasta: number; peso: number }[] = [
@@ -99,14 +99,14 @@ export const MEZCLA_CATEGORIAS: Record<Id, Record<Categoria, number>> = {
   },
   usq: {
     camisas: 0.25,
-    polos: 0.135,
+    polos: 0.12,
     pantalones: 0.21,
-    blazers: 0.06,
+    blazers: 0.07,
     trajes: 0.02,
-    punto: 0.11,
+    punto: 0.12,
     abrigos_chaquetas: 0.025,
     calzado: 0.04,
-    accesorios: 0.15,
+    accesorios: 0.14,
   },
   zr: {
     camisas: 0.26,
@@ -146,10 +146,10 @@ export const CANALES = { local: 0.9, whatsapp: 0.05, instagram: 0.03, web: 0.02,
 export const MEDIOS_PAGO_EVOLUCION: { medio: MedioPago; hace12Meses: number; mesActual: number }[] = [
   { medio: 'datafono_debito', hace12Meses: 0.282, mesActual: 0.264 },
   { medio: 'datafono_credito', hace12Meses: 0.188, mesActual: 0.176 },
-  { medio: 'efectivo', hace12Meses: 0.25, mesActual: 0.18 },
+  { medio: 'efectivo', hace12Meses: 0.25, mesActual: 0.17 },
   { medio: 'nequi', hace12Meses: 0.08, mesActual: 0.13 },
-  { medio: 'transferencia', hace12Meses: 0.02, mesActual: 0.07 },
-  { medio: 'qr_bre_b', hace12Meses: 0, mesActual: 0.04 },
+  { medio: 'transferencia', hace12Meses: 0.02, mesActual: 0.075 },
+  { medio: 'qr_bre_b', hace12Meses: 0, mesActual: 0.045 },
   { medio: 'daviplata', hace12Meses: 0.03, mesActual: 0.04 },
   { medio: 'credito_financiera', hace12Meses: 0.02, mesActual: 0.03 },
   { medio: 'bono_regalo', hace12Meses: 0.01, mesActual: 0.01 },
@@ -162,6 +162,8 @@ export const SEPARADOS = {
   plazoDias: [15, 30] as [number, number],
   completados: 0.85,
   abonos: [1, 3] as [number, number],
+  /** Saldo objetivo de los separados narrativos (N7, P17): $ 1,87 M los 3 que vencen esta semana + $ 4,33 M los otros. */
+  saldoNarrativo: { porVencer: 1_870_000, resto: 4_330_000 },
 } as const;
 
 /** Devoluciones (7.6). */
@@ -186,8 +188,8 @@ export const DOCUMENTOS = { diasConDocumento: 90, proporcionFacturaElectronica: 
 /** Vendedora estrella (7.8, P2). */
 export const VENDEDORA_ESTRELLA = {
   empleadoId: 'em_vgomez',
-  // F2-A2: 1,3 no alcanzaba el 43 % de Parque 93 con tres vendedores (P2); la pista de calibración lo afina.
-  pesoAsignacion: 1.5,
+  // Pista de calibración: con la asignación estratificada y la franja de la tarde en 1,4, 1,3 da ≈ 43 % (P2).
+  pesoAsignacion: 1.25,
   factorTicket: 1.25,
   accesorio: 0.46,
   accesorioResto: 0.17,

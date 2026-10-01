@@ -15,6 +15,11 @@ export interface PerfilFabrica {
   retrasoPromedioDias: number;
   /** Fracción de pedidos a tiempo (P14). */
   aTiempo: Fraccion;
+  /**
+   * Probabilidad de aforo en la nacionalización (pista de calibración, P14). Sin valor, la general de
+   * HISTORIA_IMPORTACIONES. La puntual casi nunca; la del etiquetado dudoso, más.
+   */
+  probabilidadAforo?: Fraccion;
   puertoOrigen: string;
 }
 
@@ -62,6 +67,7 @@ export const PROVEEDORES: ProveedorSeed[] = [
       defectos: 0.011,
       retrasoPromedioDias: 0,
       aTiempo: 0.96,
+      probabilidadAforo: 0.03,
       puertoOrigen: 'Shenzhen (Yantian)',
     },
   },
@@ -75,7 +81,7 @@ export const PROVEEDORES: ProveedorSeed[] = [
       categoriasProducto: ['blazers', 'trajes'],
       calificacion: 3,
     },
-    perfil: { cadencia: 150, defectos: 0.048, retrasoPromedioDias: 12, aTiempo: 0.4, puertoOrigen: 'Ningbo' },
+    perfil: { cadencia: 150, defectos: 0.048, retrasoPromedioDias: 12, aTiempo: 0.4, probabilidadAforo: 0.3, puertoOrigen: 'Ningbo' },
   },
   {
     id: 'pr_lanxin',
@@ -90,7 +96,7 @@ export const PROVEEDORES: ProveedorSeed[] = [
     perfil: {
       cadencia: 'semestral',
       defectos: 0.02,
-      retrasoPromedioDias: 4,
+      retrasoPromedioDias: 3,
       aTiempo: 0.75,
       puertoOrigen: 'Shanghái',
     },
@@ -119,7 +125,7 @@ export const PROVEEDORES: ProveedorSeed[] = [
       categoriasProducto: ['calzado', 'accesorios'],
       calificacion: 4,
     },
-    perfil: { cadencia: 240, defectos: 0.03, retrasoPromedioDias: 5, aTiempo: 0.7, puertoOrigen: 'Ningbo' },
+    perfil: { cadencia: 240, defectos: 0.03, retrasoPromedioDias: 4, aTiempo: 0.7, puertoOrigen: 'Ningbo' },
   },
   // Proveedores locales.
   {
