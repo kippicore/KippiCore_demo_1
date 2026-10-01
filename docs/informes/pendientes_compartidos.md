@@ -19,3 +19,7 @@ Ramas a fusionar: ver cada informe.
 1. `Table.tsx`: `desborda` queda en true por medición vieja; observar también la `<table>` (`ro.observe(el.firstElementChild)`), si no la cabecera fija baja 76 px sobre las filas.
 2. (= B4.1) `BotonAccionesFila` sin forwardRef.
 3. CONTRATOS §14.3: advertirlo o corregirlo.
+
+## A2 (rama worktree-agent-a1959e6d95b7c4d53, 2fd42f5)
+1. (= A4.1) cabecera fija de `Table` montada sobre filas cuando hay overflow-x.
+2. `src/ui/primitivos/Select.tsx` (Radix) puede llamar `onValueChange('')`: filtrar en el componente compartido.
