@@ -1,3 +1,4 @@
+/// <reference lib="dom" />
 import type { Page } from '@playwright/test';
 import { expect as expectBase, test } from '../fixtures';
 import { esperarDatos as esperarDatosBase, type KcPagina } from '../kc';
