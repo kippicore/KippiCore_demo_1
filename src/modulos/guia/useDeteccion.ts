@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { almacenGuia, useDatos, useEvento, useEventoUI } from '@/estado';
 import { bus } from '@/estado/eventos';
-import { avisar } from '@/ui/primitivos/Toast';
+import { avisarComplemento } from '@/ui/primitivos/Toast';
 import { contarPrincipales, itemPorEntradaRegistro, itemPorEventoDominio, itemPorEventoUI, textoHecho, TOTAL_PRINCIPALES } from './progreso';
 
 /**
@@ -18,7 +18,8 @@ export function useDeteccion(): void {
     g.completar(id);
     if (!avisarHecho) return;
     const texto = textoHecho(id);
-    if (texto) avisar({ tipo: 'exito', texto });
+    // Si la acción ya mostró su propio aviso ("Venta registrada"), el "Hecho: …" se suma a ese aviso en lugar de apilar otro.
+    if (texto) setTimeout(() => avisarComplemento(texto), 60);
     // El octavo: el panel se transforma en la tarjeta de cierre (aunque estuviera minimizado).
     if (contarPrincipales(almacenGuia.getState().completados) === TOTAL_PRINCIPALES) g.minimizarPanel(false);
   }, []);

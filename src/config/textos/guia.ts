@@ -83,7 +83,7 @@ export const PRUEBA_ESTO = {
     {
       id: 'rol',
       texto: 'Mira el sistema como lo vería tu vendedor',
-      hecho: 'Hecho: viste la vista del vendedor',
+      hecho: 'Hecho: ya viste el sistema como vendedor',
     },
     {
       id: 'pedido',

@@ -4,12 +4,25 @@ import { Cifra } from '../texto/Cifra';
 import { anchoEjeY } from '../graficos/GraficoBase';
 import { Badge, BadgeEstado } from './Badge';
 import { Checkbox } from './Controles';
+import { Toaster, avisar, avisarComplemento } from './Toast';
 import { SelectorFecha } from './DatePicker';
 import { InputNumero } from './Input';
 import { BotonAccionesFila, Table } from './Table';
 
 /** Defectos de componentes compartidos pedidos por las oleadas A y B (docs/informes/pendientes_compartidos.md). */
 describe('componentes compartidos (oleadas A y B)', () => {
+  it('avisarComplemento suma la línea al aviso visible en vez de apilar un segundo aviso', () => {
+    const { container } = render(<Toaster />);
+    act(() => {
+      avisar({ tipo: 'exito', texto: 'Venta V-1 registrada' });
+      avisarComplemento('Hecho: registraste una venta');
+      avisarComplemento('Hecho: registraste una venta');
+    });
+    expect(container.querySelectorAll('[role="status"]')).toHaveLength(1);
+    expect(container.textContent).toContain('Venta V-1 registrada');
+    expect(container.textContent?.match(/Hecho: registraste una venta/g)).toHaveLength(1);
+  });
+
   it('BotonAccionesFila reenvía ref y todas las propiedades (sirve como disparador de <Menu>)', () => {
     const ref = createRef<HTMLButtonElement>();
     const abajo = vi.fn();

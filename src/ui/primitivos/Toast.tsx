@@ -25,6 +25,8 @@ export interface Aviso {
   tipo: TipoAviso;
   texto: string;
   detalle?: string;
+  /** Líneas que se suman a un aviso ya visible (p. ej. "Hecho: …" de la guía) en vez de apilar otro aviso. */
+  complementos?: string[];
   accion?: { texto: string; a?: string; alHacer?: () => void };
 }
 
@@ -45,6 +47,23 @@ export function avisar(a: Omit<Aviso, 'id' | 'tipo'> & { tipo?: TipoAviso }): nu
   const nuevo: Aviso = { ...a, tipo: a.tipo ?? 'info', id };
   almacenAvisos.setState((s) => ({ avisos: [...s.avisos, nuevo].slice(-3) }));
   return id;
+}
+
+/**
+ * Suma una línea al último aviso visible (sin apilar otro: dos avisos juntos tapan botones). Si no hay ninguno,
+ * muestra el texto como aviso propio. Un mismo texto no se repite.
+ */
+export function avisarComplemento(texto: string, tipo: TipoAviso = 'exito'): void {
+  const { avisos } = almacenAvisos.getState();
+  const ultimo = avisos[avisos.length - 1];
+  if (!ultimo) {
+    avisar({ tipo, texto });
+    return;
+  }
+  if (ultimo.texto === texto || ultimo.complementos?.includes(texto)) return;
+  almacenAvisos.setState({
+    avisos: avisos.map((a) => (a.id === ultimo.id ? { ...a, complementos: [...(a.complementos ?? []), texto] } : a)),
+  });
 }
 
 export function quitarAviso(id: number): void {
@@ -96,6 +115,11 @@ function TarjetaAviso({ aviso }: { aviso: Aviso }) {
       <div className="min-w-0 flex-1">
         <p className="t-body text-inverse">{aviso.texto}</p>
         {aviso.detalle && <p className="mt-0.5 t-small text-inverse/80">{aviso.detalle}</p>}
+        {aviso.complementos?.map((c) => (
+          <p key={c} className="mt-0.5 t-small text-inverse/80">
+            {c}
+          </p>
+        ))}
       </div>
       {aviso.accion &&
         (aviso.accion.a ? (
