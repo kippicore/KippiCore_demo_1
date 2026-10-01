@@ -82,7 +82,7 @@ export function TabContactos({ imp }: { imp: Importacion }) {
                   Prefiere {ETIQUETAS_CANAL[f.contacto.canalPreferido]}
                 </span>
               </div>
-              <div className="hidden t-small text-muted wide:block">
+              <div className="hidden t-small text-muted desk:block">
                 <p className="num">{f.contacto.whatsapp ? celular(f.contacto.whatsapp) : ''}</p>
                 <p>{f.contacto.correo}</p>
               </div>

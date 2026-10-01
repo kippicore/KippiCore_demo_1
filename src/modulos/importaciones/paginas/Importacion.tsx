@@ -291,7 +291,7 @@ function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
       <div className="mt-8">
         {pestana === '' && (
           <div className="space-y-6" data-testid="resumen-importacion">
-            <div className="grid grid-cols-2 gap-4 wide:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 desk:grid-cols-4">
               <Kpi
                 etiqueta={recibido ? 'Recibido en bodega' : 'Llega a bodega'}
                 valor={recibido ? 0 : Math.max(0, diasLlegada)}
@@ -335,7 +335,7 @@ function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
               )}
             </div>
 
-            <div className="grid gap-6 wide:grid-cols-[minmax(0,1fr)_380px]">
+            <div className="grid gap-6 desk:grid-cols-[minmax(0,1fr)_380px]">
               <div className="space-y-6">
                 <Card titulo="Dónde viene" data-testid="card-ruta">
                   <RutaChina

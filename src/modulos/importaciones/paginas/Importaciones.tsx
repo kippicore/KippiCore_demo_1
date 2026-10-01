@@ -396,7 +396,7 @@ export default function Importaciones() {
         pestanas={esDueno ? <PestanasModulo conContactos /> : undefined}
       />
 
-      <div className="mt-8 grid grid-cols-2 gap-4 wide:grid-cols-4" data-testid="kpis-importaciones">
+      <div className="mt-8 grid grid-cols-2 gap-4 desk:grid-cols-4" data-testid="kpis-importaciones">
         <Kpi
           etiqueta="Pedidos en curso"
           valor={enCurso.length}

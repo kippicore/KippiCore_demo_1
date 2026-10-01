@@ -332,7 +332,7 @@ export default function SugerirPedido() {
         </p>
       </div>
 
-      <div className="mt-6 grid gap-6 wide:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="mt-6 grid gap-6 desk:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Segmentado
@@ -414,7 +414,7 @@ export default function SugerirPedido() {
         </div>
 
         <aside
-          className="wide:sticky wide:top-(--sticky-top) wide:self-start"
+          className="desk:sticky desk:top-(--sticky-top) desk:self-start"
           aria-label="Resumen del pedido"
         >
           <div className="space-y-4 border border-line bg-surface p-6" data-testid="resumen-sugerencia">

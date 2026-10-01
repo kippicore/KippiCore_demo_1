@@ -72,12 +72,10 @@ export function CalculadoraCosto({ imp }: { imp: Importacion }) {
   const pasos: PasoCascada[] = useMemo(() => {
     if (!v) return [];
     if (vista === 'prenda' && desglose) {
-      const intermedios = desglose.pasos
-        .slice(1)
-        .map((p) => ({
-          etiqueta: ETIQUETA_CORTA[p.concepto] ?? p.etiqueta,
-          valor: dinero.convertir(p.valor),
-        }));
+      const intermedios = desglose.pasos.slice(1).map((p) => ({
+        etiqueta: ETIQUETA_CORTA[p.concepto] ?? p.etiqueta,
+        valor: dinero.convertir(p.valor),
+      }));
       return [
         {
           etiqueta: ETIQUETA_CORTA.fob ?? 'Fábrica',
@@ -312,7 +310,7 @@ export function CalculadoraCosto({ imp }: { imp: Importacion }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 wide:grid-cols-4" data-testid="kpis-costo">
+      <div className="grid grid-cols-2 gap-4 desk:grid-cols-4" data-testid="kpis-costo">
         <Kpi
           etiqueta="Costo real por prenda"
           valor={promedio}
@@ -352,7 +350,7 @@ export function CalculadoraCosto({ imp }: { imp: Importacion }) {
         />
       </div>
 
-      <div className="grid gap-6 wide:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid gap-6 desk:grid-cols-[minmax(0,1fr)_340px]">
         <section className="border border-line bg-surface p-6" aria-label="De la fábrica a la bodega">
           <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
             <div>

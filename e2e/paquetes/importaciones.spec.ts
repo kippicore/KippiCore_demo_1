@@ -91,13 +91,14 @@ test.describe('Importaciones (dueño)', () => {
     const n = await narrativa(page);
     const tarjeta = page.getByTestId(`tarjeta-${n.enProduccion}`);
     const destino = page.locator('section[aria-label="Viaje"]');
+    await tarjeta.scrollIntoViewIfNeeded();
     const a = await tarjeta.boundingBox();
     const b = await destino.boundingBox();
     if (!a || !b) throw new Error('sin cajas');
     await page.mouse.move(a.x + 10, a.y + 10);
     await page.mouse.down();
     await page.mouse.move(a.x + 30, a.y + 30, { steps: 5 });
-    await page.mouse.move(b.x + 30, b.y + 60, { steps: 15 });
+    await page.mouse.move(b.x + 30, a.y + 20, { steps: 15 });
     await page.mouse.up();
     await expect(page.getByTestId('dialogo-cambiar-estado')).toBeVisible();
     await expect(page.getByTestId('select-estado')).toContainText('Embarcado');
