@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router';
 import { RUTAS, rutaDeUrl } from '@/app/rutas';
-import { useMarca, useRolActivo, useSesion } from '@/estado';
+import { useDatos, useMarca, useRolActivo, useSesion } from '@/estado';
+import { CargaDatos } from '@/app/CargaDatos';
+import { Marca } from '@/ui/conectados/Marca';
+import { Skeleton } from '@/ui/primitivos/Estados';
 import { RequiereDatos } from '@/app/RequiereDatos';
 import { GuiaFlotante } from '@/modulos/guia/publico';
 import { FranjaMoneda } from '@/ui/conectados/Contexto';
@@ -52,7 +55,44 @@ function useRiel(): [boolean, () => void] {
   ];
 }
 
+/**
+ * Armazón mientras se construyen los datos (entrada directa por un enlace profundo): la barra lateral y la barra
+ * superior leen el estado (personas, locales, notificaciones), así que hasta tenerlo se pinta su silueta.
+ */
+function ArmazonEscritorio() {
+  return (
+    <div data-testid="layout-escritorio" className="hidden min-h-dvh bg-canvas lg:grid" style={{ gridTemplateColumns: 'var(--sidebar-w) minmax(0, 1fr)' }}>
+      <aside className="sticky top-0 flex h-dvh flex-col border-r border-line bg-surface max-desk:hidden">
+        <div className="flex h-16 flex-col justify-center px-5 text-ink">
+          <Marca descriptor />
+        </div>
+        <div className="mt-4 flex flex-col gap-3 px-6">
+          {[70, 55, 62, 48, 66, 52, 58, 44].map((w, i) => (
+            <Skeleton key={i} className="h-3" style={{ width: `${w}%` }} />
+          ))}
+        </div>
+      </aside>
+      <div className="min-w-0 px-6 pt-(--topbar-gap)">
+        <div className="glass h-(--topbar-h) rounded-chrome" />
+        <CargaDatos />
+      </div>
+    </div>
+  );
+}
+
 export function LayoutEscritorio() {
+  const hayEstado = useDatos((s) => s.estado !== null);
+  if (!hayEstado)
+    return (
+      <>
+        <AvisoPantallaPequena />
+        <ArmazonEscritorio />
+      </>
+    );
+  return <LayoutConDatos />;
+}
+
+function LayoutConDatos() {
   const rol = useRolActivo();
   const moneda = useSesion((s) => s.moneda);
   const { pathname } = useLocation();
