@@ -2,7 +2,7 @@ import type { COP, EstadoDominio, FechaHoraISO, FechaISO, Id, MesISO } from '@/d
 import { diaSemana, diasDelMes, minutosDeHora, rangoFechas, sumarDias, sumarMesesAMes } from '@/dominio/reglas/fechas';
 import { esFestivo } from '@/dominio/reglas/festivos';
 import { crearSelector } from './memo';
-import { hechosEnFechas, hechosEnRango, resumirHechos, type ResumenVentas, selVentasHoyHastaHora } from './ventas';
+import { hechosEnFechas, hechosEnRango, MIN_VENTAS_BASE, MIN_VENTAS_HOY, resumirHechos, type ResumenVentas, selVentasHoyHastaHora } from './ventas';
 import { selEfectivoEnCajas, selCierresDelDia } from './caja';
 import { nombreEmpleado } from './base';
 
@@ -53,6 +53,44 @@ export interface KpisInicio {
   ayer: ResumenVentas;
   mes: ResumenVentas;
   mesAnterior: ResumenVentas;
+  /**
+   * Con qué periodo se calculan las tarjetas del mes: el mes a la fecha, o (los primeros días del mes, cuando casi no
+   * hay con qué comparar) los últimos 30 días contra los 30 anteriores.
+   */
+  periodo: { modo: 'mes' | '30d'; desde: FechaISO; hasta: FechaISO };
+}
+
+/** Días que debe llevar el mes para comparar "a la fecha" con el mes anterior; antes se usan los últimos 30 días. */
+export const DIAS_MINIMOS_MES = 7;
+
+/** Apertura y cierre típicos de los locales, solo para repartir un día en fracciones (hora de la demo). */
+const APERTURA_TIPICA_MIN = 10 * 60;
+const CIERRE_TIPICO_MIN = 20 * 60;
+
+export interface AvanceMeta {
+  /** 'arranque': el mes apenas empieza; 'ritmo': mes en curso; 'cierre': mes ya cerrado. */
+  modo: 'arranque' | 'ritmo' | 'cierre';
+  /** Fracción del mes que ya pasó (incluye la parte del día de hoy). */
+  transcurrido: number;
+  /** Lo logrado dividido entre lo esperado a hoy (1 = justo al ritmo). null si el mes apenas arranca o ya cerró. */
+  vsEsperado: number | null;
+}
+
+/**
+ * Cuánto de la meta lleva el mes frente a lo que debería llevar a esta fecha y hora (la meta se reparte por igual
+ * entre los días del mes). Evita que el día 1 diga "2 % de la meta": con menos de 3 días completos solo se avisa
+ * que el mes apenas arranca.
+ */
+export function avanceMeta(cumplimiento: number, ahora: FechaHoraISO, mes: MesISO): AvanceMeta {
+  const hoyF = ahora.slice(0, 10);
+  if (!hoyF.startsWith(mes)) return { modo: 'cierre', transcurrido: hoyF > `${mes}-31` ? 1 : 0, vsEsperado: null };
+  const total = diasDelMes(mes);
+  const completos = Number(hoyF.slice(8, 10)) - 1;
+  const min = minutosDeHora(ahora.slice(11, 16));
+  const deHoy = Math.max(0, Math.min(1, (min - APERTURA_TIPICA_MIN) / (CIERRE_TIPICO_MIN - APERTURA_TIPICA_MIN)));
+  const transcurrido = Math.min(1, (completos + deHoy) / total);
+  if (completos < 3) return { modo: 'arranque', transcurrido, vsEsperado: null };
+  return { modo: 'ritmo', transcurrido, vsEsperado: transcurrido > 0 ? cumplimiento / transcurrido : null };
 }
 
 /** Las seis tarjetas de Inicio con micrográfico y variación (2.3.2). Cuadran con la suma directa de las ventas. */
@@ -63,7 +101,13 @@ export const selKpisInicio = crearSelector<{ localId: Id | 'todos'; ahora: Fecha
     const hoyF = ahora.slice(0, 10);
     const ayerF = sumarDias(hoyF, -1);
     const ant0 = mismaFechaMesAnterior(hoyF);
-    const hechos = hechosEnFechas(e, { desde: `${ant0.mes}-01`, hasta: hoyF });
+    const modo30 = Number(hoyF.slice(8, 10)) < DIAS_MINIMOS_MES;
+    const desde30 = sumarDias(hoyF, -29);
+    const ant30 = sumarDias(hoyF, -30);
+    const hechos = hechosEnFechas(e, { desde: modo30 ? sumarDias(hoyF, -59) : `${ant0.mes}-01`, hasta: hoyF });
+    const hora = ahora.slice(11, 19);
+    // El periodo anterior se corta a la misma hora del día equivalente: hoy a las 3:30 p. m. no se compara con un día entero.
+    const hastaLaHora = (hs: typeof hechos, ultimaFecha: FechaISO) => hs.filter((h) => h.fecha < ultimaFecha || h.ts.slice(11, 19) <= hora);
     const vh = selVentasHoyHastaHora(e, { hoy: hoyF, ahora, localId });
     const ayer = resumirHechos(hechosEnRango(hechos, ayerF, ayerF, localId));
     const apertura = aperturaDelDia(e, hoyF, localId);
@@ -71,8 +115,16 @@ export const selKpisInicio = crearSelector<{ localId: Id | 'todos'; ahora: Fecha
     const inicioMes = `${hoyF.slice(0, 7)}-01`;
     const mes = resumirHechos(hechosEnRango(hechos, inicioMes, hoyF, localId).filter((h) => h.ts <= ahora));
     const ant = mismaFechaMesAnterior(hoyF);
-    const mesAnterior = resumirHechos(hechosEnRango(hechos, `${ant.mes}-01`, ant.hasta, localId));
+    const mesAnterior = resumirHechos(hastaLaHora(hechosEnRango(hechos, `${ant.mes}-01`, ant.hasta, localId), ant.hasta));
+    const ultimos30 = resumirHechos(hechosEnRango(hechos, desde30, hoyF, localId).filter((h) => h.ts <= ahora));
+    const anteriores30 = resumirHechos(hastaLaHora(hechosEnRango(hechos, sumarDias(hoyF, -59), ant30, localId), ant30));
     const nombreMesAnt = MESES[Number(ant.mes.slice(5, 7)) - 1] ?? '';
+    // Lo que muestran las tarjetas del mes: el mes a la fecha, o los últimos 30 días en los primeros días del mes.
+    const act = modo30 ? ultimos30 : mes;
+    const base = modo30 ? anteriores30 : mesAnterior;
+    const cmpFecha = modo30 ? 'vs. los 30 días anteriores' : `vs. ${nombreMesAnt} a la misma fecha`;
+    const cmp = modo30 ? 'vs. los 30 días anteriores' : `vs. ${nombreMesAnt}`;
+    const delPeriodo = modo30 ? 'últimos 30 días' : 'del mes';
     const variacion = (a: number, b: number) => (b !== 0 ? (a - b) / Math.abs(b) : null);
 
     // Series: últimos 14 días (netas) y días del mes.
@@ -107,43 +159,43 @@ export const selKpisInicio = crearSelector<{ localId: Id | 'todos'; ahora: Fecha
           },
       {
         id: 'ventas_mes',
-        etiqueta: 'Ventas del mes',
-        valor: mes.netas,
+        etiqueta: modo30 ? 'Ventas de los últimos 30 días' : 'Ventas del mes',
+        valor: act.netas,
         formato: 'dinero',
-        variacion: variacion(mes.netas, mesAnterior.netas),
-        comparacion: `vs. ${nombreMesAnt} a la misma fecha`,
+        variacion: variacion(act.netas, base.netas),
+        comparacion: cmpFecha,
         serie: serie('netas'),
-        detalle: `${mes.numVentas} ventas`,
+        detalle: `${act.numVentas} ventas`,
       },
       {
         id: 'ticket',
         etiqueta: 'Ticket promedio',
-        valor: mes.ticket,
+        valor: act.ticket,
         formato: 'dinero',
-        variacion: variacion(mes.ticket, mesAnterior.ticket),
-        comparacion: `vs. ${nombreMesAnt}`,
+        variacion: variacion(act.ticket, base.ticket),
+        comparacion: cmp,
         serie: serie('ticket'),
-        detalle: 'del mes',
+        detalle: delPeriodo,
       },
       {
         id: 'unidades',
         etiqueta: 'Unidades vendidas',
-        valor: mes.unidades,
+        valor: act.unidades,
         formato: 'entero',
-        variacion: variacion(mes.unidades, mesAnterior.unidades),
-        comparacion: `vs. ${nombreMesAnt} a la misma fecha`,
+        variacion: variacion(act.unidades, base.unidades),
+        comparacion: cmpFecha,
         serie: serie('unidades'),
-        detalle: 'del mes',
+        detalle: delPeriodo,
       },
       {
         id: 'margen',
-        etiqueta: 'Margen bruto del mes',
-        valor: mes.margen,
+        etiqueta: modo30 ? 'Margen bruto de 30 días' : 'Margen bruto del mes',
+        valor: act.margen,
         formato: 'dinero',
-        variacion: variacion(mes.margen, mesAnterior.margen),
-        comparacion: `vs. ${nombreMesAnt} a la misma fecha`,
+        variacion: variacion(act.margen, base.margen),
+        comparacion: cmpFecha,
         serie: serie('margen'),
-        detalle: `${Math.round(mes.margenPct * 1000) / 10} % sobre la venta sin IVA`,
+        detalle: `${Math.round(act.margenPct * 1000) / 10} % sobre la venta sin IVA`,
       },
       {
         id: 'efectivo',
@@ -156,7 +208,8 @@ export const selKpisInicio = crearSelector<{ localId: Id | 'todos'; ahora: Fecha
         detalle: localId === 'todos' ? 'Estimado: suma de las tres cajas' : 'Estimado',
       },
     ];
-    return { tarjetas, antesDeAbrir, hoy: vh.hoy, ayer, mes, mesAnterior };
+    const periodo = modo30 ? { modo: '30d' as const, desde: desde30, hasta: hoyF } : { modo: 'mes' as const, desde: inicioMes, hasta: hoyF };
+    return { tarjetas, antesDeAbrir, hoy: vh.hoy, ayer, mes, mesAnterior, periodo };
   },
 );
 
@@ -216,7 +269,7 @@ export const selSaludo = crearSelector<{ localId: Id | 'todos'; ahora: FechaHora
       periodo,
       ventas: r.netas,
       numVentas: r.numVentas,
-      variacion: b.netas > 0 ? (r.netas - b.netas) / b.netas : null,
+      variacion: b.netas > 0 && b.numVentas >= MIN_VENTAS_BASE && r.numVentas >= MIN_VENTAS_HOY ? (r.netas - b.netas) / b.netas : null,
       diaComparacion: DIAS[diaSemana(fecha)] ?? '',
       mejorLocal: localId === 'todos' ? mejor : null,
       cierres,

@@ -91,8 +91,9 @@ describe('nota de existencias', () => {
   it('avisa lo que queda y dónde más hay', () => {
     expect(listaNatural(['Usaquén', 'Zona Rosa'])).toBe('Usaquén y Zona Rosa');
     expect(listaNatural(['A', 'B', 'C'])).toBe('A, B y C');
-    expect(notaExistencias({ stock: 2, despacho: 'Parque 93', otros: [] })).toEqual({ tono: 'warning', texto: 'Quedan 2 en tu talla' });
-    expect(notaExistencias({ stock: 1, despacho: 'Parque 93', otros: [] }).texto).toBe('Queda 1 en tu talla');
+    expect(notaExistencias({ stock: 2, despacho: 'Parque 93', otros: [] })).toEqual({ tono: 'warning', texto: 'Quedan 2 para envío' });
+    expect(notaExistencias({ stock: 2, despacho: 'Parque 93', otros: ['Zona Rosa'] }).texto).toBe('Quedan 2 para envío · disponible en otras tiendas');
+    expect(notaExistencias({ stock: 1, despacho: 'Parque 93', otros: [] }).texto).toBe('Queda 1 para envío');
     expect(notaExistencias({ stock: 9, despacho: 'Parque 93', otros: ['Usaquén'] })).toEqual({ tono: 'muted', texto: 'Disponible para envío desde Parque 93' });
     expect(notaExistencias({ stock: 0, despacho: 'Parque 93', otros: ['Usaquén'] }).texto).toContain('recogerla en Usaquén');
     expect(notaExistencias({ stock: null, despacho: 'Parque 93', otros: ['Usaquén', 'Zona Rosa'] }).texto).toBe('Sale desde Parque 93. También en Usaquén y Zona Rosa.');

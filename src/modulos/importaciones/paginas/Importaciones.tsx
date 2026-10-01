@@ -418,7 +418,7 @@ export default function Importaciones() {
             valor={saldoCop}
             formatear={dinero.corta}
             completo={dinero(saldoCop)}
-            nota="Con la tasa de hoy"
+            nota="Con la tasa vigente"
             a={rutas.porPagar()}
           />
         ) : (

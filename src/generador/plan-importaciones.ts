@@ -53,7 +53,7 @@ const OTROS_TRIBUTOS_SOBRE_FOB = 0.2;
  * ventas perdidas (agotados de tallas y colores) da ≈ 160–230 días de inventario y ≈ $ 52–60 M (P5; pista de
  * calibración con 135, compartidos C-D con 160 para que el calzado sea la categoría más quieta).
  */
-const DIAS_CALZADO_DORMIDO = 160;
+const DIAS_CALZADO_DORMIDO = 156;
 
 function cadenciaDe(fab: ProveedorSeed): number {
   const c = fab.perfil?.cadencia ?? 120;
@@ -237,13 +237,27 @@ function estimadasCompletas(fechas: Fechas, narrativas: Fechas, ancla: FechaISO)
   let previa = '';
   for (const e of ESTADOS_IMPORTACION) {
     const real = fechas[e] as FechaISO;
-    let f = real <= aplicar ? real : (narrativas[e] ?? real);
+    // Los pasos ya alcanzados llevan su estimada original, unos días antes de la real (con China nada llega justo
+    // el día previsto): así la línea de tiempo muestra desfases verosímiles y no "estimada = real" en todos.
+    let f = real <= aplicar ? masDias(real, -(DESFASE_ESTIMADA_DIAS[e] ?? 0)) : (narrativas[e] ?? real);
     if (f < previa) f = previa;
     r[e] = f;
     previa = f;
   }
   return { fecha: aplicar, estimadas: r };
 }
+
+/** Días que la fecha real de cada paso ya alcanzado llegó después de la estimada original (desfase acumulado de una importación). */
+const DESFASE_ESTIMADA_DIAS: Partial<Record<EstadoImportacion, number>> = {
+  anticipo_pagado: 1,
+  en_produccion: 1,
+  listo_despacho: 3,
+  saldo_pagado: 3,
+  embarcado: 4,
+  en_transito: 4,
+  en_puerto: 3,
+  en_nacionalizacion: 2,
+};
 
 /** Unidades esperadas de un producto entre dos fechas (sumas acumuladas de la demanda esperada). */
 function esperado(

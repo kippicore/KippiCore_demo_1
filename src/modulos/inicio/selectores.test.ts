@@ -65,7 +65,8 @@ describe('selDormidosInicio', () => {
   it('con un local solo cuenta lo que tiene existencias allí y no vendió allí en 60 días', () => {
     const d = selDormidosInicio(e, { dias: 60, hoy: HOY, localId: 'usq', n: 500 });
     const desde = sumarDias(HOY, -60);
-    const vendidosAhi = new Set(hechosEnFechas(e, { desde, hasta: HOY }).filter((h) => h.localId === 'usq').map((h) => h.productoId));
+    // Las devoluciones (cantidad negativa) no cuentan como venta en el local.
+    const vendidosAhi = new Set(hechosEnFechas(e, { desde, hasta: HOY }).filter((h) => h.localId === 'usq' && h.cantidad > 0).map((h) => h.productoId));
     for (const x of d.items) {
       expect(vendidosAhi.has(x.productoId)).toBe(false);
       expect(x.unidades).toBeGreaterThan(0);

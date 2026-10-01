@@ -1,9 +1,11 @@
 import { Link } from 'react-router';
 import { rutas } from '@/app/rutas';
 import { useAhora, useDinero, useFiltroLocal, usePuede, useSel } from '@/estado';
+import { fraseAvanceMeta } from '@/lib/avanceMeta';
 import { entero, porcentaje } from '@/lib/formato';
+import { avanceMeta } from '@/selectores';
 import { Badge, BarraProgreso, cn, Dinero, EncabezadoSeccion } from '@/ui';
-import { estadoCierre, ritmoMeta } from '../calculos';
+import { estadoCierre } from '../calculos';
 import { selLocalesInicio, type LocalInicio } from '../selectores';
 import { TXT } from '../textos';
 
@@ -22,20 +24,20 @@ export function TusLocales() {
       <EncabezadoSeccion titulo={TXT.locales.titulo} />
       <div className="grid grid-cols-3 gap-4">
         {filas.map((f) => (
-          <TarjetaLocal key={f.localId} fila={f} hoy={hoy} mes={mes} />
+          <TarjetaLocal key={f.localId} fila={f} hoy={hoy} ahora={ahora} mes={mes} />
         ))}
       </div>
     </section>
   );
 }
 
-function TarjetaLocal({ fila: f, hoy, mes }: { fila: LocalInicio; hoy: string; mes: string }) {
+function TarjetaLocal({ fila: f, hoy, ahora, mes }: { fila: LocalInicio; hoy: string; ahora: string; mes: string }) {
   const localId = useFiltroLocal();
   const puede = usePuede();
   const dinero = useDinero();
   const seleccionado = localId === f.localId;
   const cierre = estadoCierre(f.ultimoCierre, hoy, dinero);
-  const ritmo = f.cumplimiento !== null ? ritmoMeta(f.cumplimiento, hoy, mes) : null;
+  const avance = f.cumplimiento !== null ? avanceMeta(f.cumplimiento, ahora, mes) : null;
   return (
     <article
       className={cn('border bg-surface p-5 transition-colors duration-(--dur-instant)', seleccionado ? 'border-ink' : 'border-line')}
@@ -63,14 +65,14 @@ function TarjetaLocal({ fila: f, hoy, mes }: { fila: LocalInicio; hoy: string; m
       </dl>
 
       <div className="mt-4">
-        {f.meta !== null && f.cumplimiento !== null && ritmo ? (
+        {f.meta !== null && f.cumplimiento !== null && avance ? (
           <BarraProgreso
             meta
             valor={f.cumplimiento}
             etiqueta={TXT.locales.meta}
             detalle={
-              <span title={ritmo.alDia ? 'Va al día o adelantado frente al avance del mes' : 'Va por debajo del avance del mes'}>
-                {porcentaje(f.cumplimiento, 0)} de <Dinero valor={f.meta} corta />
+              <span title="Frente a lo que el mes debería llevar a esta fecha, repartiendo la meta por días">
+                {fraseAvanceMeta(avance, f.cumplimiento)} · meta <Dinero valor={f.meta} corta />
               </span>
             }
           />

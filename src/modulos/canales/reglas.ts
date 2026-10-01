@@ -238,6 +238,18 @@ const TALLAS_PALABRA: Record<string, string> = {
   chico: 'S',
 };
 
+/** Tallas de pantalón dichas con letras ("la treinta y dos"). */
+const TALLAS_EN_LETRAS: Record<string, string> = {
+  veintiocho: '28',
+  treinta: '30',
+  'treinta y dos': '32',
+  'treinta y cuatro': '34',
+  'treinta y seis': '36',
+  'treinta y ocho': '38',
+  cuarenta: '40',
+};
+const RE_TALLA_EN_LETRAS = /(?:^|\s)(?:talla|la|una|en)\s+(veintiocho|treinta y dos|treinta y cuatro|treinta y seis|treinta y ocho|treinta|cuarenta)(?=\s|$)/;
+
 /** La talla que dice el texto (sin validarla contra el producto). */
 export function reconocerTalla(texto: string): string | null {
   if (/^\s*(XXL|XL|S|M|L)\s*[.?!]*\s*$/i.test(texto)) return texto.replace(/[^A-Za-z]/g, '').toUpperCase();
@@ -258,6 +270,8 @@ export function reconocerTalla(texto: string): string | null {
     if (/^\d{2}$/.test(w) && Number(w) >= 28 && Number(w) <= 56 && prev !== 'parque') return w;
   }
   for (const w of t) if (TALLAS_PALABRA[w]) return TALLAS_PALABRA[w]!;
+  const enLetras = t.join(' ').match(RE_TALLA_EN_LETRAS);
+  if (enLetras) return TALLAS_EN_LETRAS[enLetras[1]!] ?? null;
   return null;
 }
 
@@ -284,8 +298,10 @@ export function reconocerLocal(texto: string, locales: { id: string }[]): string
 export interface ResultadoProducto {
   /** Un producto claro. */
   producto: ProductoBot | null;
-  /** Varios con el mismo puntaje: hay que preguntar. */
+  /** Varios con el mismo puntaje: hay que preguntar (los primeros tres, en el orden en que se ofrecen). */
   ambiguos: ProductoBot[];
+  /** Todos los que empatan (para que la siguiente respuesta, "el elástico", elija entre ellos). */
+  empatados: ProductoBot[];
 }
 
 const PALABRAS_COLOR = new Set(
@@ -314,7 +330,7 @@ function tokensConsulta(t: string): string[] {
 /** Producto que el texto menciona: puntúa por palabras del nombre (las de color valen la mitad); en empate gana el más consultado. */
 export function reconocerProducto(mensaje: string, d: DatosBot): ResultadoProducto {
   const consulta = new Set(tokensConsulta(mensaje));
-  if (consulta.size === 0) return { producto: null, ambiguos: [] };
+  if (consulta.size === 0) return { producto: null, ambiguos: [], empatados: [] };
   let mejor = 0;
   const puntaje = new Map<string, number>();
   for (const p of d.productos) {
@@ -323,15 +339,43 @@ export function reconocerProducto(mensaje: string, d: DatosBot): ResultadoProduc
     if (n > 0) puntaje.set(p.id, n);
     mejor = Math.max(mejor, n);
   }
-  if (mejor === 0) return { producto: null, ambiguos: [] };
+  if (mejor === 0) return { producto: null, ambiguos: [], empatados: [] };
   const empatados = d.productos.filter((p) => puntaje.get(p.id) === mejor);
-  if (empatados.length === 1) return { producto: empatados[0]!, ambiguos: [] };
+  if (empatados.length === 1) return { producto: empatados[0]!, ambiguos: [], empatados };
   const critico = empatados.find((p) => p.id === d.criticoId);
-  if (critico) return { producto: critico, ambiguos: [] };
+  if (critico) return { producto: critico, ambiguos: [], empatados };
   const orden = [...empatados].sort(
     (a, b) => Number(b.destacado) - Number(a.destacado) || a.nombre.localeCompare(b.nombre, 'es'),
   );
-  return { producto: null, ambiguos: orden.slice(0, 3) };
+  return { producto: null, ambiguos: orden.slice(0, 3), empatados: orden };
+}
+
+
+/** Ordinales que el cliente usa para elegir entre las opciones que se le ofrecieron ("la segunda", "el último"). */
+const ORDINALES: [RegExp, number][] = [
+  [/\b(primer|primero|primera|el uno|la uno)\b/, 0],
+  [/\b(segund|segundo|segunda|el dos|la dos)\b/, 1],
+  [/\b(tercer|tercero|tercera|el tres|la tres)\b/, 2],
+];
+
+/**
+ * Elige entre las prendas que el bot acababa de ofrecer ("¿cuál chino?" → "el elástico"). Devuelve la prenda si la
+ * respuesta apunta a una sola; si todavía quedan varias, devuelve las que quedan para seguir preguntando entre ellas.
+ */
+export function elegirEntreOfrecidas(
+  mensaje: string,
+  ofrecidas: ProductoBot[],
+): { elegida: ProductoBot | null; quedan: ProductoBot[] } {
+  if (ofrecidas.length === 0) return { elegida: null, quedan: [] };
+  const t = palabras(mensaje).join(' ');
+  for (const [re, i] of ORDINALES) if (re.test(t) && ofrecidas[i]) return { elegida: ofrecidas[i]!, quedan: [] };
+  const consulta = new Set(tokensConsulta(mensaje));
+  if (consulta.size === 0) return { elegida: null, quedan: [] };
+  const puntos = ofrecidas.map((p) => fichaNombre(p.nombre).filter((w) => consulta.has(w)).length);
+  const mejor = Math.max(...puntos);
+  if (mejor === 0) return { elegida: null, quedan: [] };
+  const quedan = ofrecidas.filter((_, i) => puntos[i] === mejor);
+  return { elegida: quedan.length === 1 ? quedan[0]! : null, quedan };
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -841,21 +885,55 @@ export function responder(mensaje: string, mem: Memoria, d: DatosBot, ctx: Conte
       );
   }
 
-  // 6. Producto: ambiguo, nuevo o el de la conversación.
-  if (!prod.producto && prod.ambiguos.length > 0)
+  // 6. Producto: el del mensaje, uno de los que acabo de ofrecer ("el elástico"), de la misma categoría que venía
+  // hablando, ambiguo o el de la conversación.
+  const ofrecidas = mem.ambiguosIds
+    .map((id) => d.productos.find((x) => x.id === id))
+    .filter((x): x is ProductoBot => !!x);
+  const pidePrecio = RE.precio.test(t) || (ofrecidas.length > 0 && mem.pidioPrecio);
+  let elegido: ProductoBot | null = prod.producto;
+  let sigueContexto = !!elegido && ofrecidas.some((x) => x.id === elegido!.id);
+  let aun: ProductoBot[] = prod.empatados;
+  if (!elegido && ofrecidas.length > 0) {
+    const r = elegirEntreOfrecidas(limpio, ofrecidas);
+    if (r.elegida) {
+      elegido = r.elegida;
+      sigueContexto = true;
+    } else if (r.quedan.length > 1) aun = r.quedan;
+  }
+  if (!elegido && prodMem && aun.length > 1) {
+    // Varias coinciden: si solo una es de la categoría de la que veníamos hablando, es esa.
+    const mismaCategoria = aun.filter((x) => x.tipo === prodMem.tipo);
+    if (mismaCategoria.length === 1) {
+      elegido = mismaCategoria[0]!;
+      sigueContexto = true;
+    }
+  }
+  if (!elegido && aun.length > 1) {
+    const ofrecer = (aun === prod.empatados ? prod.ambiguos : aun).slice(0, 3);
+    const mantiene = ofrecidas.length > 0;
     return respuesta(
       [
         texto(
-          `${hola}Tengo varias opciones: ${unir(prod.ambiguos.map((p) => p.nombre))}. ${tr(ctx, '¿Cuál te interesa?', '¿Cuál le interesa?')}`,
+          `${hola}Tengo varias opciones: ${unir(ofrecer.map((x) => x.nombre))}. ${tr(ctx, '¿Cuál te interesa?', '¿Cuál le interesa?')}`,
         ),
       ],
       'no_entiende',
-      { nodos: nodos(mensaje, `${prod.ambiguos.length} prendas coinciden`, null, 'Preguntar cuál', null) },
-      mem,
+      { nodos: nodos(mensaje, `${aun.length} prendas coinciden`, null, 'Preguntar cuál', null) },
+      {
+        ...mem,
+        productoId: null,
+        talla: talla ?? (mantiene ? mem.talla : null),
+        colorIds: mencionaColor ? reconocerColores(limpio, todosColores).map((c) => c.id) : mantiene ? mem.colorIds : [],
+        localElegido: localElegido ?? mem.localElegido,
+        ambiguosIds: aun.map((x) => x.id),
+        pidioPrecio: pidePrecio,
+      },
     );
+  }
   const usaMemoria =
-    !prod.producto && !!prodMem && (!!talla || mencionaColor || RE.precio.test(t) || localElegido !== null);
-  const p = prod.producto ?? (usaMemoria ? prodMem : null);
+    !elegido && !!prodMem && (!!talla || mencionaColor || RE.precio.test(t) || localElegido !== null);
+  const p = elegido ?? (usaMemoria ? prodMem : null);
   if (!p)
     return respuesta(
       [
@@ -876,7 +954,7 @@ export function responder(mensaje: string, mem: Memoria, d: DatosBot, ctx: Conte
       mem,
     );
 
-  const cambio = p.id !== mem.productoId;
+  const cambio = !sigueContexto && p.id !== mem.productoId;
   const tallaPedida = talla ?? (cambio ? null : mem.talla);
   const coloresProd = reconocerColores(limpio, p.colores);
   const colorAjeno = mencionaColor && coloresProd.length === 0;
@@ -891,6 +969,8 @@ export function responder(mensaje: string, mem: Memoria, d: DatosBot, ctx: Conte
     talla: tallaPedida,
     colorIds: coloresPedidos.map((c) => c.id),
     localElegido: localElegido ?? (cambio ? null : mem.localElegido),
+    ambiguosIds: [],
+    pidioPrecio: false,
   };
   const femenino = articulo(p.tipo) === 'la';
   const lo = femenino ? 'la' : 'lo';
@@ -904,7 +984,7 @@ export function responder(mensaje: string, mem: Memoria, d: DatosBot, ctx: Conte
   const articuloNombre = capitalizar(nombreConArticulo(p));
 
   // Solo precio.
-  if (RE.precio.test(t) && !talla && coloresProd.length === 0)
+  if (pidePrecio && coloresProd.length === 0 && (sigueContexto ? !tallaPedida : !talla))
     return respuesta(
       [
         texto(
@@ -1009,7 +1089,7 @@ export function responder(mensaje: string, mem: Memoria, d: DatosBot, ctx: Conte
     return respuesta(
       [
         texto(
-          `${hola}Por ahora ${nombreConArticulo(p)}${color} en talla ${tallaPedida} está ${estado} en los locales.${camino}${alterna}`,
+          `${hola}Por ahora ${nombreConArticulo(p)}${color} en talla ${tallaPedida} está ${estado} en los locales.${camino}${alterna}${pidePrecio ? ` Cuesta ${d.dinero(p.precio)}.` : ''}`,
         ),
       ],
       'inventario',
@@ -1027,13 +1107,29 @@ export function responder(mensaje: string, mem: Memoria, d: DatosBot, ctx: Conte
     );
   }
 
+  const localPedido = base.localElegido ? (d.locales.find((l) => l.id === base.localElegido) ?? null) : null;
+  const porColorEnLocal = localPedido
+    ? conExistencias
+        .map(({ c, col }) => ({ col, n: c.filas.find((f) => f.localId === localPedido.id)?.unidades ?? 0 }))
+        .filter((x) => x.n > 0)
+    : [];
+  const enLocalPedido = porColorEnLocal.reduce((a, x) => a + x.n, 0);
+  // Si preguntó por un local ("en Usaquén"), se le dice primero lo que hay ahí (o que ahí no hay).
   const cuerpo =
-    conExistencias.length === 1
-      ? `Sí: ${nombreConArticulo(p)} ${colorTexto(conExistencias[0]!.col.nombre, femenino)} en talla ${tallaPedida} está disponible en ${textoLocales(conExistencias[0]!.c.filas)}. Cuesta ${d.dinero(p.precio)}.`
-      : `En talla ${tallaPedida} tengo ${nombreConArticulo(p)} en ${conExistencias.map(({ c, col }) => `${colorTexto(col.nombre, femenino)}: ${textoLocales(c.filas)}`).join('; ')}. Cuesta ${d.dinero(p.precio)}.`;
+    localPedido && conExistencias.length > 1 && enLocalPedido > 0
+      ? `En ${localPedido.nombre} tengo ${nombreConArticulo(p)} en talla ${tallaPedida}: ${unir(porColorEnLocal.map((x) => `${colorTexto(x.col.nombre, femenino)} (${x.n})`))}. Cuesta ${d.dinero(p.precio)}.`
+      : conExistencias.length === 1
+        ? `Sí: ${nombreConArticulo(p)} ${colorTexto(conExistencias[0]!.col.nombre, femenino)} en talla ${tallaPedida} está disponible en ${textoLocales(conExistencias[0]!.c.filas)}. Cuesta ${d.dinero(p.precio)}.`
+        : `En talla ${tallaPedida} tengo ${nombreConArticulo(p)} en ${conExistencias.map(({ c, col }) => `${colorTexto(col.nombre, femenino)}: ${textoLocales(c.filas)}`).join('; ')}. Cuesta ${d.dinero(p.precio)}.`;
+  const sobreLocal =
+    !localPedido || (conExistencias.length > 1 && enLocalPedido > 0)
+      ? ''
+      : enLocalPedido > 0
+        ? ` En ${localPedido.nombre} hay ${enLocalPedido}.`
+        : ` En ${localPedido.nombre} no hay en esa talla.`;
   const cierre = tr(ctx, ` ¿Te ${lo} separo en alguno?`, ` ¿Se ${lo} separo en alguno?`);
   return respuesta(
-    [texto(`${hola}${cuerpo}${cierre}`)],
+    [texto(`${hola}${cuerpo}${sobreLocal}${cierre}`)],
     'inventario',
     {
       nodos: nodos(mensaje, entendido, detalleConsulta, 'Responder disponibilidad por local y precio', null),

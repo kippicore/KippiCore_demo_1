@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { CostosImportacion, MapaComandos } from '../tipos';
 import { existencia, saldoCuenta } from '../comandos/tx';
 import { saldoCxP } from '../reglas/cuentas';
+import { hitosAlCambiarEstado, llegadaABodega } from '../reglas/importaciones';
 import { hacer, intentar, nuevoEstado, OXFORD_M_AZC } from './fixtures';
 
 const costos: CostosImportacion = {
@@ -53,6 +54,27 @@ describe('importaciones (M1–M8, W3, W4)', () => {
     expect(
       intentar(e, 'importacion.crear', { ...crear('IMP-2026-01'), importacionId: 'im_2' }),
     ).toMatchObject({ ok: false, error: { codigo: 'NUMERO_DUPLICADO' } });
+  });
+
+  it('la llegada a bodega proyectada al cambiar de estado es la que queda guardada (una sola fecha en aviso y ficha)', () => {
+    const e = nuevoEstado();
+    hacer(e, 'importacion.crear', crear());
+    const antes = structuredClone(e.importaciones.im_1!);
+    hacer(e, 'importacion.cambiarEstado', {
+      importacionId: 'im_1',
+      estado: 'en_nacionalizacion',
+      fecha: '2026-08-10',
+      nota: null,
+      origen: 'panel',
+      autor: null,
+    });
+    const despues = e.importaciones.im_1!;
+    const proyectados = hitosAlCambiarEstado(antes, 'en_nacionalizacion', '2026-08-10');
+    expect(llegadaABodega({ hitos: proyectados })).toBe(llegadaABodega(despues));
+    expect(proyectados.nacionalizado.estimada).toBe(despues.hitos.nacionalizado.estimada);
+    // Un estado ya alcanzado no vuelve a correr las fechas.
+    expect(hitosAlCambiarEstado(despues, 'en_nacionalizacion', '2026-08-10')).toBe(despues.hitos);
+    expect(llegadaABodega(despues)).not.toBe(llegadaABodega(antes));
   });
 
   it('al confirmar nacen anticipo 30 % y saldo 70 % (vence en listo para despacho); al nacionalizar, los tributos', () => {

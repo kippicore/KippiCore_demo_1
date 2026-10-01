@@ -1,5 +1,5 @@
 import type { EstadoDominio, EstadoImportacion, FechaISO, Id, Importacion } from '@/dominio/tipos';
-import { indiceEstado, retrasoDias } from '@/dominio/reglas/importaciones';
+import { indiceEstado, retrasoDias, llegadaABodega } from '@/dominio/reglas/importaciones';
 import { saldoCxP } from '@/dominio/reglas/cuentas';
 import { sumarDias } from '@/dominio/reglas/fechas';
 import { crearSelector } from './memo';
@@ -57,7 +57,7 @@ function elegir(
 }
 
 const porLlegada = (a: Importacion, b: Importacion) =>
-  a.hitos.recibido_bodega.estimada < b.hitos.recibido_bodega.estimada ? -1 : a.hitos.recibido_bodega.estimada > b.hitos.recibido_bodega.estimada ? 1 : a.numero < b.numero ? -1 : 1;
+  llegadaABodega(a) < llegadaABodega(b) ? -1 : llegadaABodega(a) > llegadaABodega(b) ? 1 : a.numero < b.numero ? -1 : 1;
 
 export const selNarrativa = crearSelector<{ hoy: FechaISO }, NarrativaDinamica>(
   'selNarrativa',

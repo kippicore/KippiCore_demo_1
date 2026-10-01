@@ -11,6 +11,7 @@ import type {
   Traslado,
   Variante,
 } from '@/dominio/tipos';
+import { llegadaABodega } from '@/dominio/reglas/importaciones';
 import { ESTADOS_IMPORTACION } from '@/dominio/tipos';
 import { sumarDias } from '@/dominio/reglas/fechas';
 import { CURVAS_TALLAS } from '@/seed/tallas';
@@ -463,7 +464,7 @@ export const selRecepciones = crearSelector<void, FilaRecepcion[]>('selRecepcion
       proveedor: e.proveedores[i.proveedorId]?.nombreCorto ?? '',
       estado: i.estado,
       unidades: i.lineas.reduce((a, l) => a + Object.values(l.cantidades).reduce((x, y) => x + y, 0), 0),
-      llegadaEstimada: i.hitos.recibido_bodega.real ?? i.hitos.recibido_bodega.estimada,
+      llegadaEstimada: llegadaABodega(i),
       puedeRecibir: ESTADOS_IMPORTACION.indexOf(i.estado) >= IDX_NACIONALIZADO && i.estado !== 'recibido_bodega',
       recibida: i.estado === 'recibido_bodega',
     }))

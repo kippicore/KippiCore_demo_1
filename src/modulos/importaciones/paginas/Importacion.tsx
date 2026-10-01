@@ -15,7 +15,7 @@ import { useParamsRuta } from '@/app/useParamsRuta';
 import type { Importacion as TImportacion } from '@/dominio/tipos';
 import { ETIQUETAS_ESTADO_IMPORTACION } from '@/config/aduanas';
 import { MATRIZ_AVISOS } from '@/config/textos/mensajes';
-import { siguienteEstado } from '@/dominio/reglas/importaciones';
+import { siguienteEstado, llegadaABodega } from '@/dominio/reglas/importaciones';
 import { diferenciaDias } from '@/dominio/reglas/fechas';
 import { copDeCentavos } from '@/dominio/reglas/dinero';
 import {
@@ -135,7 +135,7 @@ function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
   });
   const retraso = fila?.retrasoDias ?? 0;
   const recibido = imp.estado === 'recibido_bodega';
-  const llegada = fila?.llegadaEstimada ?? imp.hitos.recibido_bodega.estimada;
+  const llegada = fila?.llegadaEstimada ?? llegadaABodega(imp);
   const posicion = posicionRuta(imp, hoy);
   const diasLlegada = diferenciaDias(hoy, llegada);
   const puedeCambiar = esDueno && !recibido && puede('importacion.cambiarEstado');
@@ -380,7 +380,7 @@ function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
                         </>
                       ) : (
                         <>
-                          Llega est. <Fecha valor={imp.hitos.recibido_bodega.estimada} />
+                          Llega est. <Fecha valor={llegadaABodega(imp)} />
                         </>
                       ),
                     }}
@@ -445,7 +445,7 @@ function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
                       ...(verPagos
                         ? ([
                             [
-                              'Moneda y tasa del pedido',
+                              'Moneda y tasa del día del pedido',
                               `${imp.moneda === 'USD' ? 'US$' : 'CN¥'} · $ ${formatoNumero(imp.tasaPedido, 2)}`,
                             ],
                           ] as const)
@@ -463,7 +463,7 @@ function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
                   />
                   {verPagos && fila && tasa > 0 && (
                     <p className="mt-4 t-small text-muted">
-                      Con la tasa de hoy, el valor de fábrica equivale a{' '}
+                      Con la tasa vigente de hoy, el valor de fábrica equivale a{' '}
                       {dinero(copDeCentavos(fila.fobOrigen, tasa))}.
                     </p>
                   )}

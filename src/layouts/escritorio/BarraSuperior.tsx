@@ -4,11 +4,12 @@ import { useNavigate } from 'react-router';
 import type { Notificacion } from '@/dominio/tipos';
 import { rolPuedeVer, rutaDeUrl, rutas } from '@/app/rutas';
 import { useAhora, useDinero, useEstadoDominio, useHoy, useRolActivo, useSel, useSesion } from '@/estado';
-import { selBuscarProducto, selClientes, selNotificaciones, selVariantesPorProducto } from '@/selectores';
+import { partesConPesos, selBuscarProducto, selClientes, selNotificaciones, selVariantesPorProducto } from '@/selectores';
 import { celular, fechaLarga, relativa } from '@/lib/formato';
 import { diferenciaDias } from '@/lib/fechas';
 import { MenuAyuda } from '@/modulos/guia/publico';
 import { BotonAppDueno } from '@/movil/publico';
+import { FraseConDinero } from '@/ui/conectados/Cifras';
 import { SelectorLocal, SelectorMoneda, SelectorRol } from '@/ui/conectados/Contexto';
 import { cn } from '@/ui/cn';
 import { Combobox, Resaltado, type GrupoCombobox } from '@/ui/primitivos/Combobox';
@@ -23,23 +24,33 @@ import { MiniaturaPrenda } from '@/ui/prenda/Prenda';
  * dueño · "?" · notificaciones.
  */
 export function BarraSuperior({ resaltar }: { resaltar: string | null }) {
+  // Lo del negocio es del dueño: el vendedor y la bodega no ven la app del dueño, la moneda ni las notificaciones del negocio.
+  const esDueno = useRolActivo() === 'dueno';
   return (
     <div data-testid="barra-superior" className="glass flex h-(--topbar-h) items-center gap-3 rounded-chrome pl-3 pr-2">
       <BuscadorGlobal />
       <span className="flex-1" />
       <div className="flex items-center gap-1">
         <SelectorLocal />
-        <span className="mx-1">
-          <SelectorMoneda resaltar={resaltar === 'moneda'} />
-        </span>
+        {esDueno && (
+          <span className="mx-1">
+            <SelectorMoneda resaltar={resaltar === 'moneda'} />
+          </span>
+        )}
         <SelectorRol resaltar={resaltar === 'rol'} />
         <span aria-hidden className="mx-2 h-6 w-px bg-line-strong" />
-        <BotonAppDueno />
+        {esDueno && <BotonAppDueno />}
         <MenuAyuda />
-        <Notificaciones />
+        {esDueno && <Notificaciones />}
       </div>
     </div>
   );
+}
+
+/** Texto del dominio con montos en pesos: cada monto se pinta con `<Dinero>` y sigue la moneda activa. */
+function ConPesos({ texto }: { texto: string }) {
+  const partes = partesConPesos(texto);
+  return partes ? <FraseConDinero partes={partes} /> : <>{texto}</>;
 }
 
 const MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
@@ -197,8 +208,8 @@ const ICONO_SEVERIDAD: Record<Notificacion['severidad'], LucideIcon> = { info: I
 function Notificaciones() {
   const leidas = useSesion((s) => s.notificacionesLeidas);
   const marcar = useSesion((s) => s.marcarNotificacionLeida);
-  const lista = useSel(selNotificaciones, { leidas });
   const ahora = useAhora();
+  const lista = useSel(selNotificaciones, { leidas, hoy: ahora.slice(0, 10) });
   const navegar = useNavigate();
   const [abierto, setAbierto] = useState(false);
   const pendientes = lista.filter((n) => !n.leida).length;
@@ -263,8 +274,12 @@ function Notificaciones() {
                   >
                     <Icono icono={ICONO_SEVERIDAD[n.severidad]} tamano={16} className="mt-0.5 text-ink-2" />
                     <span className="min-w-0 flex-1">
-                      <span className={cn('block t-body text-ink', !leida && 'font-semibold')}>{n.titulo}</span>
-                      {n.detalle && <span className="mt-0.5 block t-small text-muted">{n.detalle}</span>}
+                      <span className={cn('block t-body text-ink', !leida && 'font-semibold')}><ConPesos texto={n.titulo} /></span>
+                      {n.detalle && (
+                        <span className="mt-0.5 block t-small text-muted">
+                          <ConPesos texto={n.detalle} />
+                        </span>
+                      )}
                       <span className="mt-1 block t-micro num text-ink-2">{relativa(n.ts, ahora)}</span>
                     </span>
                     {!leida && <span aria-label="Sin leer" className="mt-1.5 size-1.5 shrink-0 rounded-full bg-accent" />}

@@ -18,6 +18,6 @@ export { EncabezadoPagina, Migas, type Miga } from './primitivos/EncabezadoPagin
 export { NotaLegal } from './texto/NotaLegal';
 export { Sparkline } from './graficos/Sparkline';
 export { Prenda, MiniaturaPrenda } from './prenda/Prenda';
-export { Dinero, Fecha, FraseConDinero, type ParteConDinero } from './conectados/Cifras';
+export { Dinero, DineroCaja, Fecha, FraseConDinero, type ParteConDinero } from './conectados/Cifras';
 export { Marca } from './conectados/Marca';
 export { Pista, RequiereRol, SoloRol, ResaltarFila, useResaltar, AvisoNavegadorInterno, esNavegadorInterno, esIos } from './conectados/Guia';

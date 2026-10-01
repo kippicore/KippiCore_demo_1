@@ -11,7 +11,7 @@ import type {
 } from '@/dominio/tipos';
 import { ESTADOS_IMPORTACION } from '@/dominio/tipos';
 import { calcularCostoAterrizado, fobImportacion, margenBruto, precioSugerido, type ResultadoCosteo, tasaCosteoPonderada, unidadesLinea } from '@/dominio/reglas/costeo';
-import { avanceRuta, indiceEstado, retrasoDias, sugerirPedido, type ResultadoSugerencia, type SugerenciaVariante } from '@/dominio/reglas/importaciones';
+import { avanceRuta, indiceEstado, retrasoDias, sugerirPedido, type ResultadoSugerencia, type SugerenciaVariante, llegadaABodega, hitosAlCambiarEstado } from '@/dominio/reglas/importaciones';
 import { saldoCxP } from '@/dominio/reglas/cuentas';
 import { copDeCentavos } from '@/dominio/reglas/dinero';
 import { rellenarPlantilla } from '@/dominio/reglas/texto';
@@ -90,7 +90,7 @@ export const selImportaciones = crearSelector<
       saldoOrigen: Math.max(0, (total || fob) - pagado),
       retrasoDias: imp.estado === 'recibido_bodega' ? 0 : retrasoDias(imp, f.hoy),
       avance: avanceRuta(imp, f.hoy),
-      llegadaEstimada: imp.hitos.recibido_bodega.real ?? imp.hitos.recibido_bodega.estimada,
+      llegadaEstimada: llegadaABodega(imp),
       esCargaInicial: imp.nota === 'Carga inicial de existencias',
     });
   }
@@ -198,7 +198,7 @@ export const selLlegadasProximas = crearSelector<{ hoy: FechaISO; dias: number }
         numero: i.numero,
         proveedorNombre: e.proveedores[i.proveedorId]?.nombreCorto ?? '',
         estado: i.estado,
-        fecha: i.hitos.recibido_bodega.estimada,
+        fecha: llegadaABodega(i),
         unidades: i.lineas.reduce((a, l) => a + unidadesLinea(l), 0),
       }))
       .filter((x) => x.fecha >= hoy && x.fecha <= hasta)
@@ -379,6 +379,7 @@ export const selAvisosEstado = crearSelector<
         : `carga aérea de ${miles(imp.carga.kg)} kg`;
   const h = hora ?? '12:00';
   const saludo = h < '12:00' ? SALUDOS.manana : h < '19:00' ? SALUDOS.tarde : SALUDOS.noche;
+  const hitosEfectivos = hitosAlCambiarEstado(imp, estado, fecha);
   const datosBase: Record<string, string | number> = {
     numero: imp.numero,
     marca,
@@ -387,9 +388,11 @@ export const selAvisosEstado = crearSelector<
     puertoOrigen: imp.puertoOrigen,
     puertoDestino: imp.puertoDestino,
     fecha: fechaCorta(fecha),
-    llegadaPuerto: fechaCorta(imp.hitos.en_puerto.estimada),
-    llegadaBodega: fechaCorta(imp.hitos.recibido_bodega.estimada),
-    levanteEstimado: fechaCorta(imp.hitos.nacionalizado.estimada),
+    // Las fechas de los avisos son las que quedan al pasar a este estado (el comando corre los pasos siguientes si el
+    // paso se adelanta o se atrasa): el aviso, la ficha y el calendario dicen lo mismo.
+    llegadaPuerto: fechaCorta(hitosEfectivos.en_puerto.estimada),
+    llegadaBodega: fechaCorta(llegadaABodega({ hitos: hitosEfectivos })),
+    levanteEstimado: fechaCorta(hitosEfectivos.nacionalizado.estimada),
     unidades: miles(unidades),
     detalleDestacado: '',
     proveedor: prov?.nombreCorto ?? '',

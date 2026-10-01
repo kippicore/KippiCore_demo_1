@@ -88,9 +88,9 @@ export function TabPagos({ imp }: { imp: Importacion }) {
         ]}
       />
       <p className="t-small text-muted">
-        Tasa del pedido: <span className="num">$ {numero(pagos.tasaPedido, 2)}</span> · tasa de hoy:{' '}
-        <span className="num">$ {numero(pagos.tasaVigente, 2)}</span>. Las cifras en pesos usan la tasa del
-        día de cada pago.
+        Tasa del día en que se hizo el pedido: <span className="num">$ {numero(pagos.tasaPedido, 2)}</span> · tasa vigente
+        hoy: <span className="num">$ {numero(pagos.tasaVigente, 2)}</span> (la misma de todo KippiCore). Los pagos ya hechos
+        se muestran con la tasa del día del pago.
       </p>
 
       {pagos.cuentas.length === 0 ? (

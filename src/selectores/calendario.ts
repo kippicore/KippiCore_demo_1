@@ -1,4 +1,5 @@
 import type { CategoriaCxP, EventoVista, FechaISO, Id, TipoEvento } from '@/dominio/tipos';
+import { llegadaABodega } from '@/dominio/reglas/importaciones';
 import { estadoCxP, saldoCxP } from '@/dominio/reglas/cuentas';
 import { lunesDe, sumarDias } from '@/dominio/reglas/fechas';
 import { unidadesLinea } from '@/dominio/reglas/costeo';
@@ -70,7 +71,7 @@ export const selEventosCalendario = crearSelector<
   if (quiere('importacion'))
     for (const i of Object.values(e.importaciones)) {
       if (i.eliminadoEn || i.estado === 'recibido_bodega' || i.estado === 'cotizado') continue;
-      const fecha = i.hitos.recibido_bodega.estimada;
+      const fecha = llegadaABodega(i);
       if (fecha < f.desde || fecha > f.hasta) continue;
       const prov = e.proveedores[i.proveedorId]?.nombreCorto ?? '';
       const cat = e.productos[i.lineas[0]?.productoId ?? '']?.categoria;

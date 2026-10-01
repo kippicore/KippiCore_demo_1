@@ -12,7 +12,7 @@ import {
   selVentas,
 } from '@/selectores';
 import { AHORA, estadoDe, HOY } from '@/selectores/pruebas/construir';
-import { IDS_REPORTES, REPORTES } from './definiciones';
+import { IDS_REPORTES, rangoPorDefecto, rangoPorDefectoDe, rangoUltimoMesCompleto, REPORTES } from './definiciones';
 import { exportarReporte, hojasParaExportar } from './exportar';
 import { emisor, pdfDesprendible, pdfDocumentoPos, pdfEtiquetas, pdfFactura, pdfNotaCredito } from './plantillas-pdf';
 import type { FiltrosReporte, HojaReporte } from './tipos';
@@ -106,6 +106,26 @@ describe('filas y totales = selectores', () => {
     expect(er.filas.find((x) => x.concepto === 'Utilidad operativa')?.todos).toBe(
       selEstadoResultados(e, { desde: F.desde, hasta: F.hasta, localId: 'todos', prorratear: true }).utilidadOperativa,
     );
+  });
+
+  it('estado de resultados: la columna Total suma los locales y el periodo por defecto es el último mes completo', () => {
+    const f: FiltrosReporte = { ...F, desde: '2026-09-01', hasta: '2026-09-30' };
+    const er = hoja('resultados', 'Estado de resultados', f);
+    const fila = (c: string) => er.filas.find((x) => x.concepto === c) as Record<string, number>;
+    const claves = (er.columnas.map((c) => c.clave) as string[]).filter((c) => c !== 'concepto' && c !== 'todos');
+    expect(claves.length).toBe(3);
+    for (const concepto of ['Ventas netas sin IVA', 'Costo de la mercancía vendida', 'Utilidad bruta', 'Gastos operativos del local', 'Gastos generales prorrateados', 'Utilidad operativa']) {
+      const suma3 = claves.reduce((a, c) => a + (fila(concepto)[c] as number), 0);
+      expect(Math.abs((fila(concepto).todos as number) - suma3)).toBeLessThanOrEqual(3);
+    }
+    expect(fila('Gastos generales prorrateados').todos).toBeGreaterThan(0);
+    // Fila a fila: bruta − operativos − generales = utilidad operativa.
+    const t = fila('Utilidad bruta').todos! - fila('Gastos operativos del local').todos! - fila('Gastos generales prorrateados').todos!;
+    expect(t).toBe(fila('Utilidad operativa').todos);
+    expect(rangoUltimoMesCompleto('2026-10-01')).toEqual({ desde: '2026-09-01', hasta: '2026-09-30' });
+    expect(rangoUltimoMesCompleto('2027-01-15')).toEqual({ desde: '2026-12-01', hasta: '2026-12-31' });
+    expect(rangoPorDefectoDe('resultados', '2026-10-01')).toEqual({ desde: '2026-09-01', hasta: '2026-09-30' });
+    expect(rangoPorDefectoDe('ventas', '2026-10-01')).toEqual(rangoPorDefecto('2026-10-01'));
   });
 
   it('nómina, comisiones y el contador', () => {

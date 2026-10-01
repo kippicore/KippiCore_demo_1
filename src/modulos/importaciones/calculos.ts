@@ -13,7 +13,7 @@ import { PLANTILLAS_FABRICA_EN } from '@/config/textos/mensajes';
 import { fobLinea, unidadesLinea, type ResultadoCosteo } from '@/dominio/reglas/costeo';
 import { copDeCentavos, redondear } from '@/dominio/reglas/dinero';
 import { diferenciaDias } from '@/dominio/reglas/fechas';
-import { avanceRuta, indiceEstado, validarCambioEstado } from '@/dominio/reglas/importaciones';
+import { avanceRuta, indiceEstado, validarCambioEstado, llegadaABodega } from '@/dominio/reglas/importaciones';
 import { rellenarPlantilla } from '@/dominio/reglas/texto';
 import type { EntradaAccion } from '@/estado';
 import type { DestinatarioAvisoVista } from '@/selectores';
@@ -85,7 +85,7 @@ export function posicionRuta(imp: Pick<Importacion, 'estado' | 'hitos'>, hoy: Fe
     imp.hitos.en_transporte_bogota.real ??
     imp.hitos.nacionalizado.real ??
     imp.hitos.en_transporte_bogota.estimada;
-  const llegada = imp.hitos.recibido_bodega.estimada;
+  const llegada = llegadaABodega(imp);
   const total = diferenciaDias(salida, llegada);
   const f = total <= 0 ? 0.5 : Math.min(0.9, Math.max(0.1, diferenciaDias(salida, hoy) / total));
   return { progreso: PROGRESO_PUERTO + f * (1 - PROGRESO_PUERTO), tramo: 'tierra' };

@@ -86,6 +86,9 @@ test('empresa: el nombre, el NIT y los colores cambian el sistema entero y emite
   expect(JSON.parse(r.marca)).toEqual({ nombreNegocio: 'Casa Ibarra', nombrePersona: 'Marcela' });
 
   // El nombre llega a la barra lateral y los colores a las variables CSS de toda la aplicación.
+  // El nombre propio también es el de la persona en el pie de la barra lateral (no el del dueño de ejemplo).
+  await expect(page.getByTestId('barra-lateral')).toContainText('Marcela');
+  await expect(page.getByTestId('barra-lateral')).not.toContainText('Juan Camilo');
   await expect(page.locator('[data-marca="Casa Ibarra"]:visible').first()).toBeVisible();
   const color = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--marca-acento').trim().toUpperCase());
   expect(color).toBe('#2F6B4F');
