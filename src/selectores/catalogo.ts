@@ -6,6 +6,12 @@ import { existencia } from './inventario';
 
 /** Catálogo (PLAN 6.23 `catalogo.ts`). */
 
+/**
+ * Una referencia sale "STOCK BAJO" cuando al menos esta fracción de sus tallas/colores está por debajo del mínimo.
+ * Con un umbral de "alguna talla" casi todo el catálogo salía en alerta (82 de 85) y la alerta perdía valor.
+ */
+export const FRACCION_VARIANTES_BAJAS = 0.3;
+
 export type EstadoStock = 'agotado' | 'bajo' | 'normal';
 
 export interface FiltroCatalogo {
@@ -25,7 +31,7 @@ export interface FilaCatalogo {
   variantes: number;
   /** Existencias en el local filtrado (o en todos, bodega incluida). */
   existencias: number;
-  /** Variantes del filtro bajo el mínimo en el local (o en algún local que vende). */
+  /** Variantes del filtro bajo el mínimo en el local elegido (o en todos los sitios sumados). */
   variantesBajas: number;
   estadoStock: EstadoStock;
   margenPct: number;
@@ -38,7 +44,6 @@ export const selCatalogo = crearSelector<FiltroCatalogo, FilaCatalogo[]>(
   (e, f) => {
     const texto = f.texto ? normalizar(f.texto) : '';
     const locales = Object.values(e.locales).filter((l) => !l.eliminadoEn && (!f.localId || f.localId === 'todos' || l.id === f.localId));
-    const vendedores = locales.filter((l) => l.vende);
     const porProducto = new Map<Id, Variante[]>();
     for (const v of Object.values(e.variantes)) {
       if (v.eliminadoEn) continue;
@@ -65,10 +70,14 @@ export const selCatalogo = crearSelector<FiltroCatalogo, FilaCatalogo[]>(
       let ex = 0;
       let bajas = 0;
       for (const v of vs) {
-        for (const l of locales) ex += existencia(e, v.id, l.id);
-        if (vendedores.some((l) => existencia(e, v.id, l.id) < p.stockMinimo)) bajas += 1;
+        let enVariante = 0;
+        for (const l of locales) enVariante += existencia(e, v.id, l.id);
+        ex += enVariante;
+        // Una talla/color está baja si en todo lo que se está mirando (todos los sitios, o el local elegido) quedan
+        // menos unidades que el mínimo. Antes bastaba una sola celda local por debajo: casi todo salía "stock bajo".
+        if (enVariante < p.stockMinimo) bajas += 1;
       }
-      const estadoStock: EstadoStock = ex <= 0 ? 'agotado' : bajas > 0 ? 'bajo' : 'normal';
+      const estadoStock: EstadoStock = ex <= 0 ? 'agotado' : vs.length > 0 && bajas / vs.length >= FRACCION_VARIANTES_BAJAS ? 'bajo' : 'normal';
       if (f.stock && f.stock !== estadoStock) continue;
       r.push({
         producto: p,
