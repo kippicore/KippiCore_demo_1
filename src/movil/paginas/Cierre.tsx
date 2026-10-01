@@ -6,11 +6,11 @@ import { PERSONAS_ROL } from '@/config/permisos';
 import { useAcciones, useAhora, useDinero, useSel } from '@/estado';
 import { dinero, fechaLarga, hora, relativa } from '@/lib/formato';
 import { avisar, Button, Dinero, EmptyState, Icono, PuntoEstado, Textarea } from '@/ui/ligero';
-import { HojaLigera } from '@/ui/movil/Movil';
 import { Pantalla } from '../componentes/Pantalla';
 import { ParDato, Tarjeta, TarjetaTitulo } from '../componentes/Tarjeta';
 import { nombreCorto, selDetalleCierre } from '../selectores';
 import { TXT } from '../textos';
+import { HojaApp } from '../componentes/HojaApp';
 
 /**
  * Detalle de un cierre de caja (W11): el estado y la diferencia en grande, quién cerró y a qué hora, el arqueo por
@@ -228,7 +228,7 @@ function DetalleCierre({ d }: { d: NonNullable<ReturnType<typeof selDetalleCierr
         )}
       </Tarjeta>
 
-      <HojaLigera
+      <HojaApp
         abierta={abierta}
         alCerrar={() => setAbierta(false)}
         titulo={TXT.cierres.marcar}
@@ -251,7 +251,7 @@ function DetalleCierre({ d }: { d: NonNullable<ReturnType<typeof selDetalleCierr
           placeholder={TXT.cierres.notaEjemplo}
           data-testid="app-nota-revision"
         />
-      </HojaLigera>
+      </HojaApp>
     </Pantalla>
   );
 }

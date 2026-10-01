@@ -6,8 +6,9 @@ import { MONEDAS, TASA_EJEMPLO } from '@/config/monedas';
 import type { Moneda } from '@/dominio/tipos';
 import { dinero } from '@/lib/formato';
 import { cn, Icono } from '@/ui/ligero';
-import { BotonEncabezadoMovil, HojaLigera, LocalEncabezado } from '@/ui/movil/Movil';
+import { BotonEncabezadoMovil, LocalEncabezado } from '@/ui/movil/Movil';
 import { TXT } from '../textos';
+import { HojaApp } from './HojaApp';
 
 /**
  * Controles del encabezado de cada pestaña (PLAN 8.5.2): a la derecha, el selector de local (`MapPin` + nombre corto)
@@ -59,7 +60,7 @@ export function HojaLocal({ abierta, alCerrar }: { abierta: boolean; alCerrar: (
   const cambiar = useSesion((s) => s.cambiarLocal);
   const locales = useSel(selLocalesQueVenden);
   return (
-    <HojaLigera abierta={abierta} alCerrar={alCerrar} titulo="Ver datos de">
+    <HojaApp abierta={abierta} alCerrar={alCerrar} titulo="Ver datos de">
       <div role="radiogroup" aria-label="Local">
         <OpcionHoja
           testid="app-local-todos"
@@ -85,7 +86,7 @@ export function HojaLocal({ abierta, alCerrar }: { abierta: boolean; alCerrar: (
           />
         ))}
       </div>
-    </HojaLigera>
+    </HojaApp>
   );
 }
 
@@ -112,8 +113,8 @@ export function OpcionesMoneda({ alElegir }: { alElegir?: () => void }) {
 
 export function HojaMoneda({ abierta, alCerrar }: { abierta: boolean; alCerrar: () => void }) {
   return (
-    <HojaLigera abierta={abierta} alCerrar={alCerrar} titulo="Ver cifras en">
+    <HojaApp abierta={abierta} alCerrar={alCerrar} titulo="Ver cifras en">
       <OpcionesMoneda alElegir={alCerrar} />
-    </HojaLigera>
+    </HojaApp>
   );
 }

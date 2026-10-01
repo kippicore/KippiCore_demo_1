@@ -1,5 +1,5 @@
 import { Smartphone } from 'lucide-react';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { createStore, useStore } from 'zustand';
 import { emitirUI } from '@/estado';
 import { Button } from '@/ui/primitivos/Button';
@@ -25,6 +25,10 @@ const Contenido = lazy(() => import('./ContenidoModalApp'));
 export function ModalAppDueno({ abierto, alCerrar }: { abierto?: boolean; alCerrar?: () => void } = {}) {
   const abiertoGlobal = useStore(almacen, (s) => s.abierto);
   const visible = abierto ?? abiertoGlobal;
+  // Con el modal controlado (`abierto`) nadie llamó a `abrirAppDueno()`: el evento de la guía se emite al abrirse.
+  useEffect(() => {
+    if (abierto) emitirUI('qr_abierto');
+  }, [abierto]);
   const cerrar = () => {
     almacen.setState({ abierto: false });
     alCerrar?.();

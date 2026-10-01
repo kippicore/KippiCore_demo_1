@@ -3,9 +3,9 @@ import { useState } from 'react';
 import { APP } from '@/config/textos/guia';
 import { useDatos } from '@/estado';
 import { cn, Icono } from '@/ui/ligero';
-import { HojaLigera } from '@/ui/movil/Movil';
 import { TXT } from '../textos';
 import { esPwaInstalada, esIosNavegador } from './entorno';
+import { HojaApp } from './HojaApp';
 
 /**
  * Chip permanente "Datos de ejemplo de este celular" (PLAN 8.5.3): 28 px, `bg-surface-2`, ícono `Info`. Abre una hoja
@@ -30,7 +30,7 @@ export function ChipDatos({ className }: { className?: string }) {
           {APP.chipDatos}
         </span>
       </button>
-      <HojaLigera abierta={abierta} alCerrar={() => setAbierta(false)} titulo={APP.chipDatos}>
+      <HojaApp abierta={abierta} alCerrar={() => setAbierta(false)} titulo={APP.chipDatos}>
         <div data-testid="chip-explicacion">
           <p className="t-body-lg text-ink">{TXT.chip.base}</p>
           <p className="mt-2 t-body text-muted">{TXT.chip.qr}</p>
@@ -44,7 +44,7 @@ export function ChipDatos({ className }: { className?: string }) {
           )}
           {esPwaInstalada() && esIosNavegador() && <p className="mt-4 t-body text-muted">{APP.explicacionPwaIos}</p>}
         </div>
-      </HojaLigera>
+      </HojaApp>
     </>
   );
 }

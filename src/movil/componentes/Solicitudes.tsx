@@ -4,10 +4,10 @@ import { useAcciones, useAhora, useSel } from '@/estado';
 import { ESTADOS_APROBACION } from '@/config/estados';
 import { relativa, unidades as unidadesTexto } from '@/lib/formato';
 import { avisar, BadgeEstado, Button, cn, Dinero, EmptyState, Icono, Textarea } from '@/ui/ligero';
-import { HojaLigera } from '@/ui/movil/Movil';
 import { selSolicitudesApp, type SolicitudVista } from '../selectores';
 import { TXT } from '../textos';
 import { ParDato, Tarjeta } from './Tarjeta';
+import { HojaApp } from './HojaApp';
 
 /**
  * "Para aprobar" (W10 y W11): los descuentos por encima del 15 %, los traslados y las anulaciones que esperan al dueño.
@@ -25,6 +25,8 @@ function TarjetaSolicitud({ s, alDecidir, saliendo }: { s: SolicitudVista; alDec
   const ahora = useAhora();
   const [dx, setDx] = useState(0);
   const arrastre = useRef<{ x: number; y: number; activo: boolean } | null>(null);
+  // El desplazamiento también va en una referencia: al soltar, `dx` del estado puede ir un movimiento atrasado.
+  const ultimoDx = useRef(0);
 
   const alBajar = (e: PointerEvent<HTMLElement>) => {
     if ((e.target as HTMLElement).closest('button')) return;
@@ -41,12 +43,15 @@ function TarjetaSolicitud({ s, alDecidir, saliendo }: { s: SolicitudVista; alDec
         e.currentTarget.setPointerCapture(e.pointerId);
       } else return;
     }
-    setDx(Math.max(-140, Math.min(140, mx)));
+    ultimoDx.current = Math.max(-140, Math.min(140, mx));
+    setDx(ultimoDx.current);
   };
   const alSoltar = () => {
     const a = arrastre.current;
     arrastre.current = null;
-    if (a?.activo && Math.abs(dx) >= UMBRAL) alDecidir(dx > 0 ? 'aprobada' : 'rechazada');
+    const final = ultimoDx.current;
+    ultimoDx.current = 0;
+    if (a?.activo && Math.abs(final) >= UMBRAL) alDecidir(final > 0 ? 'aprobada' : 'rechazada');
     setDx(0);
   };
 
@@ -147,7 +152,7 @@ export function ListaSolicitudes({ limite, vacio = true }: { limite?: number; va
           <TarjetaSolicitud key={s.id} s={s} saliendo={saliendo[s.id] ?? null} alDecidir={(d) => decidir(s, d)} />
         ))}
       </div>
-      <HojaLigera
+      <HojaApp
         abierta={!!confirmando}
         alCerrar={() => setConfirmando(null)}
         titulo={confirmando?.decision === 'aprobada' ? 'Confirma la anulación' : 'Rechazar solicitud'}
@@ -184,7 +189,7 @@ export function ListaSolicitudes({ limite, vacio = true }: { limite?: number; va
             )}
           </div>
         )}
-      </HojaLigera>
+      </HojaApp>
     </>
   );
 }

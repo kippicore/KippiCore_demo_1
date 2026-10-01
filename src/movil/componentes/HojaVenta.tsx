@@ -2,10 +2,10 @@ import { useSel } from '@/estado';
 import { unidades } from '@/lib/formato';
 import { ESTADOS_VENTA } from '@/config/estados';
 import { BadgeEstado, Dinero, Fecha } from '@/ui/ligero';
-import { HojaLigera } from '@/ui/movil/Movil';
 import { selDetalleVentaApp } from '../selectores';
 import { TXT } from '../textos';
 import { ParDato } from './Tarjeta';
+import { HojaApp } from './HojaApp';
 
 /**
  * Detalle de una venta en una hoja inferior (los modales de /app son hojas, nunca diálogos centrados, 8.5.4). Todo sale
@@ -14,9 +14,9 @@ import { ParDato } from './Tarjeta';
  */
 export default function HojaVenta({ ventaId, alCerrar }: { ventaId: string | null; alCerrar: () => void }) {
   return (
-    <HojaLigera abierta={!!ventaId} alCerrar={alCerrar} titulo={TXT.venta.titulo}>
+    <HojaApp abierta={!!ventaId} alCerrar={alCerrar} titulo={TXT.venta.titulo}>
       {ventaId && <ContenidoVenta ventaId={ventaId} />}
-    </HojaLigera>
+    </HojaApp>
   );
 }
 
