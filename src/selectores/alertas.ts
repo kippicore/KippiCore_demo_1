@@ -1,5 +1,5 @@
 import { TASA_EJEMPLO } from '@/config/monedas';
-import type { Alerta, Categoria, COP, EstadoDominio, FechaHoraISO, Id, Notificacion, ParteFrase, SolicitudAprobacion } from '@/dominio/tipos';
+import type { Alerta, Categoria, COP, EstadoDominio, FechaHoraISO, FechaISO, Id, Notificacion, ParteFrase, SolicitudAprobacion } from '@/dominio/tipos';
 import { asistenciaDia } from '@/dominio/reglas/asistencia';
 import { saldoCxP } from '@/dominio/reglas/cuentas';
 import { diferenciaDias, lunesDe, minutosDeHora, sumarDias } from '@/dominio/reglas/fechas';
@@ -15,7 +15,7 @@ import { selNarrativa } from './narrativa';
 import { selMetricasClientes } from './clientes';
 import { selCuentasPorCobrar } from './finanzas';
 import { selRiesgosContratacion } from './personal';
-import { capital, enumerar, montoExtranjero, pesos, pesosEnPalabras, relativaDias } from './texto';
+import { capital, enumerar, montoExtranjero, partesConPesos, pesos, pesosEnPalabras, relativaDias } from './texto';
 
 /**
  * "Requiere tu atención" (PLAN 2.3.3, 6.23 `alertas.ts`): las 10 alertas del guion resueltas con `selNarrativa`
@@ -379,7 +379,7 @@ export const selAlertas = crearSelector<{ localId: Id | 'todos'; ahora: FechaHor
     // importación sigan entre las cinco primeras (compartidos C-D).
     const solicitudPorNotificacion = new Map<string, SolicitudAprobacion>();
     for (const s of Object.values(e.solicitudes)) solicitudPorNotificacion.set(idHijo(s.id, 'n'), s);
-    const nuevas = selNotificaciones(e, { leidas })
+    const nuevas = selNotificaciones(e, { leidas, hoy })
       .filter((x) => !x.leida && x.notificacion.tipo !== 'sistema' && diferenciaDias(x.notificacion.ts.slice(0, 10), hoy) <= 2)
       .map(({ notificacion: x }, i): Alerta => {
         const base: Alerta = {
@@ -397,7 +397,11 @@ export const selAlertas = crearSelector<{ localId: Id | 'todos'; ahora: FechaHor
           prioridad: i < MAX_NUEVAS_ARRIBA ? 0 : 3.5,
         };
         const sol = x.tipo === 'aprobacion_solicitada' ? solicitudPorNotificacion.get(x.id) : undefined;
-        return sol ? { ...base, ...accionAprobacion(e, sol) } : base;
+        // Los pesos que traen los textos del dominio ("Nueva venta en la tienda web: $ 219.900") siguen la moneda activa.
+        const tituloPartes = partesConPesos(x.titulo);
+        const contextoPartes = x.detalle ? partesConPesos(x.detalle) : null;
+        const conDinero: Alerta = { ...base, ...(tituloPartes ? { tituloPartes } : {}), ...(contextoPartes ? { contextoPartes } : {}) };
+        return sol ? { ...conDinero, ...accionAprobacion(e, sol) } : conDinero;
       });
     const fuera = new Set(descartadas);
     return [...nuevas, ...r]
@@ -455,13 +459,18 @@ export interface NotificacionVista {
 }
 
 /** Notificaciones (de dominio) con su estado de lectura (de interfaz, store `sesion`). */
-export const selNotificaciones = crearSelector<{ leidas?: readonly string[] }, NotificacionVista[]>(
+/** Días que una notificación sigue "sin leer" si nadie la abre: las históricas de la demo nacen leídas. */
+export const VENTANA_NOTIFICACIONES_DIAS = 7;
+
+export const selNotificaciones = crearSelector<{ leidas?: readonly string[]; hoy?: FechaISO }, NotificacionVista[]>(
   'selNotificaciones',
   ['notificaciones'],
-  (e, { leidas = [] }) => {
+  (e, { leidas = [], hoy }) => {
     const l = new Set(leidas);
+    // Con `hoy`, lo que quedó fuera de la ventana reciente cuenta como leído (los 18 meses de historia no son alertas).
+    const vieja = (ts: string) => !!hoy && diferenciaDias(ts.slice(0, 10), hoy) > VENTANA_NOTIFICACIONES_DIAS;
     return Object.values(e.notificaciones)
-      .map((x) => ({ notificacion: x, leida: l.has(x.id) }))
+      .map((x) => ({ notificacion: x, leida: l.has(x.id) || vieja(x.ts) }))
       .sort((a, b) => (a.notificacion.ts < b.notificacion.ts ? 1 : -1));
   },
 );

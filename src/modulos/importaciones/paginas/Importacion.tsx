@@ -443,7 +443,7 @@ function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
                       ...(verPagos
                         ? ([
                             [
-                              'Moneda y tasa del pedido',
+                              'Moneda y tasa del día del pedido',
                               `${imp.moneda === 'USD' ? 'US$' : 'CN¥'} · $ ${formatoNumero(imp.tasaPedido, 2)}`,
                             ],
                           ] as const)
@@ -461,7 +461,7 @@ function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
                   />
                   {verPagos && fila && tasa > 0 && (
                     <p className="mt-4 t-small text-muted">
-                      Con la tasa de hoy, el valor de fábrica equivale a{' '}
+                      Con la tasa vigente de hoy, el valor de fábrica equivale a{' '}
                       {dinero(copDeCentavos(fila.fobOrigen, tasa))}.
                     </p>
                   )}

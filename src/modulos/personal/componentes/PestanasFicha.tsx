@@ -6,7 +6,7 @@ import { BotonDocumentoPdf } from '@/ui/conectados/BotonDocumentoPdf';
 import { ESTADOS_PERSONAL } from '@/config/estados';
 import type { Contrato, MesISO } from '@/dominio/tipos';
 import { useAcciones, useDinero, useHoy, useSel } from '@/estado';
-import { cedula, celular, cifraCorta, mesAnio, porcentaje } from '@/lib/formato';
+import { cedula, celular, mesAnio, porcentaje } from '@/lib/formato';
 import { rutas } from '@/app/rutas';
 import { selComisiones } from '@/selectores';
 import { antiguedad, frasesEsquema, mesesRecientes } from '../calculos';
@@ -281,7 +281,7 @@ export function PestanaComisiones({ ficha }: { ficha: FichaEmpleado }) {
               etiqueta="Meta del local"
               valor={c.metaLocalMes > 0 ? c.ventasLocalMes / c.metaLocalMes : 0}
               formatear={(n) => porcentaje(n, 0)}
-              nota={c.metaLocalMes > 0 ? `Meta de ${cifraCorta(c.metaLocalMes)}` : 'Sin meta fijada este mes'}
+              nota={c.metaLocalMes > 0 ? `Meta de ${dinero.corta(c.metaLocalMes)}` : 'Sin meta fijada este mes'}
             />
           </div>
           <DesgloseComision comision={c} conMeta={false} />

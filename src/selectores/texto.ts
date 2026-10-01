@@ -1,4 +1,4 @@
-import type { COP, FechaISO, MonedaExtranjera } from '@/dominio/tipos';
+import type { COP, FechaISO, MonedaExtranjera, ParteFrase } from '@/dominio/tipos';
 import { diferenciaDias } from '@/dominio/reglas/fechas';
 import { fechaCorta, miles, pesos, porcentajeTexto } from '@/dominio/reglas/texto';
 
@@ -54,4 +54,35 @@ export function capital(t: string): string {
 export function enumerar(lista: readonly string[]): string {
   if (lista.length <= 1) return lista[0] ?? '';
   return `${lista.slice(0, -1).join(', ')} y ${lista[lista.length - 1]}`;
+}
+
+// Un monto en pesos dentro de un texto ya armado: "$ 219.900", "−$ 40.000", "$ 58,1 millones", "$ 850 mil".
+const RE_PESOS = /(?:[-\u2212])?\$[\u00a0 ]?\d{1,3}(?:\.\d{3})*(?:,\d+)?(?:[\u00a0 ](?:millones|millón|mil)\b)?/g;
+
+/**
+ * Parte un texto que trae montos en pesos (las notificaciones del dominio: "Nueva venta en la tienda web: $ 219.900")
+ * en trozos para `<FraseConDinero>`, de modo que el dinero siga la moneda activa. `null` si no hay pesos.
+ */
+export function partesConPesos(texto: string): ParteFrase[] | null {
+  const partes: ParteFrase[] = [];
+  let desde = 0;
+  let hubo = false;
+  for (const m of texto.matchAll(RE_PESOS)) {
+    const crudo = m[0];
+    const negativo = /^[-\u2212]/.test(crudo);
+    const cifra = crudo.replace(/^[-\u2212]/, '').replace(/^\$[\u00a0 ]?/, '');
+    const [numero = '', sufijo] = cifra.split(/[\u00a0 ]/);
+    let valor = Number(numero.replace(/\./g, '').replace(',', '.'));
+    if (!Number.isFinite(valor)) continue;
+    if (sufijo === 'mil') valor *= 1_000;
+    else if (sufijo === 'millones' || sufijo === 'millón') valor *= 1_000_000;
+    const inicio = m.index ?? 0;
+    if (inicio > desde) partes.push({ texto: texto.slice(desde, inicio) });
+    partes.push({ dinero: Math.round(negativo ? -valor : valor), corta: !!sufijo });
+    desde = inicio + crudo.length;
+    hubo = true;
+  }
+  if (!hubo) return null;
+  if (desde < texto.length) partes.push({ texto: texto.slice(desde) });
+  return partes;
 }

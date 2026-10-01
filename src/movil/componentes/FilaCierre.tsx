@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react';
 import { rutas } from '@/app/rutas';
 import { hora } from '@/lib/formato';
-import { Dinero, Icono, PuntoEstado } from '@/ui/ligero';
+import { DineroCaja, Icono, PuntoEstado } from '@/ui/ligero';
 import type { CierreApp } from '../selectores';
 import { TXT } from '../textos';
 import { FilaLista } from './Tarjeta';
@@ -32,7 +32,7 @@ export function EstadoCierre({ c }: { c: CierreApp }) {
   return (
     <PuntoEstado tono="danger" className="t-small text-ink">
       <span>
-        {(c.diferencia ?? 0) < 0 ? 'Faltan' : 'Sobran'} <Dinero valor={Math.abs(c.diferencia ?? 0)} />
+        {(c.diferencia ?? 0) < 0 ? 'Faltan' : 'Sobran'} <DineroCaja valor={Math.abs(c.diferencia ?? 0)} />
       </span>
     </PuntoEstado>
   );

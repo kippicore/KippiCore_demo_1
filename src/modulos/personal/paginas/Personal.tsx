@@ -22,7 +22,7 @@ import {
 import type { Empleado, TipoVinculacion } from '@/dominio/tipos';
 import { sumarMesesAMes } from '@/dominio/reglas/fechas';
 import { useAhora, useDinero, useFiltroLocal, useHoy, useSel } from '@/estado';
-import { cifraCorta, numero, plural, porcentaje } from '@/lib/formato';
+import { numero, plural, porcentaje } from '@/lib/formato';
 import { rutas } from '@/app/rutas';
 import { useParamsRuta } from '@/app/useParamsRuta';
 import { selCostoNominaPorLocal, selLocales, type ModoCosto } from '@/selectores';
@@ -183,7 +183,7 @@ function CuerpoLista() {
             valor={sobreVentas}
             formatear={(n) => porcentaje(n, 1)}
             completo={porcentaje(sobreVentas, 2)}
-            nota={`${plural(contratistas, 'contratista')} · ${cifraCorta(costoLocales)} en los locales`}
+            nota={`${plural(contratistas, 'contratista')} · ${dinero.corta(costoLocales)} en los locales`}
             data-testid="personal-kpi-ventas"
           />
           <Kpi

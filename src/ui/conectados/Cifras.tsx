@@ -54,6 +54,21 @@ export function Dinero({ valor, corta, animar, incremento, contarDesdeCero, clav
   );
 }
 
+/**
+ * Diferencia de caja (faltante o sobrante): el efectivo se cuenta en pesos. En otra moneda se muestra convertida (como
+ * todo el sistema) y el título dice los pesos contados ("$ 40.000 en efectivo"), para que un faltante de US$ 10,13 no
+ * parezca un error.
+ */
+export function DineroCaja({ valor, className }: { valor: COP; className?: string }) {
+  const d = useDinero();
+  if (d.moneda === 'COP') return <Dinero valor={valor} className={className} />;
+  return (
+    <span className={cn('num whitespace-nowrap', className)} title={`${formatoDinero(valor, 'COP')} en efectivo`} data-valor={valor}>
+      {d(valor)}
+    </span>
+  );
+}
+
 /** Trozo de una frase armada por un selector (`Hallazgo.partes`, `Alerta.tituloPartes`). */
 export type ParteConDinero = ParteFrase;
 
