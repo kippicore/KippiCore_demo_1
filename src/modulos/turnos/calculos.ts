@@ -10,7 +10,7 @@ import type {
 } from '@/dominio/tipos';
 import { diferenciaDias, lunesDe, sumarDias } from '@/dominio/reglas/fechas';
 import { horasNetasTurno, minutosBrutos, seSolapan } from '@/dominio/reglas/jornada';
-import { FRANJAS } from '@/config/turnos';
+import { franjaDeTurno } from '@/config/turnos';
 import { semanaIso } from '@/lib/fechas';
 import { fechaCorta, fechaLarga, hora, numero, porcentaje } from '@/lib/formato';
 
@@ -30,20 +30,9 @@ export interface PlantillaTurno {
   descansoMin: number;
 }
 
-/** Horario habitual de cada tipo de turno en cada local (plantilla semanal de `config/turnos`). */
+/** Horario habitual de cada tipo de turno en cada local (`franjaDeTurno` de `config/turnos`). */
 export function plantillaTurno(tipo: TipoTurno, localId: Id): PlantillaTurno {
-  const f =
-    tipo === 'apertura'
-      ? FRANJAS.apertura
-      : tipo === 'intermedio'
-        ? FRANJAS.intermedio
-        : tipo === 'cierre'
-          ? localId === 'zr'
-            ? FRANJAS.cierreZr
-            : FRANJAS.cierre
-          : localId === 'bod'
-            ? FRANJAS.bodega
-            : FRANJAS.domingo;
+  const f = franjaDeTurno(tipo, localId);
   return { tipo, inicio: f.inicio, fin: f.fin, descansoMin: f.descansoMin };
 }
 
@@ -287,25 +276,6 @@ export function efectoEnNomina(
   if (tipo === 'vacaciones') return 'Se pagan como vacaciones y no cuentan como ausencia.';
   if (!remunerada) return 'No se paga: se descuentan estos días del salario.';
   return 'Se paga completa y no cuenta como ausencia.';
-}
-
-// ---------------------------------------------------------------------------------------------------------
-// Recargos
-// ---------------------------------------------------------------------------------------------------------
-/**
- * Reparte el recargo estimado de un empleado (`selRecargosTurnos`) entre el nocturno y el dominical/festivo en
- * proporción a horas × porcentaje de cada uno. La suma da exactamente el valor del dominio.
- */
-export function repartirRecargo(
-  r: { horasNocturnas: number; horasDominicalFestivo: number; valor: number },
-  recargos: { nocturno: number; dominicalFestivo: number },
-): { nocturno: number; dominical: number } {
-  const pesoN = r.horasNocturnas * recargos.nocturno;
-  const pesoD = r.horasDominicalFestivo * recargos.dominicalFestivo;
-  const total = pesoN + pesoD;
-  if (total <= 0 || r.valor <= 0) return { nocturno: 0, dominical: 0 };
-  const nocturno = Math.round((r.valor * pesoN) / total);
-  return { nocturno, dominical: r.valor - nocturno };
 }
 
 // ---------------------------------------------------------------------------------------------------------

@@ -17,7 +17,6 @@ import {
   puntualidad,
   rangoCompacto,
   rangoHoras,
-  repartirRecargo,
   textoHoras,
   textoMinutos,
   validarBorradorNovedad,
@@ -258,33 +257,6 @@ describe('novedades', () => {
       'No se paga: se descuentan estos días del salario.',
     );
     expect(efectoEnNomina('permiso', true, 1, p)).toBe('Se paga completa y no cuenta como ausencia.');
-  });
-});
-
-describe('recargos', () => {
-  const rec = { nocturno: 0.35, dominicalFestivo: 0.9 };
-
-  it('reparte el recargo en proporción a horas × porcentaje y la suma da exactamente el valor del dominio', () => {
-    const r = repartirRecargo({ horasNocturnas: 3, horasDominicalFestivo: 7, valor: 68_250 }, rec);
-    expect(r.nocturno + r.dominical).toBe(68_250);
-    // 3 × 0,35 = 1,05 frente a 7 × 0,90 = 6,30: el domingo pesa 6 veces más que cerrar tarde.
-    expect(r.nocturno).toBe(Math.round((68_250 * 1.05) / 7.35));
-    expect(r.dominical).toBeGreaterThan(r.nocturno * 5);
-  });
-
-  it('sin horas con recargo o sin valor (prestación de servicios) no reparte nada', () => {
-    expect(repartirRecargo({ horasNocturnas: 2, horasDominicalFestivo: 7, valor: 0 }, rec)).toEqual({
-      nocturno: 0,
-      dominical: 0,
-    });
-    expect(repartirRecargo({ horasNocturnas: 0, horasDominicalFestivo: 0, valor: 0 }, rec)).toEqual({
-      nocturno: 0,
-      dominical: 0,
-    });
-    expect(repartirRecargo({ horasNocturnas: 6, horasDominicalFestivo: 0, valor: 18_000 }, rec)).toEqual({
-      nocturno: 18_000,
-      dominical: 0,
-    });
   });
 });
 

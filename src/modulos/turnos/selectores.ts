@@ -21,7 +21,7 @@ import {
   type RecargoEmpleado,
   type ResumenAsistencia,
 } from '@/selectores';
-import { diasDeNovedad, estadoDeNovedad, nombreCorto, repartirRecargo, type EstadoNovedad } from './calculos';
+import { diasDeNovedad, estadoDeNovedad, nombreCorto, type EstadoNovedad } from './calculos';
 
 /**
  * Selectores locales de C2: componen los del dominio (`selTurnosSemana`, `selRecargosTurnos`, `selAsistencia`) y
@@ -148,22 +148,18 @@ export interface RecargosVista {
   valorDominical: number;
 }
 
-/** `selRecargosTurnos` con el recargo repartido entre "cerrar tarde" y "abrir el domingo". */
+/** `selRecargosTurnos` (que ya trae el nocturno y el dominical por persona) con el nombre corto y la vinculación. */
 export const selRecargosDetallados = crearSelector<{ localId: Id; lunes: FechaISO }, RecargosVista>(
   'selRecargosDetallados',
   ['turnos', 'empleados', 'contratos', 'parametros'],
   (e, p) => {
     const r = selRecargosTurnos(e, p);
-    const rec = e.parametros.nomina.recargos;
     const empleados: RecargoDetallado[] = r.empleados.map((x) => {
       const em = e.empleados[x.empleadoId];
-      const reparto = repartirRecargo(x, rec);
       return {
         ...x,
         corto: em ? nombreCorto(em.nombres, em.apellidos) : x.nombre,
         vinculacion: em ? (e.contratos[em.contratoVigenteId]?.tipo ?? null) : null,
-        valorNocturno: reparto.nocturno,
-        valorDominical: reparto.dominical,
       };
     });
     return {

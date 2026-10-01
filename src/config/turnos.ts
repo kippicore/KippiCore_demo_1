@@ -17,7 +17,7 @@ export interface TurnoPlantilla {
   descansoMin: number;
 }
 
-type Franja = { tipo: TipoTurno; inicio: HoraHHmm; fin: HoraHHmm; descansoMin: number };
+export type Franja = { tipo: TipoTurno; inicio: HoraHHmm; fin: HoraHHmm; descansoMin: number };
 
 export const FRANJAS = {
   apertura: { tipo: 'apertura', inicio: '10:00', fin: '18:00', descansoMin: 60 },
@@ -132,6 +132,25 @@ export const PLANTILLA_TURNOS: TurnoPlantilla[] = [
     6: F.bodegaSabado,
   }),
 ];
+
+/**
+ * Horario habitual de un tipo de turno en un local (compartidos C-D, pedido de C2): la franja que más usa la
+ * plantilla para ese tipo y local (el cierre de Zona Rosa es de 1 a 9 p. m.; el turno completo de la bodega, de 8 a
+ * 4), o la general si la plantilla no la usa allí. Sin ids de locales escritos a mano.
+ */
+export function franjaDeTurno(tipo: TipoTurno, localId: Id): Franja {
+  const conteo = new Map<string, { f: Franja; n: number }>();
+  for (const t of PLANTILLA_TURNOS) {
+    if (t.localId !== localId || t.tipo !== tipo) continue;
+    const clave = `${t.inicio}|${t.fin}|${t.descansoMin}`;
+    const x = conteo.get(clave) ?? { f: { tipo, inicio: t.inicio, fin: t.fin, descansoMin: t.descansoMin }, n: 0 };
+    x.n += 1;
+    conteo.set(clave, x);
+  }
+  const mas = [...conteo.values()].sort((a, b) => b.n - a.n)[0];
+  if (mas) return mas.f;
+  return { apertura: FRANJAS.apertura, intermedio: FRANJAS.intermedio, cierre: FRANJAS.cierre, completo: FRANJAS.domingo }[tipo];
+}
 
 /** Semanas de turnos almacenados alrededor del ancla (ventana móvil, 7.8). */
 export const SEMANAS_TURNOS = { atras: 13, adelante: 3 } as const;
