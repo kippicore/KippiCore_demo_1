@@ -19,7 +19,7 @@ const usdCorta = (cop: number) => {
   if (a >= 1e3) return `US$ ${uno(a / 1e3)} mil`;
   return `US$ ${Math.round(a)}`;
 };
-const limpio = (t: string | null) => (t ?? '').replace(/ /g, ' ').replace(/\s+/g, ' ').trim();
+const limpio = (t: string | null) => (t ?? '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
 
 /** Cifras en pesos que queden en la página ("$ 1.234", "$ 12,4 M"), sin contar las de US$ ni las de la tasa. */
 async function pesosVisibles(page: Page): Promise<string[]> {
