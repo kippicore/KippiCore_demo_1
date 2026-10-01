@@ -124,7 +124,7 @@ if (!r.ok) {
 const efectos = selEfectosVenta(r.antes, r.despues, ventaIdDeLaVenta);   // W1
 ```
 
-- **Una función por comando** del catálogo 6.21 (107). Nombre: `objeto.verbo` → `verboObjeto` (tabla completa en el **anexo B**). Datos: los de `MapaComandos` (`src/dominio/tipos/comandos.ts`).
+- **Una función por comando** del catálogo 6.21 (108; `notaCredito.avanzarEstado` desde compartidos C-D). Nombre: `objeto.verbo` → `verboObjeto` (tabla completa en el **anexo B**). Datos: los de `MapaComandos` (`src/dominio/tipos/comandos.ts`).
 - La acción **genera** los IDs de lo que crea (si no vienen), el `ts`, la marca de agua y el usuario/rol del sobre: tú solo pasas datos de negocio. Si necesitas el id antes (para navegar a lo creado), genéralo con `acciones.nuevoId(PREFIJO)` y pásalo, o léelo del registro (`useDatos(s => s.registro.at(-1))`).
 - Resultado: `{ ok: true, eventos, antes, despues }` o `{ ok: false, error: { codigo, mensaje, campo? } }`. Un comando inválido **no cambia nada** (atomicidad probada en F2-A1).
 - Actores especiales: `useAcciones({ actor: 'portal' })` en `/seguimiento/:numero` (B1) y `useAcciones({ actor: 'tienda' })` en `/tienda` (D6).
@@ -197,6 +197,7 @@ const { referencia, trasladar, resaltar } = useParamsRuta('producto');      // t
 - Claves legibles: referencia del producto (`HL-CAM-0142`), número de importación (`IMP-2026-07`), slug del empleado (`sebastian-cardenas`); el resto, el `id`. Resuelve con `selProductoPorReferencia`, `selImportacionPorNumero`, `selEmpleadoPorSlug`, `selProductoPorSlug` (tienda).
 - **Nunca escribas un número de importación, un id o un nombre del guion a mano**: resuélvelos con `selNarrativa({ hoy })` (las entidades del guion son dinámicas: la importación que hoy está en puerto depende del año).
 - Parámetros desconocidos se ignoran; un parámetro con una entidad inexistente muestra la pantalla sin el efecto y un toast discreto ("Esa venta ya no está en la lista").
+- Compartidos C-D: `rutas.canalInstagram({ escenario })` (`precio-comentario`, `catalogo-dm`) y `rutas.facturacion({ tipo: 'notas' })` (lista filtrada por notas crédito; también `factura_electronica` y `documento_equivalente_pos`).
 - `rutas.pos({ cliente })` abre el POS con ese cliente y, si tiene saldo a favor, con el saldo como primer medio de pago (el resto en efectivo) hasta que se toque el pago; A1 consume el parámetro (un id inexistente avisa y abre con Consumidor final). `rutas.ventas({ texto })`: la búsqueda de la lista viaja a la URL como los demás filtros (01/10/2026).
 - `?resaltar=<id>`: la fila/tarjeta destino se resalta 1,5 s y se desplaza a la vista con `<ResaltarFila>` (F2-C). `?resaltar=<control>` (`cambiar-estado`, `rol`, `moneda`): pulso de pista sobre ese control, una vez.
 - Globales: `?hoy=` (QA: reloj fijo, claves de almacenamiento aparte) y `?marco=1` (marcos que adoptan el store del padre). Para abrir un contexto NUEVO (portal en otra pestaña, QR) usa `propagarHoy(url, overrideHoy())`.
@@ -336,11 +337,11 @@ Todo lo de las columnas **Honra**, **Emite** y **Pistas** es criterio de aceptac
 | **C2** Turnos y asistencia | `src/modulos/turnos/**`, `e2e/paquetes/turnos.spec.ts` | `turnos`, `asistencia`, `novedades`, `miTurno`, `miDia` | `?local=&empleado=&desde=&hasta=` (asistencia), `?semana=&local=` (turnos) | — | `turnos.recargos` (total "Recargos estimados de la semana") | `asistencia` | 4322 |
 | **C3** Calendario | `src/modulos/calendario/**`, `e2e/paquetes/calendario.spec.ts` | `calendario` | `?vista=mes\|semana\|dia&fecha=&resaltar=` | — | `calendario.leyenda` (leyenda de tipos) | — | 4323 |
 | **D1** Inicio | `src/modulos/inicio/**`, `e2e/paquetes/inicio.spec.ts` | `inicio` | —. **Produce** los enlaces de las alertas (`selAlertas` ya los trae armados con `rutas.ts`) | — | `inicio.alertas` (lista "Requiere tu atención") | — | 4331 |
-| **D2** Análisis | `src/modulos/analisis/**`, `e2e/paquetes/analisis.spec.ts` | `analisis`, `tablaDinamica`, `analisisProductos`, `analisisClientes`, `analisisLocales` | `?vista=&resaltar=`. **Produce** `rutas.sugerirPedido({ proveedor, desde: 'analisis' })` | `tabla_dinamica_modificada` (cambio de filas, columnas o medida); `excel_generado` `{ reporte: 'pivote' }` al exportar | `analisis.hallazgos` (bloque de hallazgos) | pivote con `crearLibroExcel` (6.1) | 4332 |
-| **D3** Facturación | `src/modulos/facturacion/**`, `e2e/paquetes/facturacion.spec.ts` | `facturacion`, `factura`, `notaCredito` | `?resaltar=`, `?tipo=` | `pdf_generado` (vía el botón) | `facturacion.marca` (marca de agua de la vista previa) | documentos `factura`, `pos`, `nota-credito` | 4333 |
+| **D2** Análisis | `src/modulos/analisis/**`, `e2e/paquetes/analisis.spec.ts` | `analisis`, `tablaDinamica`, `analisisProductos`, `analisisClientes`, `analisisLocales` | analisis: `?vista=hallazgos\|proyeccion\|meses\|calor\|semanas`, `?resaltar=<id del hallazgo>\|AAAA-MM`; analisisProductos: `?vista=vendidos\|tallas\|colores\|rotacion`, `?resaltar=<referencia\|id\|categoría>` (la categoría se marca en Rotación); tablaDinamica: `?vista=mes-local\|vendedor-local\|categoria-talla\|dia-hora\|categoria-margen\|pago-mes` (abre ese ejemplo armado). **Produce** `rutas.sugerirPedido({ proveedor, desde: 'analisis' })` | `tabla_dinamica_modificada` (cambio de filas, columnas o medida); `excel_generado` `{ reporte: 'pivote' }` al exportar | `analisis.hallazgos` (bloque de hallazgos) | pivote con `crearLibroExcel` (6.1) | 4332 |
+| **D3** Facturación | `src/modulos/facturacion/**`, `e2e/paquetes/facturacion.spec.ts` | `facturacion`, `factura`, `notaCredito` | `?resaltar=`, `?tipo=factura_electronica\|documento_equivalente_pos\|notas` | `pdf_generado` (vía el botón) | `facturacion.marca` (marca de agua de la vista previa) | documentos `factura`, `pos`, `nota-credito` | 4333 |
 | **D4** Reportes | `src/modulos/reportes/**`, `e2e/paquetes/reportes.spec.ts` | `reportes` | `?reporte=<id>` (abre la tarjeta; valida contra `IDS_REPORTES`) | `pdf_generado`, `excel_generado` (vía `<BotonExportar>`; `contador` para la tarjeta destacada) | `reportes.contador` (tarjeta "Exportar para tu contador") | los 13 (`REPORTES`); rol bodega: `inventario` y `kardex` | 4334 |
-| **D5** Canales | `src/modulos/canales/**`, `src/seed/escenarios-canales.ts`, `e2e/paquetes/canales.spec.ts` | `canales`, `canalWhatsapp`, `canalInstagram`, `canalWeb` | `?escenario=<id>` | `whatsapp_escenario_completado` (`{ escenario }`), `whatsapp_respondido` | `canales.escenarios` (selector de escenarios) | — | 4335 |
-| **D6** Tienda web | `src/tienda/**`, `e2e/paquetes/tienda.spec.ts` | `tienda`, `tiendaCategoria`, `tiendaProducto`, `tiendaBolsa`, `tiendaPago`, `tiendaPedido` | `?marco=1` (el store del padre lo resuelve F2-B), `?talla=&color=` | — | `tienda.franja` (franja superior) | — | 4336 |
+| **D5** Canales | `src/modulos/canales/**`, `src/seed/escenarios-canales.ts`, `e2e/paquetes/canales.spec.ts` | `canales`, `canalWhatsapp`, `canalInstagram`, `canalWeb` | `?escenario=<id>` (WhatsApp e Instagram) | `whatsapp_escenario_completado` (`{ escenario }`), `whatsapp_respondido` | `canales.escenarios` (selector de escenarios) | — | 4335 |
+| **D6** Tienda web | `src/tienda/**`, `e2e/paquetes/tienda.spec.ts` | `tienda`, `tiendaCategoria`, `tiendaProducto`, `tiendaBolsa`, `tiendaPago`, `tiendaPedido` | `?marco=1` (el store del padre lo resuelve F2-B; el encabezado del layout lo conserva), `?talla=&color=` | — | `tienda.franja` (franja superior) | — | 4336 |
 | **E1** App del dueño | `src/movil/**`, `e2e/paquetes/movil.spec.ts` | `app`, `appVentas`, `appInventario`, `appProducto`, `appAgenda`, `appCierres`, `appCierre`, `appMas`, `appAprobar`, `appImportaciones`, `appImportacion`, `appNomina`, `appPagos`, `appAlertas`, `appMoneda`, `appComoArrancariamos` | `#r=` (ya decodificado: `useDatos(s => s.qr)` = `{ resultado: 'adoptado'\|'fusionado'\|'otra_ancla'\|'invalido', entradas, ancla }`), `?marco=1`, `?sesion=` (cierres) | `qr_abierto` (al abrir `ModalAppDueno`), `app_abierta` (al montar `/app` sin `?marco=1`) | `app.hoy` (cifra principal) | — | 4341 |
 | **E2** Entrada, guía y "Cómo arrancaríamos" | `src/modulos/entrada/**`, `src/modulos/guia/**`, `e2e/paquetes/guia.spec.ts` | `entrada`, `comoArrancariamos` | — (escucha todos los `EventoUI` y de dominio) | `como_arrancariamos_visto`, `marca_personalizada` | textos de todas las pistas (`config/textos/guia.ts`, `PISTAS_TEXTOS`). **Pendiente de A1:** la píldora de `GuiaFlotante` (`bottom-6 right-6`) tapa "Confirmar venta" en `/panel/pos`: ocúltala o muévela en esa ruta | — | 4342 |
 | **E3** Configuración | `src/modulos/configuracion/**`, `e2e/paquetes/configuracion.spec.ts` | `configuracion`, `configEmpresa`, `configLocales`, `configMonedas`, `configNomina`, `configImpuestos`, `configAduanas`, `configUsuarios`, `configDatos` | — | `marca_personalizada` | `configuracion.restaurar` (botón "Restaurar datos de demostración") | — | 4343 |
@@ -397,12 +398,12 @@ El sistema de diseño vive en `src/ui/**` (PLAN 8) y se ve completo, con datos r
 | `Input`, `InputNumero`, `Textarea` | `etiqueta`, `opcional`, `ayuda`, `error`, `tamano`, `prefijo`/`sufijo`, `buscar`, `numerico`; `InputNumero`: `valor`, `alCambiar`, `decimales` (acepta `ref`) | `InputNumero` formatea al perder el foco (1.250.000) y **selecciona todo al enfocar**: lo tecleado reemplaza el valor prellenado (en e2e basta `fill`). Error junto al campo, nunca en un toast |
 | `Select` | `valor`, `alCambiar`, `opciones` (`{ valor, etiqueta, grupo? }`), `placeholder`, `variante` campo · ghost, `enModal` | `alCambiar` nunca recibe `''` (Radix lo emite en algunos cambios; se filtra en el componente). Ninguna opción con `valor: ''` |
 | `Combobox` | `texto`, `alCambiarTexto`, `grupos`, `vacio(q)`, `fijo`, `atajo`, `alEnter` | El filtrado lo haces tú con un selector. `Resaltado` marca la coincidencia en 700 |
-| `Checkbox`, `Switch`, `GrupoRadio` | `marcado`/`activo`/`valor` + `alCambiar`; `GrupoRadio tarjetas columnas` | Tarjetas de radio para medios de pago y modalidad |
-| `SelectorFecha`, `SelectorRango` | `hoy` (de `useHoy()`), `valor`, `alCambiar`; `SelectorRango soloPanel` dentro de un `BotonPildora` | Atajos: Hoy · Ayer · Últimos 7 días · Este mes · Mes anterior · Últimos 90 días · Este año. `textoRango(r, hoy)` |
+| `Checkbox`, `Switch`, `GrupoRadio` | `marcado`/`activo`/`valor` + `alCambiar`; `GrupoRadio tarjetas columnas`; `Checkbox data-testid` va al control con `role="checkbox"` | Tarjetas de radio para medios de pago y modalidad |
+| `SelectorFecha`, `SelectorRango` | `hoy` (de `useHoy()`), `valor`, `alCambiar`; fecha opcional: `alBorrar` (+ `textoBorrar`) ofrece "Quitar la fecha"; `SelectorRango soloPanel` dentro de un `BotonPildora` | Atajos: Hoy · Ayer · Últimos 7 días · Este mes · Mes anterior · Últimos 90 días · Este año. `textoRango(r, hoy)` |
 | `Tabs` + `PanelTab` | `valor`, `alCambiar`, `pestanas` (`{ valor, etiqueta, contador? }`) | Subrayado de 2 px que se desliza |
 | `PestanasEnlace` | `pestanas` (`{ a: rutas.x(...), etiqueta, fin? }`) | Pestañas que son subrutas (fichas) |
 | `Segmentado` | `valor`, `alCambiar`, `opciones`, `etiqueta`, `tamano` | Tabla/Tarjetas, Mes/Semana/Día |
-| `Badge`, `BadgeEstado`, `PuntoEstado` | `tono` (de `config/estados.ts`), `tamano`; `BadgeEstado estado={ESTADOS_VENTA.pagada}` | **Nunca** elijas el color: usa el mapa canónico |
+| `Badge`, `BadgeEstado`, `PuntoEstado` | `tono` (de `config/estados.ts`), `tamano`, `data-testid`; `BadgeEstado estado={ESTADOS_VENTA.pagada}` | **Nunca** elijas el color: usa el mapa canónico |
 | `Card`, `Kpi`, `EncabezadoSeccion`, `EnlaceVerTodo` | `Card`: `titulo`, `accion`, `a` (clicable), `padding`; `Kpi`: `etiqueta`, `valor`, `formatear`, `completo`, `variacion { valor, comparado, buenoCuando }`, `serie`, `nota`, `destacada`, `a` | Sin sombras. Una sola `destacada` por pantalla |
 | `EncabezadoPagina` | `migas`, `titulo`, `subtitulo`, `insignia`, `eyebrow`, `acciones`, `pestanas` | Encabezado de TODA página del escritorio (8.4.5) |
 | `Table` | `columnas` (`{ id, encabezado, celda, ordenar?, numerica?, alinear?, ancho?, truncar? }`), `filas`, `clave`, `sustantivo`, `alAbrir`, `resaltada`, `totales`, `barra`, `seleccion`/`alSeleccionar`/`accionesLote`, `accionesFila`, `densidad`, `porPagina`, `ordenInicial`, `vacio`, `cargando` | Cabecera fija bajo la barra superior, totales fijos, paginación 25/50/100, barra de lote negra. Si la tabla no cabe a lo ancho, se desplaza en horizontal y la cabecera queda en su sitio (`top: 0`, sin pegarse al hacer scroll vertical): dimensiona para 1280 si quieres la cabecera fija. La fila resaltada se desplaza a la vista una vez (al cambiar). `useDensidadTabla(id)`, `FranjaResumen`, `BotonAccionesFila` (reenvía `ref` y props: disparador de `<Menu>`) |
@@ -417,11 +418,12 @@ El sistema de diseño vive en `src/ui/**` (PLAN 8) y se ve completo, con datos r
 | `Skeleton`, `FilasEsqueleto`, `Retrasado` | | Solo si la espera pasa de 300 ms |
 | `Timeline`, `pasosImportacion()`, `TimelineCompacta` | `pasos` / `estado` | 13 estados en 5 fases |
 | `Kanban`, `TarjetaTablero` | `columnas`, `tarjetas` (`{ id, columna, titulo }`), `pintar`, `alMover`, `permitido` | En la interfaz se llama "Tablero por estado" |
-| `Stepper`, `BarraProgreso`, `ListaQueCambio`, `MarcaAguaDocumento` | | "Qué cambió" escalonado 80 ms (W1) |
+| `Stepper`, `BarraProgreso`, `ListaQueCambio` (+ tipo `FilaCambio` desde `@/ui/ligero`), `MarcaAguaDocumento` | | "Qué cambió" escalonado 80 ms (W1) |
 | `Avatar`, `GrupoAvatares`, `MuestraColor`, `CajaTalla`, `ChipFiltro` | | Muestras y tallas: hex del PRODUCTO (`e.colores`) |
 | `Prenda`, `MiniaturaPrenda` | `tipo` (13 `TipoPrenda`), `color` (hex de la variante), `patron`, `vista` frente · detalle · tejido, `tamano`, `nombre` | La "foto" de catálogo. Miniaturas: tabla 30 × 40, buscador 32 × 43, bolsa 72 × 96 |
 | `GraficoBase` / `GraficoBarras` / `GraficoLineas` / `GraficoArea` | `datos`, `x`, `series` (`{ clave, nombre, color 1–4 · 'acento', tipo?, punteada? }`), `apiladas`, `titulo`, `lectura`, `formatoX`, `destacarX`, `referencia`, `referenciaX`, `alto`, `movil` | Presentacional. Etiquetas directas por serie, "Ver como tabla" |
-| `GraficoDinero` | igual que `GraficoBase`, con series **en COP** | Convierte a la moneda activa ejes, tooltips y tabla |
+| `GraficoDinero` | igual que `GraficoBase`, con series **en COP** | Convierte a la moneda activa ejes, tooltips y tabla. El eje Y mide su etiqueta más larga y las series se montan de nuevo si cambia la escala: ya no hace falta `key` por local y moneda |
+| `FraseConDinero` | `partes` (`ParteFrase[]`: `{ texto }` o `{ dinero: COP, corta? }`) | Frases de selectores (hallazgos, alertas) con el dinero en la moneda activa |
 | `colorDeLocal(local.orden)` | | Parque 93 → 1, Usaquén → 2, Zona Rosa → 3, Bodega → 4 |
 | `MapaCalor`, `GraficoCascada` | `valores` 7 × 12, `formatoValor`, `hallazgo`; `pasos`, `formato` | |
 | `CodigoBarras`, `CodigoQR` | `ean`, `copiable`; `valor`, `tamano` 72 · 96 · 120 · 160, `mostrarUrl` | Siempre negro sobre blanco. `CodigoQR` carga `qrcode`: diferido |
@@ -487,6 +489,15 @@ El sistema de diseño vive en `src/ui/**` (PLAN 8) y se ve completo, con datos r
 - **Rutas**: `rutas.pos({ cliente })` y `rutas.ventas({ texto })`.
 - **E2**: la píldora de `GuiaFlotante` no debe tapar "Confirmar venta" en `/panel/pos` (informe A1).
 
+### 14.3.2 Lo que cambió para la oleada E (compartidos C-D, 01/10/2026)
+
+- **Datos** (`versionGenerador` 4): Valentina es la que más vende de todo el equipo en 30 y 90 días (Juliana trabaja de jueves a domingo; Mateo cierra el sábado); el calzado es la categoría con más días de inventario; hay una novedad vigente (incapacidad de Julián Torres, de ayer a mañana) y una próxima (vacaciones de Santiago Rojas la semana siguiente); Hernando y Alejandro tienen la PILA del mes verificada (Daniela y Juliana no). Sebastián "este mes" ≈ $ 4,6 M (comisión ≈ $ 843.000).
+- **Alertas** (E1): las aprobaciones ya no enlazan a `/app/mas/aprobar` desde el selector (E1 arma su ruta por `tipo`, como ya hace); solo 2 "Nuevo" arriba; `tituloPartes`/`contextoPartes` traen el dinero en COP: píntalos con `<FraseConDinero>` para que respeten la moneda.
+- **Calendario** (E1 Agenda): `EventoVista.titulo` ya no lleva el monto: usa `monto` con `<Dinero>` o `montoOrigen`; `detalle` es la segunda línea; `ilustrativo` marca las obligaciones sin cuenta (PILA del mes que viene); `recordatorioMin` del evento guardado.
+- **Hallazgos** (E2 si los cita): `partes` + `<FraseConDinero>`.
+- **Personal** (E2 guía): la barra de pestañas de Personal y Turnos es una sola (`PESTANAS_PERSONAL`). El guion de W6 dice "cerca de $ 4,6 millones" (PLAN 2.1 y 4.5); `config/textos/guia.ts` es de E2.
+- **Tienda** (E2 guía): los íconos del encabezado tienen acción (`tienda-encabezado-buscar|tiendas|cuenta|favoritos`, paneles `tienda-panel-*`) y el contador es del layout (`tienda-contador-bolsa`).
+
 ### 14.4 Reglas del sistema (las verifica la revisión visual)
 
 - Colores **solo** de tokens: `bg-canvas`, `bg-surface`, `bg-surface-2`, `bg-selected`, `bg-product`, `text-ink`, `text-ink-2`, `text-muted`, `text-subtle`, `border-line`, `border-line-soft`, `border-line-strong`, `accent`, `success`, `warning`, `danger` (+ `-soft`), `chart-1…4`, `heat-0…5`. La paleta por defecto de Tailwind **no existe** (`bg-blue-500`, `rounded-xl`, `shadow-lg` no compilan a nada). Los únicos hex fuera de tokens son los colores de PRODUCTO de los datos.
@@ -503,7 +514,7 @@ Generado de `src/selectores/*.ts`. `Id | 'todos'` = un local o todos. Fechas `Fe
 
 | Archivo | Selector | Parámetros | Devuelve |
 |---|---|---|---|
-| alertas | `selAlertas` | `{ localId: Id \| 'todos'; ahora: FechaHoraISO; descartadas?: readonly string[]; leidas?: readonly string[] }` | `Alerta[]` |
+| alertas | `selAlertas` | `{ localId: Id \| 'todos'; ahora: FechaHoraISO; descartadas?: readonly string[]; leidas?: readonly string[] }` | `Alerta[]`: a lo sumo 2 "Nuevo" arriba (`MAX_NUEVAS_ARRIBA`); aprobaciones con ruta de escritorio (anulación → detalle de la venta; descuento → `aprobacion: { solicitudId }` para aprobar en la alerta y enlace a la prenda); `tituloPartes`/`contextoPartes` con el dinero en COP |
 | alertas | `selNotificaciones` | `{ leidas?: readonly string[] }` | `NotificacionVista[]` |
 | alertas | `selSolicitudesPendientes` | `void` | `SolicitudAprobacion[]` |
 | analisis | `selHechosAnalisis` | `{ hoy: FechaISO }` | `HechoAnalisis[]` |
@@ -536,7 +547,7 @@ Generado de `src/selectores/*.ts`. `Id | 'todos'` = un local o todos. Fechas `Fe
 | caja | `selEfectivoEnCajas` | `{ localId: Id \| 'todos' }` | `{ total: COP; porLocal: Record<Id, COP> }` |
 | caja | `selCierresDelDia` | `{ fecha: FechaISO }` | `CierreDelDia[]` |
 | caja | `selBonos` | `{ hoy: FechaISO; estado?: BonoConSaldo['estado']; localId?: Id \| 'todos' }` | `BonoConSaldo[]` |
-| calendario | `selEventosCalendario` | `{ desde: FechaISO; hasta: FechaISO; tipos?: TipoEvento[]; localId?: Id \| 'todos' }` | `EventoVista[]` |
+| calendario | `selEventosCalendario` | `{ desde: FechaISO; hasta: FechaISO; tipos?: TipoEvento[]; localId?: Id \| 'todos' }` | `EventoVista[]`: título solo concepto; `monto` (COP, para `<Dinero>`), `montoOrigen` (US$/CN¥ ya formateado), `detalle`, `ilustrativo`, `recordatorioMin`; llegadas "IMP-2026-07 · Llega a bodega"; obligaciones del calendario ilustrativo sin cuenta (`fuente.tipo: 'obligacion'`, `movible: false`) |
 | calendario | `selProximosEventos` | `{ hoy: FechaISO; n: number; dias?: number }` | `EventoVista[]` |
 | catalogo | `selCatalogo` | `FiltroCatalogo` | `FilaCatalogo[]` |
 | catalogo | `selProductoPorReferencia` | `{ referencia: string }` | `Producto \| null` |
@@ -561,7 +572,7 @@ Generado de `src/selectores/*.ts`. `Id | 'todos'` = un local o todos. Fechas `Fe
 | gastos | `selResumenGastos` | `{ mes: MesISO; localId: Id \| 'todos' }` | `{ categorias: { categoria: CategoriaGasto; actual: COP; anterior: COP; variacion: number \| null }[]; total: COP; totalAnterior: COP }` |
 | gastos | `selEstadoResultados` | `{ desde: FechaISO; hasta: FechaISO; localId: Id \| 'todos'; prorratear: boolean }` | `EstadoResultados` (con `prorratear`, los gastos de la bodega se reparten con los generales; la bodega da utilidad 0) |
 | gastos | `selPuntoEquilibrio` | `{ localId: Id \| 'todos'; mes: MesISO }` | `{ gastosFijos: COP; margenBruto: number; ventasEquilibrio: COP \| null; ventasNetasMes: COP }` |
-| hallazgos | `selHallazgos` | `{ hoy: FechaISO; localId?: Id \| 'todos'; maximo?: number }` | `Hallazgo[]` |
+| hallazgos | `selHallazgos` | `{ hoy: FechaISO; localId?: Id \| 'todos'; maximo?: number }` | `Hallazgo[]`: `frase` (en pesos) y `partes` + `cifras` (COP) para pintarla con `<FraseConDinero partes>` en la moneda activa |
 | importaciones | `selImportaciones` | `{ hoy: FechaISO; estado?: EstadoImportacion; proveedorId?: Id; incluirRecibidas?: boolean }` | `FilaImportacion[]` |
 | importaciones | `selImportacionPorNumero` | `{ numero: string }` | `Importacion \| null` |
 | importaciones | `selCostoAterrizado` | `{ importacionId: Id; hoy: FechaISO; tasaSimulada?: number \| null }` | `CostoAterrizadoVista \| null` |
@@ -578,7 +589,7 @@ Generado de `src/selectores/*.ts`. `Id | 'todos'` = un local o todos. Fechas `Fe
 | inventario | `selStockBajo` | `{ localId: Id \| 'todos' }` | `StockBajo[]` |
 | inventario | `selValorizacion` | `{ localId: Id \| 'todos' }` | `Valorizacion` |
 | inventario | `selEnTransito` | `void` | `EnTransito` |
-| inventario | `selSinMovimiento` | `{ dias: number; hoy: FechaISO }` | `SinMovimiento[]` |
+| inventario | `selSinMovimiento` | `{ dias: number; hoy: FechaISO; localId?: Id \| 'todos' }` (con local: existencias y ventas de ese local) | `SinMovimiento[]` |
 | inventario | `selDiasInventario` | `{ categoria?: Categoria \| null; hoy: FechaISO }` | `DiasInventario` |
 | inventario | `selDisponibilidadOtrosLocales` | `{ varianteId: Id }` | `Record<Id, number>` |
 | inventario | `selTraslados` | `{ estado?: Traslado['estado']; localId?: Id \| 'todos' }` | `Traslado[]` |
@@ -598,7 +609,7 @@ Generado de `src/selectores/*.ts`. `Id | 'todos'` = un local o todos. Fechas `Fe
 | personal | `selTurnosSemana` | `{ localId: Id; lunes: FechaISO }` | `SemanaTurnos` |
 | personal | `selMiDia` | `{ empleadoId: Id; ahora: FechaHoraISO }` | `MiDia` |
 | personal | `selRiesgosContratacion` | `{ hoy: FechaISO }` | `RiesgoContratacion[]` |
-| personal | `selRecargosTurnos` | `{ localId: Id; lunes: FechaISO }` | `{ empleados: RecargoEmpleado[]; total: COP }` |
+| personal | `selRecargosTurnos` | `{ localId: Id; lunes: FechaISO }` | `{ empleados: RecargoEmpleado[]; total: COP }` (por persona `valorNocturno`, `valorDominical` y `valor` = su suma) |
 | personal | `selLiquidacionFinal` | `{ empleadoId: Id; fecha: FechaISO }` | `LiquidacionFinal \| null` |
 | proveedores | `selProveedores` | `{ hoy: FechaISO; tipo?: Proveedor['tipo']; localId?: Id \| 'todos'; texto?: string }` | `FilaProveedor[]` |
 | proveedores | `selFichaProveedor` | `{ proveedorId: Id; hoy: FechaISO }` | `FichaProveedor \| null` (con `entregas: EntregaProveedor[]` por pedido recibido; sin importaciones eliminadas) |
@@ -720,6 +731,7 @@ Comando del catálogo 6.21 → nombre de la acción. Datos: `MapaComandos['<coma
 | `factura.emitir` | `emitirFactura` |
 | `factura.avanzarEstado` | `avanzarEstadoFactura` |
 | `notaCredito.emitir` | `emitirNotaCredito` |
+| `notaCredito.avanzarEstado` | `avanzarEstadoNotaCredito` (`{ notaId, estado: 'enviada' \| 'aceptada' }`, evento `NotaCreditoEstado`; mismas reglas que la factura) |
 | `empresa.editar` | `editarEmpresa` |
 | `local.crear` | `crearLocal` |
 | `local.editar` | `editarLocal` |
@@ -742,3 +754,4 @@ Comando del catálogo 6.21 → nombre de la acción. Datos: `MapaComandos['<coma
 | 01/10/2026 | Versión inicial (F2-B): API de estado, 106 rutas, 15 `EventoUI`, 23 pistas, 13 reportes y 5 plantillas PDF, puertos por paquete | F2-B |
 | 01/10/2026 | Sección 14 (componentes de interfaz), marcador común `data-testid="pagina"`, `@/ui/ligero`, selectores del layout como menús (`selector-rol` → `rol-<rol>`, `selector-moneda` → `moneda-<código>`, `selector-local` → `local-<id>`) | F2-C |
 | 01/10/2026 | Cambios compartidos de las oleadas A y B (informe `docs/informes/compartidos_AB.md`): `BotonAccionesFila` con `forwardRef`; `Table` con desborde horizontal (cabecera `top: 0`), observa la `<table>` y desplaza la fila resaltada solo al cambiar; `InputNumero` selecciona todo al enfocar; `Select` ignora `''`; `--animate-page-in` con `backwards`; `Cifra` con StrictMode; `Dialog confirmarAlCerrar` documentado. Separado creado y cancelado en el mismo mes fuera de los hechos de venta; `FiltrosReporte` y `BotonExportar` con los filtros de la lista de ventas; etiquetas de categoría en `gastos` y `cuentas`; `FichaProveedor.entregas`; bodega como gasto compartido en `selEstadoResultados`; `selSugerenciaPedido` con la espera; flujo de caja con pedidos futuros, otros gastos y retiros prudentes del socio (`RETIRO_SOCIO`), cobros desestacionalizados; `selMensajes`; rutas `pos?cliente=` y `ventas?texto=` | A1, A2, A3, A4, B1, B2, B3, B4, calibración |
+| 01/10/2026 | Cambios compartidos de las oleadas C y D (informe `docs/informes/compartidos_CD.md`): historia de datos coherente (`versionGenerador` 4, patrones `P2.lider30/90` y `P5.primera`, novedades vigente y próxima, PILA de dos contratistas); `selAlertas` con aprobaciones de escritorio (`Alerta.aprobacion`), 2 "Nuevo" arriba y `tituloPartes`/`contextoPartes`; `EventoVista` con `monto`, `montoOrigen`, `detalle`, `ilustrativo`, `recordatorioMin`, `fuente.tipo: 'obligacion'` y llegadas cortas; `obligacionesIlustrativas` en `dominio/reglas/obligaciones`; `Hallazgo.partes`/`cifras` y `FraseConDinero`; `GraficoBase` con eje Y a la medida y montaje por escala; comando `notaCredito.avanzarEstado`; emisor de los PDF con la marca activa; `selSinMovimiento({ localId })`; `selRecargosTurnos` con nocturno y dominical; `franjaDeTurno`; rutas `canalInstagram?escenario=` y `facturacion?tipo=notas`; `LayoutTienda` con contador, íconos con acción y `?marco=1`; `FilaCambio` en `@/ui/ligero`; `Badge`, `BadgeEstado` y `Checkbox` con `data-testid`; `SelectorFecha alBorrar`; pestañas únicas de Personal y Turnos | C1, C2, C3, D1, D2, D3, D5, D6 |
