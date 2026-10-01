@@ -34,7 +34,8 @@ export const TIPOS_LATENTES_CLIENTES: TipoLatenteCliente[] = [
   {
     id: 'frecuente',
     proporcion: 0.22,
-    compras18m: [4, 7],
+    // Más las 3 compras garantizadas del último año (P11); con más, uno de cada cuatro pasaba a VIP.
+    compras18m: [0, 2],
     factorTicket: 1.1,
     abandonoDias: null,
     altaUltimosDias: null,
@@ -62,7 +63,8 @@ export const TIPOS_LATENTES_CLIENTES: TipoLatenteCliente[] = [
   {
     id: 'en_riesgo',
     proporcion: 0.18,
-    compras18m: [1, 3],
+    // Más la compra garantizada antes del abandono (P11).
+    compras18m: [1, 4],
     factorTicket: 0.9,
     abandonoDias: [95, 300],
     altaUltimosDias: null,

@@ -98,17 +98,25 @@ export function planClientes(e: EntradaClientes): ClientePlan[] {
       activoHasta = masDias(e.ancla, -rng.entero(...latente.abandonoDias));
       alta = masDias(activoHasta, -rng.entero(150, 900));
     } else alta = masDias(e.ancla, -rng.entero(75, 1100));
-    let activoDesde = alta > e.inicio ? alta : e.inicio;
-    // Los ocasionales compran de vez en cuando, pero sus 1–3 compras caen en los últimos meses (P11: si no,
-    // casi todos quedarían "en riesgo" con la regla de 90 días).
-    if (tipo === 'ocasional') {
-      const reciente = masDias(e.ancla, -240);
-      if (activoDesde < reciente) activoDesde = reciente;
-    }
-    const compras = rng.entero(...latente.compras18m);
+    // Compras garantizadas (pista de calibración, P11): con la regla de 90 días, un frecuente que compra cada
+    // 3–4 meses o un ocasional quedan "en riesgo" por azar; se fija la compra que define su segmento.
+    const A = e.ancla;
+    const entre = (desde: number, hasta: number) => masDias(A, -rng.entero(hasta, desde));
+    const garantizadas: FechaISO[] = [];
+    if (tipo === 'vip') garantizadas.push(entre(60, 3));
+    else if (tipo === 'frecuente') garantizadas.push(entre(80, 3), entre(200, 110), entre(330, 220));
+    else if (tipo === 'ocasional') {
+      // Mitad con una sola compra hace 2–3 meses; mitad con una antigua y una reciente.
+      if (rng.chance(0.5)) garantizadas.push(entre(86, 62));
+      else garantizadas.push(entre(85, 5), entre(330, 100));
+    } else if (activoHasta) garantizadas.push(masDias(activoHasta, -rng.entero(0, 25)));
+    for (const f of garantizadas) if (f < alta.slice(0, 10)) alta = f;
+    const activoDesde = alta > e.inicio ? alta : e.inicio;
+    // Los ocasionales solo compran en sus fechas garantizadas (1–2 compras en el año).
+    const compras = tipo === 'ocasional' ? 0 : rng.entero(...latente.compras18m);
     // Las compras de los tipos latentes son para la ventana completa; quien llegó después compra en proporción.
     const diasRef = Math.min(DIAS_VENTANA_REF, Math.max(30, diferenciaDias(activoDesde, activoHasta ?? e.ancla)));
-    const completa = latente.altaUltimosDias !== null || tipo === 'ocasional';
+    const completa = latente.altaUltimosDias !== null;
     const tasa = (compras * (completa ? 1 : diasRef / DIAS_VENTANA_REF)) / Math.max(30, diasRef);
     const mes = rng.entero(1, 12);
     const diaNac = rng.entero(1, mes === 2 ? 28 : 30);
@@ -151,6 +159,7 @@ export function planClientes(e: EntradaClientes): ClientePlan[] {
       activoDesde,
       activoHasta,
       tasa,
+      garantizadas: garantizadas.filter((f) => f >= e.inicio).sort(),
       localHabitual,
       tallas,
       colorFavorito: rng.elegir(COLORES).id,

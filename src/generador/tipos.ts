@@ -74,8 +74,14 @@ export interface ClientePlan {
   activoDesde: FechaISO;
   /** Último día en que compra (en riesgo: antes del abandono). null = sigue activo. */
   activoHasta: FechaISO | null;
-  /** Compras esperadas por día activo. */
+  /** Compras esperadas por día activo (sorteadas entre las ventas identificadas). */
   tasa: number;
+  /**
+   * Fechas de compras garantizadas (P11): la última compra reciente de VIP, frecuentes y ocasionales, las del
+   * año de los frecuentes y ocasionales y la última antes del abandono de los "en riesgo". El plan las asigna a
+   * una venta concreta del día en su local habitual.
+   */
+  garantizadas: FechaISO[];
   localHabitual: Id;
   tallas: { superior: string; pantalon: string; calzado: string; sastreria: string };
   colorFavorito: Id;
