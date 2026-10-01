@@ -10,3 +10,4 @@ blob-report
 .vercel
 .env*
 .qa
+.claude/worktrees/
