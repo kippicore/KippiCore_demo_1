@@ -8,6 +8,7 @@ import type {
   MovimientoInventario,
   Traslado,
 } from '@/dominio/tipos';
+import { llegadaABodega } from '@/dominio/reglas/importaciones';
 import { ESTADOS_IMPORTACION } from '@/dominio/tipos';
 import { sumarDias } from '@/dominio/reglas/fechas';
 import { crearSelector } from './memo';
@@ -56,7 +57,7 @@ export const selEnCaminoPorVariante = crearSelector<void, Record<Id, EnCaminoVar
       if (imp.eliminadoEn) continue;
       const i = ESTADOS_IMPORTACION.indexOf(imp.estado);
       if (i < IDX_CONFIRMADO || i >= IDX_RECIBIDO) continue;
-      const llega = imp.hitos.recibido_bodega.estimada;
+      const llega = llegadaABodega(imp);
       for (const l of imp.lineas)
         for (const [v, n] of Object.entries(l.cantidades)) {
           if (n <= 0) continue;

@@ -217,7 +217,7 @@ export function MatrizFicha({ producto, alSolicitar, puedeSolicitar = true }: Pr
                       <span className="inline-flex items-center gap-2" data-testid={`en-camino-variante-${c.id}`}>
                         <Icono icono={Ship} tamano={14} />
                         <span>
-                          <strong className="font-bold text-ink num">{entero(ecVariante.unidades)}</strong> en {ecVariante.numero} · llegan {relativaDias(ecVariante.fechaEstimada, hoy)}{' '}
+                          <strong className="font-bold text-ink num">{entero(ecVariante.unidades)}</strong> en {ecVariante.numero} · llegan a bodega {relativaDias(ecVariante.fechaEstimada, hoy)}{' '}
                           <span className="text-muted">(talla {tallaElegida})</span>
                         </span>
                       </span>
@@ -225,7 +225,7 @@ export function MatrizFicha({ producto, alSolicitar, puedeSolicitar = true }: Pr
                       <span className="inline-flex items-center gap-2" title={`${ec.numero} · llegada estimada ${fecha(ec.llega)}`} data-testid={`en-camino-${c.id}`}>
                         <Icono icono={Ship} tamano={14} />
                         <span>
-                          <strong className="font-semibold text-ink num">{entero(ec.unidades)}</strong> en {ec.numero} · llegan {relativaDias(ec.llega, hoy)}
+                          <strong className="font-semibold text-ink num">{entero(ec.unidades)}</strong> en {ec.numero} · llegan a bodega {relativaDias(ec.llega, hoy)}
                         </span>
                       </span>
                     ) : (

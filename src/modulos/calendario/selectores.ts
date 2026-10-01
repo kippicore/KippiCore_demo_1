@@ -1,4 +1,5 @@
 import { rutas } from '@/app/rutas';
+import { llegadaABodega } from '@/dominio/reglas/importaciones';
 import { ETIQUETAS_ESTADO_IMPORTACION } from '@/config/aduanas';
 import { ESTADOS_POR_PAGAR, TONO_ESTADO_IMPORTACION } from '@/config/estados';
 import type { CategoriaCxP, CuentaPorPagar, EventoCalendario, FechaISO, Id, TipoEvento } from '@/dominio/tipos';
@@ -105,7 +106,7 @@ export const selAgenda = crearSelector<{ desde: FechaISO; hasta: FechaISO; hoy: 
           // El título del selector compartido es una frase larga; aquí el número va primero para que se lea en una ficha angosta.
           titulo: `${i.numero} · Llega a bodega`,
           origen: 'importacion',
-          fechaOrigen: i.hitos.recibido_bodega.estimada,
+          fechaOrigen: llegadaABodega(i),
           importacionNumero: i.numero,
           contenido: `${capital(categoria)} ${proveedor} · ${unidades(uds)}`.trim(),
           estadoTexto: ETIQUETAS_ESTADO_IMPORTACION[i.estado],
@@ -201,7 +202,7 @@ export const selUbicarEvento = crearSelector<{ clave: string }, { id: string; fe
     const turno = e.turnos[clave.startsWith('turno:') ? clave.slice(6) : clave];
     if (turno) return { id: `turno:${turno.id}`, fecha: turno.fecha };
     const imp = Object.values(e.importaciones).find((i) => !i.eliminadoEn && (i.numero === clave || i.id === clave || `imp:${i.id}` === clave));
-    if (imp) return { id: `imp:${imp.id}`, fecha: imp.hitos.recibido_bodega.estimada };
+    if (imp) return { id: `imp:${imp.id}`, fecha: llegadaABodega(imp) };
     const cxp = e.cuentasPorPagar[clave.startsWith('cxp:') ? clave.slice(4) : clave];
     if (cxp && !cxp.eliminadoEn) return { id: `cxp:${cxp.id}`, fecha: cxp.programadaPara ?? cxp.fechaVencimiento };
     return null;

@@ -4,7 +4,7 @@ import { asistenciaDia } from '@/dominio/reglas/asistencia';
 import { saldoCxP } from '@/dominio/reglas/cuentas';
 import { diferenciaDias, lunesDe, minutosDeHora, sumarDias } from '@/dominio/reglas/fechas';
 import { esDominicalOFestivo } from '@/dominio/reglas/festivos';
-import { retrasoDias } from '@/dominio/reglas/importaciones';
+import { retrasoDias, llegadaABodega } from '@/dominio/reglas/importaciones';
 import { NOMBRES_CATEGORIA } from '@/seed/catalogo';
 import { rutas } from '@/app/rutas';
 import { idHijo } from '@/dominio/motor/ids';
@@ -99,7 +99,7 @@ export const selAlertas = crearSelector<{ localId: Id | 'todos'; ahora: FechaHor
         const hay = existencia(e, v.id, n.localSurtido);
         const camino = selEnCaminoPorVariante(e)[v.id];
         const contexto = `${queda === 0 ? 'No queda ninguna' : queda === 1 ? 'Queda 1' : `Quedan ${queda}`}. En ${nombreLocal(n.localSurtido)} hay ${hay}${
-          camino ? ` y vienen ${camino.unidades} en la importación ${camino.numero} (llegan ${relativaDias(camino.fechaEstimada, hoy)})` : ''
+          camino ? ` y vienen ${camino.unidades} en la importación ${camino.numero} (llegan a bodega ${relativaDias(camino.fechaEstimada, hoy)})` : ''
         }.`;
         r.push({
           id: `stock_bajo:${v.id}@${n.localEscasez}`,
@@ -169,7 +169,7 @@ export const selAlertas = crearSelector<{ localId: Id | 'todos'; ahora: FechaHor
           titulo: enPuerto ? `Tu pedido ${i.numero} llegó a ${i.puertoDestino}` : `Tu pedido ${i.numero} está en ${i.estado === 'en_nacionalizacion' ? 'nacionalización' : 'camino a Bogotá'}`,
           contexto: enPuerto
             ? `${autor ? `${autor}${contacto ? ` (${contacto.empresa.replace(/ S\.A\.S\..*$/, '')})` : ''} lo reportó ${cuando} desde el portal.` : `Llegó ${cuando}.`} Sigue la nacionalización.`
-            : `Llegada estimada a bodega: ${relativaDias(i.hitos.recibido_bodega.estimada, hoy)}.`,
+            : `Llegada estimada a bodega: ${relativaDias(llegadaABodega(i), hoy)}.`,
           accion: { texto: 'Ver dónde viene', ruta: rutas.importacion(i.numero, { resaltar: 'cambiar-estado' }) },
           ts: notif?.ts ?? ahora,
           localId: null,
@@ -297,7 +297,7 @@ export const selAlertas = crearSelector<{ localId: Id | 'todos'; ahora: FechaHor
           modulo: 'importaciones',
           severidad: 'atencion',
           titulo: `${i.numero} va ${dias} ${dias === 1 ? 'día' : 'días'} tarde`,
-          contexto: `${aforo}Nueva llegada estimada a bodega: ${relativaDias(i.hitos.recibido_bodega.estimada, hoy)}.`,
+          contexto: `${aforo}Nueva llegada estimada a bodega: ${relativaDias(llegadaABodega(i), hoy)}.`,
           accion: { texto: 'Ver detalle', ruta: rutas.importacion(i.numero) },
           ts: ahora,
           localId: null,

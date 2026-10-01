@@ -1,4 +1,5 @@
 import { PackageCheck, Ship, Wand2 } from 'lucide-react';
+import { llegadaABodega } from '@/dominio/reglas/importaciones';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import type { Id } from '@/dominio/tipos';
@@ -173,7 +174,7 @@ function Formulario({ d }: { d: DetalleRecepcion }) {
         <EmptyState
           icono={Ship}
           titulo={`${imp.numero} todavía no se puede recibir`}
-          texto={`La mercancía se recibe después del levante en aduana. Llegada estimada a bodega: ${relativaDias(imp.hitos.recibido_bodega.estimada, hoy)}.`}
+          texto={`La mercancía se recibe después del levante en aduana. Llegada estimada a bodega: ${relativaDias(llegadaABodega(imp), hoy)}.`}
           accion={<BotonEnlace to={rutas.importacion(imp.numero)}>Ver la importación</BotonEnlace>}
         />
         <p className="mx-auto mt-2 text-center t-small text-muted num">

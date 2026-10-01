@@ -74,7 +74,7 @@ test('W2: matriz con En camino y traslado que mueve las existencias en las dos c
   await expect(page.getByTestId('matriz-local-usq')).toContainText(String(matriz.porLocal.usq));
   // Columna "En camino" con la importación y la llegada.
   await expect(page.locator('[data-testid^="en-camino-"]').first()).toContainText('IMP-2026-07');
-  await expect(page.locator('[data-testid^="en-camino-"]').first()).toContainText('llegan en');
+  await expect(page.locator('[data-testid^="en-camino-"]').first()).toContainText('llegan a bodega en');
 
   // Usaquén, celda M azul cielo: casi agotada → sugerencia.
   await page.getByTestId('matriz-local-usq').click();

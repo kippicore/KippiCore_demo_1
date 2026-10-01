@@ -110,17 +110,17 @@ export const PLANTILLAS_IMPORTACION_ES: Record<string, string> = {
   'embarcado.bodega':
     '{{Nombre}}, {{saludo}}. El pedido {{numero}} ya va en camino desde China. Llegaría a bodega hacia el {{llegadaBodega}}: unas {{unidades}} prendas. {{marca}}',
   'en_nacionalizacion.transportador':
-    '{{Nombre}}, {{saludo}}. El pedido {{numero}} de {{marca}} ({{contenido}}, {{carga}}) entró hoy, {{fecha}}, a nacionalización en {{puertoDestino}}. Le confirmo la fecha de recogida apenas tengamos levante; calculamos el {{levanteEstimado}}. Quedo atento. {{marca}}',
+    '{{Nombre}}, {{saludo}}. El pedido {{numero}} de {{marca}} ({{contenido}}, {{carga}}) entró hoy, {{fecha}}, a nacionalización en {{puertoDestino}}. Le confirmo la fecha de recogida apenas tengamos levante (calculamos el levante hacia el {{levanteEstimado}}). Quedo atento. {{marca}}',
   'en_nacionalizacion.bodega':
-    '{{Nombre}}, {{saludo}}. Hacia el {{llegadaBodega}} llegan a bodega unas {{unidades}} prendas del {{numero}}{{detalleDestacado}}. Por favor prepare espacio y la recepción. {{marca}}',
+    '{{Nombre}}, {{saludo}}. Hacia el {{llegadaBodega}} llegan a la bodega unas {{unidades}} prendas del {{numero}}{{detalleDestacado}}. Por favor prepare espacio y la recepción. {{marca}}',
   'en_nacionalizacion.agente_aduanas':
     '{{Nombre}}, {{saludo}}. ¿Me confirma cuándo sale el levante del {{numero}} y cuánto hay que girar de tributos? Gracias. {{marca}}',
   'nacionalizado.transportador':
     '{{Nombre}}, {{saludo}}. El {{numero}} ya tiene levante. Por favor recójalo en {{puertoDestino}} y me confirma la fecha de llegada a la bodega de Puente Aranda. {{marca}}',
   'nacionalizado.bodega':
-    '{{Nombre}}, {{saludo}}. El {{numero}} ya tiene levante y sale para Bogotá. Por favor haga espacio para unas {{unidades}} prendas; llegarían hacia el {{llegadaBodega}}. {{marca}}',
+    '{{Nombre}}, {{saludo}}. El {{numero}} ya tiene levante y sale para Bogotá. Por favor haga espacio para unas {{unidades}} prendas; llegarían a la bodega hacia el {{llegadaBodega}}. {{marca}}',
   'en_transporte_bogota.bodega':
-    '{{Nombre}}, {{saludo}}. El camión con el {{numero}} va en camino. Llegada estimada: {{llegadaBodega}}. {{marca}}',
+    '{{Nombre}}, {{saludo}}. El camión con el {{numero}} va en camino. Llegada estimada a la bodega: {{llegadaBodega}}. {{marca}}',
   'listo_despacho.agente_carga':
     '{{Nombre}}, {{saludo}}. El pedido {{numero}} de {{proveedor}} queda listo para despacho el {{fecha}} ({{carga}}). ¿Me ayuda a reservar espacio en la próxima consolidación desde {{puertoOrigen}}? {{marca}}',
   'saldo_pagado.agente_carga':

@@ -2,6 +2,8 @@ import { Link } from 'react-router';
 import { useMemo, useState } from 'react';
 import { rutas } from '@/app/rutas';
 import type { EstadoImportacion, FechaISO, Importacion } from '@/dominio/tipos';
+import { hitosAlCambiarEstado, llegadaABodega } from '@/dominio/reglas/importaciones';
+import { fecha as fechaTexto } from '@/lib/formato';
 import { ETIQUETAS_ESTADO_IMPORTACION, FASES_IMPORTACION } from '@/config/aduanas';
 import { MATRIZ_AVISOS } from '@/config/textos/mensajes';
 import { useAcciones, useAhora, useHoy, useMarca, useRolActivo, useSel } from '@/estado';
@@ -81,6 +83,9 @@ function CambiarEstadoAbierto({
     fecha,
   });
   const quien = estado && avisos ? avisos.destinatarios.filter((d) => d.preseleccionado) : [];
+  // Si el paso ocurre antes o después de lo estimado, la llegada a bodega se corre igual: se dice antes de guardar.
+  const llegadaHoy = llegadaABodega(imp);
+  const llegadaNueva = estado && !elegido?.correccion ? llegadaABodega({ hitos: hitosAlCambiarEstado(imp, estado, fecha) }) : llegadaHoy;
 
   const opcionesSelect: OpcionSelect[] = opciones.map((o) => ({
     valor: o.estado,
@@ -115,7 +120,11 @@ function CambiarEstadoAbierto({
       setErrores({ [campo]: r.error.mensaje });
       return;
     }
-    avisar({ tipo: 'exito', texto: `${imp.numero} pasó a ${ETIQUETAS_ESTADO_IMPORTACION[estado]}` });
+    avisar({
+      tipo: 'exito',
+      texto: `${imp.numero} pasó a ${ETIQUETAS_ESTADO_IMPORTACION[estado]}`,
+      ...(llegadaNueva !== llegadaHoy ? { detalle: `La llegada a bodega ahora se estima el ${fechaTexto(llegadaNueva)} (antes ${fechaTexto(llegadaHoy)}).` } : {}),
+    });
     alCambiar(false);
     alCambiado(estado, fecha);
   };
@@ -187,6 +196,12 @@ function CambiarEstadoAbierto({
                 elegido?.correccion ? 'Es una corrección: queda en el historial con tu nota.' : undefined
               }
             />
+            {estado && llegadaNueva !== llegadaHoy && (
+              <p className="border-l-2 border-accent pl-3 t-small text-ink" data-testid="cambio-llegada">
+                Con esta fecha, la llegada a bodega se estima el {fechaTexto(llegadaNueva)} (hoy dice {fechaTexto(llegadaHoy)}): los pasos que
+                siguen se corren los mismos días.
+              </p>
+            )}
             {estado && CONSECUENCIAS[estado] && (
               <p className="border-l-2 border-accent pl-3 t-small text-ink">{CONSECUENCIAS[estado]}</p>
             )}

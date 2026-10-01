@@ -1,4 +1,5 @@
 import { CheckCircle2, Ship } from 'lucide-react';
+import { llegadaABodega } from '@/dominio/reglas/importaciones';
 import { useMemo, useState } from 'react';
 import { useParamsRuta } from '@/app/useParamsRuta';
 import type { EstadoImportacion, FechaISO } from '@/dominio/tipos';
@@ -46,7 +47,7 @@ export default function Seguimiento() {
   const fila = filas.find((f) => f.importacion.id === imp.id);
   const retraso = fila?.retrasoDias ?? 0;
   const posicion = posicionRuta(imp, hoy);
-  const llegada = fila?.llegadaEstimada ?? imp.hitos.recibido_bodega.estimada;
+  const llegada = fila?.llegadaEstimada ?? llegadaABodega(imp);
   const dias = diferenciaDias(hoy, llegada);
   const desde = imp.hitos[imp.estado].real ?? imp.hitos[imp.estado].estimada;
 
@@ -109,7 +110,7 @@ export default function Seguimiento() {
               ),
               bodega: (
                 <>
-                  Est. <Fecha valor={imp.hitos.recibido_bodega.estimada} />
+                  Est. <Fecha valor={llegadaABodega(imp)} />
                 </>
               ),
             }}

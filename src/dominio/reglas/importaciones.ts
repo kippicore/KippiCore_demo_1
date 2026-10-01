@@ -92,6 +92,28 @@ export function reestimarHitos(
   return r;
 }
 
+/**
+ * LA fecha de llegada a bodega de una importación (única fuente): la real si ya se recibió y, si no, la estimada.
+ * Ficha, tablero, "En camino" del inventario, alertas, calendario, avisos, portal y app leen esta función.
+ */
+export function llegadaABodega(imp: Pick<Importacion, 'hitos'>): FechaISO {
+  return imp.hitos.recibido_bodega.real ?? imp.hitos.recibido_bodega.estimada;
+}
+
+/**
+ * Los hitos tal como quedarán al pasar la importación a `estado` en `fecha` (lo mismo que hace el comando
+ * `importacion.cambiarEstado`): si el paso se adelanta o se atrasa frente a lo estimado, los pasos siguientes se
+ * corren los mismos días. Si el estado ya se alcanzó (o es una corrección), son los hitos de hoy.
+ */
+export function hitosAlCambiarEstado(
+  imp: Pick<Importacion, 'estado' | 'hitos'>,
+  estado: EstadoImportacion,
+  fecha: FechaISO,
+): Record<EstadoImportacion, HitoImportacion> {
+  if (indiceEstado(estado) <= indiceEstado(imp.estado)) return imp.hitos;
+  return reestimarHitos(imp.hitos, estado, fecha);
+}
+
 /** Fechas estimadas en orden no decreciente (importacion.actualizarHitos). */
 export function hitosEnOrden(hitos: Record<EstadoImportacion, HitoImportacion>): boolean {
   let previa = '';
