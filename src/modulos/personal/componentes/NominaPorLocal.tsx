@@ -19,15 +19,19 @@ export function NominaPorLocal({ mes, locales, total, ventas }: { mes: MesISO; l
         <div>
           <h2 className="t-h2 text-ink">{TEXTOS.lista.porLocalTitulo}</h2>
           <p className="mt-1 t-small text-muted">
-            {mesAnio(mes)}, el último mes completo. <Termino id="costoEmpleador" sinTecnico />.
+            {mesAnio(mes)}, el último mes completo, tal como se liquidó (con comisiones, recargos, horas extra y contratistas; por eso no coincide con el costo pactado de arriba). <Termino id="costoEmpleador" sinTecnico />.
           </p>
         </div>
         <p className="t-body text-ink-2" data-testid="personal-por-local-total" data-total={total}>
-          En total <Dinero valor={total} className="font-bold text-ink" /> de nómina sobre <Dinero valor={ventas} corta className="font-bold text-ink" /> de ventas
+          Nómina liquidada de {mesAnio(mes)}: <Dinero valor={total} className="font-bold text-ink" /> sobre <Dinero valor={ventas} corta className="font-bold text-ink" /> de ventas
           {ventas > 0 && <> · {porcentaje(total / ventas, 1)}</>}
         </p>
       </div>
-      <ul className="mt-5 divide-y divide-line-soft">
+      <p className="mt-5 flex justify-end gap-4 t-eyebrow text-muted" aria-hidden>
+        <span>Costo del mes</span>
+        <span className="w-[8ch] text-right">% de ventas</span>
+      </p>
+      <ul className="mt-2 divide-y divide-line-soft">
         {locales.map((l) => {
           const p = l.porcentaje;
           return (

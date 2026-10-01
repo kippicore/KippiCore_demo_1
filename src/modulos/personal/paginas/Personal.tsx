@@ -22,7 +22,7 @@ import {
 import type { Empleado, TipoVinculacion } from '@/dominio/tipos';
 import { sumarMesesAMes } from '@/dominio/reglas/fechas';
 import { useAhora, useDinero, useFiltroLocal, useHoy, useSel } from '@/estado';
-import { cifraCorta, numero, plural, porcentaje } from '@/lib/formato';
+import { cifraCorta, mesAnio, numero, plural, porcentaje } from '@/lib/formato';
 import { rutas } from '@/app/rutas';
 import { useParamsRuta } from '@/app/useParamsRuta';
 import { selCostoNominaPorLocal, selLocales, type ModoCosto } from '@/selectores';
@@ -99,9 +99,7 @@ function CuerpoLista() {
   const costoTotal = activas.reduce((a, f) => a + (f.costo ?? 0), 0);
   const valorTotal = activas.reduce((a, f) => a + f.valorBase, 0);
   const laborales = activas.filter((f) => f.tipo === 'laboral').length;
-  const contratistas = activas.filter((f) => f.tipo === 'prestacion_servicios').length;
   const ventasMes = porLocal.locales.reduce((a, l) => a + (l.porcentaje !== null ? l.ventas : 0), 0);
-  const costoLocales = porLocal.locales.filter((l) => l.porcentaje !== null).reduce((a, l) => a + l.costo, 0);
   const sobreVentas = ventasMes > 0 ? porLocal.total / ventasMes : 0;
 
   const limpiar = () => {
@@ -168,7 +166,7 @@ function CuerpoLista() {
             formatear={dinero.corta}
             completo={dinero(costoTotal)}
             destacada
-            nota={`${plural(activas.length, 'persona')} · ${modo === 'pactado' ? 'con lo pactado' : 'con comisiones y recargos'}`}
+            nota={`${plural(activas.length, 'persona')} · ${modo === 'pactado' ? 'lo pactado en los contratos, sin comisiones ni recargos' : 'con comisiones y recargos, proyectado a un mes'}`}
             data-testid="personal-kpi-costo"
           />
           <Kpi
@@ -183,7 +181,7 @@ function CuerpoLista() {
             valor={sobreVentas}
             formatear={(n) => porcentaje(n, 1)}
             completo={porcentaje(sobreVentas, 2)}
-            nota={`${plural(contratistas, 'contratista')} · ${cifraCorta(costoLocales)} en los locales`}
+            nota={`${mesAnio(mesCompleto)}, liquidado: ${cifraCorta(porLocal.total)} de nómina sobre ${cifraCorta(ventasMes)} de ventas`}
             data-testid="personal-kpi-ventas"
           />
           <Kpi
