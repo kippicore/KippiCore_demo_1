@@ -28,6 +28,10 @@ export interface ImportacionEnCurso {
   unidadesForzadas: Record<string, number>;
   /** Saldo del pedido en USD (centavos) cuando la narrativa lo fija (N5: US$ 14.700). */
   saldoCentavos: number | null;
+  /** Multiplica las cantidades de "pedir hasta" (pedido de temporada; W4: reparte los costos fijos). */
+  factorCantidad?: number;
+  /** Factor por referencia, en lugar de `factorCantidad` (W12: de la Oxford viene poco y el próximo pedido la necesita). */
+  factorPorProducto?: Record<Id, number>;
 }
 
 export const IMPORTACIONES_EN_CURSO: ImportacionEnCurso[] = [
@@ -83,6 +87,10 @@ export const IMPORTACIONES_EN_CURSO: ImportacionEnCurso[] = [
     aforo: null,
     unidadesForzadas: { 'pd_cam_0142|M|col_azc': 48 },
     saldoCentavos: null,
+    // Pedido de temporada (octubre–diciembre): ≈ 1.100 camisas en los 6,2 m³ (W4), con poca Oxford: ya venía
+    // corta y es la protagonista del próximo pedido (W12). Pista de calibración.
+    factorCantidad: 1.8,
+    factorPorProducto: { pd_cam_0142: 0.5 },
   },
   {
     clave: 'en_nacionalizacion',
@@ -114,9 +122,10 @@ export const HISTORIA_IMPORTACIONES = {
   },
   /** La Oxford azul cielo M se pide × 0,75 para que se agote ≈ 3 veces en 6 meses (P3). */
   oxfordM: { clave: 'pd_cam_0142|M|col_azc', factor: 0.75 },
-  /** Cobertura de cada pedido: hasta la siguiente llegada + 30 días, × 1,15 (7.9). */
-  coberturaExtraDias: 30,
-  margenSeguridad: 1.15,
+  /** Cobertura de cada pedido: hasta la siguiente llegada + 20 días, × 1,10 (7.9). */
+  // Pista de calibración (P5): 20 días y × 1,10 dejan la tienda en ≈ 4 meses de inventario (antes ≈ 5).
+  coberturaExtraDias: 20,
+  margenSeguridad: 1.1,
   /** Blazers: la tasa sube ≈ 8 % entre el penúltimo y el último pedido (P13). */
   alzaTasaBlazers: 0.08,
   /** Aforo en ≈ 15 % de los pedidos (3–8 días más de nacionalización). */

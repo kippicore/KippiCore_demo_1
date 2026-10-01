@@ -46,12 +46,18 @@ const VOLUMEN_POR_UNIDAD: Record<Categoria, number> = {
 };
 
 /** Componente específico del arancel ("Otros tributos aduaneros"), como fracción del FOB en pesos (ejemplo). */
-const OTROS_TRIBUTOS_SOBRE_FOB = 0.25;
+// Pista de calibración (W4): 20 % (antes 25 %) deja la Oxford de IMP-…-07 cerca de $ 71.850 puesta en bodega.
+const OTROS_TRIBUTOS_SOBRE_FOB = 0.2;
 /**
- * Días de demanda esperada de calzado que deja el pedido grande al ancla. Con la demanda real (agotados de
- * tallas y colores) da ≈ 160 días de inventario (P5).
+ * Días del ritmo promedio del último año de calzado que deja el pedido grande al ancla. Con lo que sobra por las
+ * ventas perdidas (agotados de tallas y colores) da ≈ 180 días de inventario y ≈ $ 50 M (P5, pista de calibración).
  */
-const DIAS_CALZADO_DORMIDO = 125;
+const DIAS_CALZADO_DORMIDO = 135;
+
+function cadenciaDe(fab: ProveedorSeed): number {
+  const c = fab.perfil?.cadencia ?? 120;
+  return c === 'semestral' ? 182 : c;
+}
 /** Fracción que se distribuye a los locales al recibir (el resto queda de reserva en bodega, 7.9). */
 export const FRACCION_DISTRIBUIDA = 0.8;
 /** Horizonte del plan después del ancla. */
@@ -96,17 +102,34 @@ function fechasRegulares(
   retraso: number,
   aforoDias: number,
 ): Fechas {
-  const total = Math.max(0, Math.round(rng.normal(retraso, retraso * 0.45 + 0.6)));
+  // La mitad del aforo se descuenta: el aforo (3–8 días) cuenta dentro del retraso promedio de la fábrica (P14).
+  // La fábrica puntual (retraso promedio ≤ 1 día) cumple las fechas de cada etapa, sin ruido.
+  const conRuido = retraso > 1;
+  const sorteo = Math.round(rng.normal(retraso, retraso * 0.2 + 0.6));
+  const total = Math.max(0, (conRuido ? sorteo : 0) - Math.round(aforoDias / 2));
   const r: Fechas = { cotizado: pedido };
   let f = pedido;
+  // Pista de calibración (P14): los ±días de cada etapa se compensan al nacionalizar, así el retraso total contra
+  // la estimada original es el de la fábrica (+ el aforo) y no se le suman ≈ 4 días de ruido por etapas.
+  let ruido = 0;
   for (let i = 1; i < ESTADOS_IMPORTACION.length; i++) {
     const e = ESTADOS_IMPORTACION[i] as EstadoImportacion;
     let d = dias[e];
-    if (e === 'listo_despacho') d += Math.round(total * 0.6) + rng.entero(-2, 2);
-    else if (e === 'en_puerto') d += Math.round(total * 0.2) + rng.entero(-2, 3);
-    else if (e === 'nacionalizado') d += total - Math.round(total * 0.6) - Math.round(total * 0.2) + aforoDias;
-    else if (e !== 'en_transito') d += rng.entero(0, 1);
-    f = masDias(f, Math.max(1, d));
+    let x = 0;
+    if (e === 'listo_despacho') {
+      x = rng.entero(-2, 2) * (conRuido ? 1 : 0);
+      d += Math.round(total * 0.6) + x;
+    } else if (e === 'en_puerto') {
+      x = rng.entero(-2, 3) * (conRuido ? 1 : 0);
+      d += Math.round(total * 0.2) + x;
+    } else if (e === 'nacionalizado') d += total - Math.round(total * 0.6) - Math.round(total * 0.2) + aforoDias - ruido;
+    else if (e !== 'en_transito' && indice(e) < indice('nacionalizado')) {
+      x = rng.entero(0, 1) * (conRuido ? 1 : 0);
+      d += x;
+    }
+    const real = Math.max(1, d);
+    if (e !== 'nacionalizado') ruido += real - dias[e] - (e === 'listo_despacho' ? Math.round(total * 0.6) : e === 'en_puerto' ? Math.round(total * 0.2) : 0);
+    f = masDias(f, real);
     r[e] = f;
   }
   return r;
@@ -254,7 +277,7 @@ export function planImportaciones(e: EntradaPlanImportaciones): PlanImportacione
     const cadencia = perfil.cadencia === 'semestral' ? 182 : perfil.cadencia;
     const regular = (pedido: FechaISO): Pedido => {
       const rng = rngPlan(e.semilla, `imp:${fab.id}:${pedido}`);
-      const conAforo = rng.chance(HISTORIA_IMPORTACIONES.probabilidadAforo);
+      const conAforo = rng.chance(perfil.probabilidadAforo ?? HISTORIA_IMPORTACIONES.probabilidadAforo);
       const aforoDias = conAforo ? rng.entero(...HISTORIA_IMPORTACIONES.diasAforo) : 0;
       return {
         proveedorId: fab.id,
@@ -371,33 +394,44 @@ export function planImportaciones(e: EntradaPlanImportaciones): PlanImportacione
       }
       const siguiente = lista.find((x) => x > llegada) ?? masDias(llegada, 200);
       const desde = ped.cargaInicial ? e.inicio : llegada;
+      // El pedido grande de Ruifeng no cubre un año de cinturones y billeteras (pista de calibración, P5): lo que no
+      // es calzado se pide para una cadencia normal.
+      const siguienteNoCalzado = ped.dormido ? (masDias(llegada, cadenciaDe(fab)) < siguiente ? masDias(llegada, cadenciaDe(fab)) : siguiente) : siguiente;
       const hasta = masDias(siguiente, HISTORIA_IMPORTACIONES.coberturaExtraDias);
+      const hastaNoCalzado = masDias(siguienteNoCalzado, HISTORIA_IMPORTACIONES.coberturaExtraDias);
       const referencias = ped.narrativa ? ped.narrativa.referencias : (porProveedor.get(fab.id) ?? []).map((p) => p.id);
       const porProducto = new Map<Id, Record<Id, number>>();
       for (const refId of referencias) {
         const p = e.productos.find((x) => x.id === refId);
         if (!p) continue;
-        const demanda = esperado(acum, p.id, desde, hasta) * HISTORIA_IMPORTACIONES.margenSeguridad;
+        const demanda = esperado(acum, p.id, desde, p.categoria === 'calzado' ? hasta : hastaNoCalzado) * HISTORIA_IMPORTACIONES.margenSeguridad;
         const curva = CURVA_PEDIDO[p.curva];
         const cantidades: Record<Id, number> = {};
         for (const talla of p.tallas) {
           for (const color of p.colores) {
             const v = p.variantes[`${talla}|${color}`];
             if (!v) continue;
-            let objetivo = demanda * (curva[talla] ?? 0) * e.demanda.fraccionColor(p, color, llegada);
+            let objetivo = demanda * (curva[talla] ?? 0) * e.demanda.fraccionColor(p, color, llegada) * (ped.narrativa?.factorPorProducto?.[p.id] ?? ped.narrativa?.factorCantidad ?? 1);
             const esOxfordM = p.id === oxfordM[0] && talla === oxfordM[1] && color === oxfordM[2];
             if (esOxfordM) {
               // P3: se agota ≈ 3 veces en 6 meses. El pedido que llega antes del ancla trae lo justo para N1.
               const antesDelAncla = llegada <= e.ancla && llegada > masDias(e.ancla, -120);
-              if (antesDelAncla && !ped.narrativa) objetivo = consumo(p, talla, color, llegada, e.ancla) + 12;
+              // Con ventas perdidas cuando un local se queda sin ella, se vende ≈ 60 % de lo esperado (pista de
+              // calibración): así a la víspera quedan ≈ 9–12 y no sobra para vender de golpe.
+              if (antesDelAncla && !ped.narrativa) objetivo = consumo(p, talla, color, llegada, e.ancla) * 0.6 + 6;
               else objetivo *= HISTORIA_IMPORTACIONES.oxfordM.factor;
             }
-            if (p.sinMovimiento && llegada < e.demanda.limiteSinMovimiento) objetivo += 2;
+            // P6, N9: las 5 sin movimiento deben llegar al ancla con existencias. Venden más de lo esperado (son el
+            // reemplazo cuando falta otra referencia), así que se piden con holgura (pista de calibración).
+            if (p.sinMovimiento && llegada < e.demanda.limiteSinMovimiento)
+              objetivo = p.categoria === 'calzado' ? objetivo + 2 : objetivo * 1.4 + 6;
             if (!ped.dormido && p.categoria === 'calzado' && dormido && llegada > dormido && llegada <= masDias(e.ancla, 60))
               objetivo = 0;
             if (ped.dormido && p.categoria === 'calzado') {
-              // P5: el pedido grande de temporada deja ≈ 160 días de inventario de calzado al ancla.
-              objetivo = consumo(p, talla, color, llegada, e.ancla) + consumo(p, talla, color, e.ancla, masDias(e.ancla, DIAS_CALZADO_DORMIDO));
+              // P5: el pedido grande de temporada deja ≈ $ 50 M de calzado al ancla (≈ 6 meses de venta) con el ritmo
+              // promedio del último año, sea cual sea la temporada del ancla.
+              const ritmo = consumo(p, talla, color, masDias(e.ancla, -365), e.ancla) / 365;
+              objetivo = consumo(p, talla, color, llegada, e.ancla) + ritmo * DIAS_CALZADO_DORMIDO;
             }
             const forzada = ped.narrativa?.unidadesForzadas[`${p.id}|${talla}|${color}`];
             const q = forzada ?? Math.max(0, Math.round(objetivo - (stock.get(v) ?? 0)));

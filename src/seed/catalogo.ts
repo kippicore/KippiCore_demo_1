@@ -911,7 +911,8 @@ export const CATALOGO: ReferenciaSeed[] = [
     descripcion: 'Lana fría. Hombro natural, forro parcial y dos aberturas atrás.',
     precioVenta: 789_900,
     colorIds: ['col_azn', 'col_car'],
-    fob: { moneda: 'USD', centavos: 4840 },
+    // Pista de calibración (P13): US$ 55,00 deja ≈ 57 % de margen en el penúltimo pedido y ≈ 53 % en el último.
+    fob: { moneda: 'USD', centavos: 5500 },
     pesoDemanda: 2.4,
     stockMinimo: 1,
     publicadoEnTienda: true,
