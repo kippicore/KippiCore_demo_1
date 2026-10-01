@@ -2,6 +2,7 @@ import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { TriangleAlert } from 'lucide-react';
 import { Button, EmptyState, EncabezadoPagina, PestanasEnlace } from '@/ui';
 import { rutas } from '@/app/rutas';
+import { pestanasPersonal } from '@/modulos/personal/publico';
 
 export type SeccionTurnos = 'turnos' | 'asistencia' | 'novedades';
 
@@ -20,7 +21,7 @@ const NOMBRES: Record<SeccionTurnos, string> = {
   novedades: 'Novedades',
 };
 
-/** Encabezado común de las tres pantallas del dueño: migas y pestañas Turnos · Asistencia · Novedades. */
+/** Encabezado común de las tres pantallas del dueño: migas y las pestañas del módulo. */
 export function EncabezadoTurnos({ seccion, titulo, subtitulo, acciones, local }: PropsEncabezadoTurnos) {
   return (
     <EncabezadoPagina
@@ -33,14 +34,7 @@ export function EncabezadoTurnos({ seccion, titulo, subtitulo, acciones, local }
       subtitulo={subtitulo}
       acciones={acciones}
       pestanas={
-        <PestanasEnlace
-          etiqueta="Secciones de turnos y asistencia"
-          pestanas={[
-            { a: rutas.turnos({ local: local ?? null }), etiqueta: 'Turnos', fin: true },
-            { a: rutas.asistencia({ local: local ?? null }), etiqueta: 'Asistencia' },
-            { a: rutas.novedades(), etiqueta: 'Novedades' },
-          ]}
-        />
+        <PestanasEnlace etiqueta="Secciones de personal y nómina" pestanas={pestanasPersonal(local ?? null)} />
       }
     />
   );

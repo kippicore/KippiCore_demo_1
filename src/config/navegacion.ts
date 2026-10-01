@@ -79,3 +79,19 @@ export const MAS_APP = [
   { id: 'moneda', etiqueta: 'Moneda', ruta: '/app/mas/moneda' },
   { id: 'como-arrancariamos', etiqueta: 'Cómo arrancaríamos', ruta: '/app/mas/como-arrancariamos' },
 ] as const;
+
+/**
+ * Pestañas del módulo "Personal y nómina" (compartidos C-D): Personal (C1) y Turnos (C2) muestran la MISMA barra
+ * para que se sientan un solo módulo. Cada módulo arma las rutas con `rutas.ts` (Turnos y Asistencia conservan el
+ * local elegido).
+ */
+export const PESTANAS_PERSONAL = [
+  { id: 'empleados', etiqueta: 'Empleados' },
+  { id: 'turnos', etiqueta: 'Turnos' },
+  { id: 'asistencia', etiqueta: 'Asistencia' },
+  { id: 'novedades', etiqueta: 'Novedades' },
+  { id: 'nomina', etiqueta: 'Nómina' },
+  { id: 'comisiones', etiqueta: 'Comisiones' },
+  { id: 'comparativo', etiqueta: 'Comparativo' },
+] as const;
+export type PestanaPersonal = (typeof PESTANAS_PERSONAL)[number]['id'];

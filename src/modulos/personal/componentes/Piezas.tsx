@@ -1,5 +1,6 @@
 import { Component, Fragment, type ErrorInfo, type ReactNode } from 'react';
 import { TriangleAlert } from 'lucide-react';
+import { PESTANAS_PERSONAL, type PestanaPersonal } from '@/config/navegacion';
 import { Avatar, Badge, Button, Dinero, EmptyState, EncabezadoPagina, NotaLegal, PestanasEnlace, Select } from '@/ui';
 import { ESTADOS_PERSONAL } from '@/config/estados';
 import type { Contrato, Empleado, MesISO } from '@/dominio/tipos';
@@ -64,7 +65,24 @@ export interface PropsEncabezadoPersonal {
   sinPestanas?: boolean;
 }
 
-/** Encabezado con las pestañas del módulo: Empleados · Nómina · Comparativo · Comisiones. */
+/**
+ * Pestañas de "Personal y nómina" (las mismas en Personal y en Turnos, `PESTANAS_PERSONAL`): Empleados · Turnos ·
+ * Asistencia · Novedades · Nómina · Comisiones · Comparativo. Turnos y Asistencia conservan el local.
+ */
+export function pestanasPersonal(local: string | null) {
+  const a: Record<PestanaPersonal, string> = {
+    empleados: rutas.personal(),
+    turnos: rutas.turnos({ local }),
+    asistencia: rutas.asistencia({ local }),
+    novedades: rutas.novedades(),
+    nomina: rutas.nomina(),
+    comisiones: rutas.comisiones(),
+    comparativo: rutas.comparativoModalidades(),
+  };
+  return PESTANAS_PERSONAL.map((p) => ({ a: a[p.id], etiqueta: p.etiqueta, fin: p.id === 'empleados' }));
+}
+
+/** Encabezado con las pestañas del módulo (`pestanasPersonal`). */
 export function EncabezadoPersonal({ titulo, subtitulo, acciones, migaFinal, sinPestanas }: PropsEncabezadoPersonal) {
   return (
     <EncabezadoPagina
@@ -74,15 +92,7 @@ export function EncabezadoPersonal({ titulo, subtitulo, acciones, migaFinal, sin
       acciones={acciones}
       pestanas={
         sinPestanas ? undefined : (
-          <PestanasEnlace
-            etiqueta="Secciones de personal y nómina"
-            pestanas={[
-              { a: rutas.personal(), etiqueta: 'Empleados', fin: true },
-              { a: rutas.nomina(), etiqueta: 'Nómina' },
-              { a: rutas.comparativoModalidades(), etiqueta: 'Comparativo de modalidades' },
-              { a: rutas.comisiones(), etiqueta: 'Comisiones' },
-            ]}
-          />
+          <PestanasEnlace etiqueta="Secciones de personal y nómina" pestanas={pestanasPersonal(null)} />
         )
       }
     />
