@@ -62,8 +62,8 @@ export const REMUNERADA_POR_DEFECTO: Record<TipoNovedad, boolean> = {
 export const TEXTOS = {
   turnos: {
     titulo: 'Turnos',
-    subtitulo: 'Programa la semana de cada local sin pasarte de la jornada y mira cuánto cuesta cerrar tarde y abrir el domingo.',
-    ayudaArrastrar: 'Arrastra un turno de la barra a un día, o un turno puesto a otro día o persona.',
+    subtitulo: 'Programa la semana sin pasarte de la jornada y mira cuánto cuesta cerrar tarde.',
+    ayudaArrastrar: 'Arrastra un turno a un día, o mueve uno ya puesto.',
     sinEquipoTitulo: 'Este local todavía no tiene equipo',
     sinEquipoTexto: 'Asigna personas al local desde Personal y nómina para poder programar sus turnos.',
     excesoTitulo: 'Esto pasa de la jornada máxima',

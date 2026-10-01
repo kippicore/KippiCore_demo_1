@@ -1,14 +1,16 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight, Copy, Plus, Users } from 'lucide-react';
-import { BotonIcono, Button, ConfirmarEliminacion, Dialog, Dinero, EmptyState, FranjaResumen, ItemMenu, Menu, Pista, Segmentado, avisar } from '@/ui';
+import { BotonIcono, Button, ConfirmarEliminacion, Dialog, Dinero, EmptyState, ItemMenu, Menu, Pista, Segmentado, avisar } from '@/ui';
 import type { FechaISO, Id, Turno } from '@/dominio/tipos';
 import { lunesDe, sumarDias } from '@/dominio/reglas/fechas';
+import { horasNetasTurno } from '@/dominio/reglas/jornada';
 import { useAcciones, useHoy, useSel } from '@/estado';
 import { selLocales, selRiesgosContratacion } from '@/selectores';
 import { fechaLarga } from '@/lib/formato';
 import {
   etiquetaSemana,
   evaluarTurno,
+  fechaEnFrase,
   fraseExceso,
   propuestaDeArrastre,
   rangoHoras,
@@ -180,29 +182,20 @@ function CuerpoTurnos({ f, dialogo, setDialogo }: { f: FiltrosTurnos; dialogo: D
         </div>
       </div>
 
-      <FranjaResumen
-        className="mt-4"
-        cifras={[
-          { etiqueta: 'Horas programadas', valor: <span data-testid="turnos-kpi-horas">{textoHoras(semana.horasLocal)}</span> },
-          {
-            etiqueta: 'Pasadas de la jornada',
-            valor: (
-              <span data-testid="turnos-kpi-exceso">
-                {semana.conExceso} {semana.conExceso === 1 ? 'persona' : 'personas'}
-              </span>
-            ),
-          },
-          {
-            etiqueta: <Pista id="turnos.recargos">Recargos estimados de la semana</Pista>,
-            valor: (
-              <span data-testid="turnos-kpi-recargos">
-                <Dinero valor={recargos.total} />
-              </span>
-            ),
-          },
-          { etiqueta: 'Horas con recargo', valor: <span data-testid="turnos-kpi-horas-recargo">{textoHoras(recargos.horasNocturnas + recargos.horasDominicalFestivo)}</span> },
-        ]}
-      />
+      <dl className="mt-4 grid grid-cols-2 border border-line bg-surface md:grid-cols-[1fr_1fr_1.5fr_1fr]" data-testid="turnos-resumen">
+        <Cifra etiqueta="Horas programadas" testid="turnos-kpi-horas">
+          {textoHoras(semana.horasLocal)}
+        </Cifra>
+        <Cifra etiqueta="Pasadas de la jornada" testid="turnos-kpi-exceso">
+          {semana.conExceso} {semana.conExceso === 1 ? 'persona' : 'personas'}
+        </Cifra>
+        <Cifra etiqueta={<Pista id="turnos.recargos">Recargos estimados de la semana</Pista>} testid="turnos-kpi-recargos">
+          <Dinero valor={recargos.total} />
+        </Cifra>
+        <Cifra etiqueta="Horas con recargo" testid="turnos-kpi-horas-recargo">
+          {textoHoras(recargos.horasNocturnas + recargos.horasDominicalFestivo)}
+        </Cifra>
+      </dl>
 
       {semana.filas.length === 0 ? (
         <div className="mt-6 border border-line bg-surface">
@@ -306,7 +299,7 @@ function CuerpoTurnos({ f, dialogo, setDialogo }: { f: FiltrosTurnos; dialogo: D
         pregunta={aEliminar ? `¿Eliminar el turno de ${eliminando?.nombre ?? 'esta persona'}?` : ''}
         consecuencias={
           aEliminar
-            ? `Se quita el turno de ${ETIQUETA_TIPO_TURNO[aEliminar.tipo].toLowerCase()} del ${fechaLarga(aEliminar.fecha)} (${rangoHoras(aEliminar.inicio, aEliminar.fin)}). Sus horas de la semana bajan${eliminando ? ` de ${textoHoras(eliminando.horas)}` : ''}.`
+            ? `Se quita el turno de ${ETIQUETA_TIPO_TURNO[aEliminar.tipo].toLowerCase()} del ${fechaEnFrase(aEliminar.fecha)} (${rangoHoras(aEliminar.inicio, aEliminar.fin)}).${eliminando ? ` Sus horas de la semana bajan de ${textoHoras(eliminando.horas)} a ${textoHoras(Math.max(0, eliminando.horas - horasNetasTurno(aEliminar)))}.` : ''}`
             : ''
         }
         accion="Eliminar turno"
@@ -314,5 +307,17 @@ function CuerpoTurnos({ f, dialogo, setDialogo }: { f: FiltrosTurnos; dialogo: D
         nota={null}
       />
     </>
+  );
+}
+
+/** Cifra de la franja de la semana: etiqueta de una línea y valor t-kpi-sm (más baja que `FranjaResumen`, para ganar pantalla). */
+function Cifra({ etiqueta, testid, children }: { etiqueta: ReactNode; testid: string; children: ReactNode }) {
+  return (
+    <div className="border-l border-line-soft px-5 py-3 first:border-l-0">
+      <dt className="t-eyebrow whitespace-nowrap text-ink-2">{etiqueta}</dt>
+      <dd className="mt-1 t-kpi-sm text-ink" data-testid={testid}>
+        {children}
+      </dd>
+    </div>
   );
 }

@@ -8,6 +8,7 @@ import {
   estadoHoras,
   etiquetaSemana,
   evaluarTurno,
+  fechaEnFrase,
   fraseExceso,
   lunesDeParametro,
   nombreCorto,
@@ -48,6 +49,7 @@ describe('plantillas y formato de horas', () => {
     expect(textoMinutos(90)).toBe('1 h 30 min');
     expect(textoMinutos(120)).toBe('2 h');
     expect(nombreCorto('Camilo Andrés', 'Suárez Lozano')).toBe('Camilo Suárez');
+    expect(fechaEnFrase('2026-10-04')).toBe('domingo 4 de octubre de 2026');
   });
 });
 

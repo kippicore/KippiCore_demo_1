@@ -71,7 +71,7 @@ function CuerpoMiDia() {
         )}
       </p>
 
-      <div className="mt-6 grid grid-cols-1 gap-6 wide:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+      <div className="mt-6 grid grid-cols-1 items-start gap-6 wide:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <Marcacion empleado={empleado} siguiente={mi.siguienteMarcacion} turnoHoy={mi.turnoHoy} marcacionesHoy={mi.marcacionesHoy} nombreLocal={nombreLocal} />
 
         <div className="flex flex-col gap-4">

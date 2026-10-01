@@ -3,7 +3,7 @@ import { diferenciaDias, lunesDe, sumarDias } from '@/dominio/reglas/fechas';
 import { horasNetasTurno, minutosBrutos, seSolapan } from '@/dominio/reglas/jornada';
 import { FRANJAS } from '@/config/turnos';
 import { semanaIso } from '@/lib/fechas';
-import { fechaCorta, hora, numero, porcentaje } from '@/lib/formato';
+import { fechaCorta, fechaLarga, hora, numero, porcentaje } from '@/lib/formato';
 
 /**
  * Cálculos propios de la pantalla de turnos, asistencia y novedades (C2). Son funciones puras: no recalculan
@@ -53,6 +53,12 @@ export function rangoCompacto(inicio: HoraHHmm, fin: HoraHHmm): string {
 /** `Camilo Suárez`: primer nombre y primer apellido. */
 export function nombreCorto(nombres: string, apellidos: string): string {
   return `${nombres.split(' ')[0] ?? ''} ${apellidos.split(' ')[0] ?? ''}`.trim();
+}
+
+/** `domingo 4 de octubre de 2026` para el medio de una frase (fechaLarga abre con mayúscula). */
+export function fechaEnFrase(f: FechaISO): string {
+  const t = fechaLarga(f);
+  return t.charAt(0).toLowerCase() + t.slice(1);
 }
 
 /** Horas netas con coma decimal: `7 h`, `7,5 h`. */

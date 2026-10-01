@@ -74,7 +74,7 @@ function CuerpoMiTurno() {
     <>
       <EncabezadoPagina migas={migas} titulo="Mi turno" subtitulo="Tu marcación, tu horario de estas dos semanas y tu asistencia del mes." />
 
-      <div className="mt-8 grid grid-cols-1 gap-6 wide:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+      <div className="mt-8 grid grid-cols-1 items-start gap-6 wide:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <Marcacion empleado={empleado} siguiente={mi.siguienteMarcacion} turnoHoy={mi.turnoHoy} marcacionesHoy={mi.marcacionesHoy} nombreLocal={nombreLocal} />
         <div className="flex flex-col gap-4" data-testid="mi-turno-horario">
           <Semana empleadoId={empleado.id} lunes={lunes} hoy={hoy} nombreLocal={nombreLocal} />

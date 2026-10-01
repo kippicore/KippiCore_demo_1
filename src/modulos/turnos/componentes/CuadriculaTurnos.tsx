@@ -231,9 +231,9 @@ export function CuadriculaTurnos({ semana, localId, hoy, nombresLocales, jornada
 function ContenidoPlantilla({ tipo, localId }: { tipo: TipoTurno; localId: Id }) {
   const p = plantillaTurno(tipo, localId);
   return (
-    <div className={cn('w-[150px] border px-3 py-2', ESTILO_TURNO[tipo])}>
-      <p className="t-small font-bold">{ETIQUETA_TIPO_TURNO[tipo]}</p>
-      <p className="t-small num opacity-80">{rangoHoras(p.inicio, p.fin)}</p>
+    <div className={cn('w-[134px] border px-2.5 py-1', ESTILO_TURNO[tipo])}>
+      <p className="t-micro font-bold">{ETIQUETA_TIPO_TURNO[tipo]}</p>
+      <p className="t-micro num whitespace-nowrap opacity-80">{rangoHoras(p.inicio, p.fin)}</p>
     </div>
   );
 }
@@ -249,10 +249,10 @@ function Plantilla({ tipo, localId }: { tipo: TipoTurno; localId: Id }) {
         {...attributes}
         aria-label={`Turno de ${ETIQUETA_TIPO_TURNO[tipo].toLowerCase()}, ${rangoHoras(p.inicio, p.fin)}. Arrástralo a un día.`}
         data-testid={`turnos-plantilla-${tipo}`}
-        className={cn('w-[150px] cursor-grab touch-none border px-3 py-2 outline-none transition-opacity duration-(--dur-fast) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus', ESTILO_TURNO[tipo], isDragging && 'opacity-30')}
+        className={cn('w-[134px] cursor-grab touch-none border px-2.5 py-1 outline-none transition-opacity duration-(--dur-fast) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus', ESTILO_TURNO[tipo], isDragging && 'opacity-30')}
       >
-        <p className="t-small font-bold">{ETIQUETA_TIPO_TURNO[tipo]}</p>
-        <p className="t-small num opacity-80">{rangoHoras(p.inicio, p.fin)}</p>
+        <p className="t-micro font-bold">{ETIQUETA_TIPO_TURNO[tipo]}</p>
+        <p className="t-micro num whitespace-nowrap opacity-80">{rangoHoras(p.inicio, p.fin)}</p>
       </div>
     </Tooltip>
   );
@@ -260,7 +260,9 @@ function Plantilla({ tipo, localId }: { tipo: TipoTurno; localId: Id }) {
 
 function BarraPlantillas({ localId }: { localId: Id }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border border-line bg-surface px-4 py-3" data-testid="turnos-plantillas">
+    // Pegada bajo la barra superior: en pantallas bajas (1366 × 657) la barra y la fila del destino caben juntas al
+    // desplazar la página, así se puede arrastrar sin que el turno cruce la pantalla.
+    <div className="sticky top-(--sticky-top) z-(--z-hint) flex flex-wrap items-center gap-x-5 gap-y-2 border border-line bg-surface px-4 py-2" data-testid="turnos-plantillas">
       <p className="t-small text-ink-2">{TEXTOS.turnos.ayudaArrastrar}</p>
       <div className="flex flex-wrap items-center gap-2">
         {TIPOS_TURNO.map((t) => (
