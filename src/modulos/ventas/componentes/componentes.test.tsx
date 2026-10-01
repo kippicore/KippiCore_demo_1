@@ -1,10 +1,18 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
+import type { EstadoDominio } from '@/dominio/tipos';
 import { almacenDatos } from '@/estado/datos';
 import { almacenSesion } from '@/estado/sesion';
 import { selVentas } from '@/selectores';
 import { estadoDe, HOY } from '@/selectores/pruebas/construir';
 import { BarraTotales } from './BarraTotales';
+
+let e: EstadoDominio;
+
+// El estado de 18 meses se construye una vez (con holgura: en una máquina cargada tarda más que el límite de una prueba).
+beforeAll(() => {
+  e = estadoDe();
+}, 120_000);
 
 afterEach(() => {
   cleanup();
@@ -13,7 +21,6 @@ afterEach(() => {
 
 describe('barra de totales del filtro', () => {
   it('pinta exactamente las cifras de selVentas, sin sumar filas', () => {
-    const e = estadoDe();
     almacenDatos.setState({ estado: e, fase: 'listo' });
     const { totales } = selVentas(e, { desde: '2026-09-01', hasta: HOY, localId: 'todos' });
     render(<BarraTotales totales={totales} />);
@@ -28,7 +35,6 @@ describe('barra de totales del filtro', () => {
   });
 
   it('el dueño ve el margen bruto y el vendedor, nunca', () => {
-    const e = estadoDe();
     almacenDatos.setState({ estado: e, fase: 'listo' });
     const { totales } = selVentas(e, { desde: HOY, hasta: HOY, localId: 'todos' });
     render(<BarraTotales totales={totales} />);
