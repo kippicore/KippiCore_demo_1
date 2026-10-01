@@ -318,7 +318,7 @@ export default function Facturas() {
         alAbrir={abrirFila}
         resaltada={(f) => f.id === params.resaltar}
         totales={{
-          numero: <span className="whitespace-nowrap t-eyebrow text-ink-2">Neto de notas crédito</span>,
+          numero: <span className="whitespace-nowrap t-eyebrow text-ink-2">Neto tras notas crédito</span>,
           iva: <Dinero valor={resumen.ivaNeto} />,
           total: <Dinero valor={resumen.neto} data-testid="facturacion-total-neto" />,
         }}
