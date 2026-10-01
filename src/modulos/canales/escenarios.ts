@@ -629,7 +629,12 @@ function libre(e: EntradaGuion, trato: 'tu' | 'usted'): GuionBase {
     flujo: FLUJO_ENTRANTE,
     reglas: ['inventario', 'precio', 'horarios', 'envios', 'separar', 'sin_negociar', 'no_entiende'],
     disparador: 'Escribes un mensaje',
-    pasos: [],
+    pasos: [
+      {
+        tipo: 'sistema',
+        texto: `Escribes como ${nombre} (${trato === 'usted' ? 'usted' : 'tú'}): pregunta por una prenda, un precio, un horario o un descuento`,
+      },
+    ],
     memoriaFinal: MEMORIA_INICIAL,
   };
 }

@@ -139,7 +139,6 @@ interface PropsChat {
   ahora: string;
   alEnviar: (t: string) => void;
   bloqueado: boolean;
-  traspasado: boolean;
   inicial: string;
   /** Instagram: vista actual y cambio manual. */
   vista?: 'comentarios' | 'mensajes';
@@ -170,7 +169,6 @@ export function PantallaChat({
   ahora,
   alEnviar,
   bloqueado,
-  traspasado,
   inicial,
   vista = 'mensajes',
   alCambiarVista,
@@ -325,13 +323,7 @@ export function PantallaChat({
             tamano="lg"
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
-            placeholder={
-              bloqueado
-                ? TEXTOS.chat.bloqueado
-                : traspasado
-                  ? TEXTOS.chat.pausa('Una persona')
-                  : TEXTOS.chat.escribir
-            }
+            placeholder={bloqueado ? TEXTOS.chat.bloqueado : TEXTOS.chat.escribir}
             disabled={bloqueado}
             className="flex-1"
             data-testid="canales-entrada"

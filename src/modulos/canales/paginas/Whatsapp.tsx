@@ -1,11 +1,11 @@
-import { Send } from 'lucide-react';
+import { MessageCircle, Send } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { rutas } from '@/app/rutas';
 import { useParamsRuta } from '@/app/useParamsRuta';
 import { emitirUI, useAhora } from '@/estado';
 import { ESCENARIOS_WHATSAPP } from '@/seed/escenarios-canales';
-import { cn, MarcoTelefono, Segmentado } from '@/ui';
+import { Button, cn, MarcoTelefono, Segmentado } from '@/ui';
 import { Cerebro } from '../componentes/Cerebro';
 import { PantallaChat } from '../componentes/Chat';
 import {
@@ -21,6 +21,14 @@ import { reglasDelCanal, TEXTOS } from '../textos';
 import type { IdEscenario } from '../tipos';
 import { useConversacion } from '../useConversacion';
 import { useDatosBot, useEscalaTelefono } from '../useDatosBot';
+
+const SUGERENCIAS = [
+  '¿Tienen la Oxford celeste en talla L?',
+  '¿Cuánto cuesta el blazer de lana fría?',
+  '¿A qué hora abren?',
+  '¿Hacen envíos?',
+  '¿Me hacen un descuento?',
+];
 
 const IDS = new Set<string>([...ESCENARIOS_WHATSAPP.map((e) => e.id), 'libre']);
 const OPCIONES = [
@@ -65,13 +73,14 @@ function Vista() {
   const reproducir = conv.reproducir;
   useEffect(() => {
     reproducir(construirGuion(id, entradaRef.current, trato));
-  }, [id, trato, repeticion, reproducir]);
+  }, [id, trato, repeticion, reproducir, datos.dinero]);
 
   const elegir = (v: string) => navegar(rutas.canalWhatsapp({ escenario: v }), { replace: true });
   const def = ESCENARIOS_WHATSAPP.find((e) => e.id === id);
   const descripcion = id === 'libre' ? TEXTOS.whatsapp.escribeTuDescripcion : (def?.descripcion ?? '');
   const guion = conv.guion;
 
+  const puedeProbar = id === 'libre' || (conv.fase === 'completo' && !conv.traspasado);
   const extras = (
     <>
       {id === 'libre' && (
@@ -122,7 +131,6 @@ function Vista() {
               ahora={ahora}
               alEnviar={conv.enviar}
               bloqueado={conv.ocupado || !guion}
-              traspasado={conv.traspasado}
             />
           </MarcoTelefono>
           <p
@@ -131,12 +139,35 @@ function Vista() {
             data-testid="canales-fase"
             data-fase={conv.fase}
           >
-            {conv.fase === 'jugando'
-              ? 'Reproduciendo el escenario…'
-              : conv.fase === 'completo'
-                ? TEXTOS.chat.cerrar
-                : 'Escribe un mensaje para empezar.'}
+            {id === 'libre'
+              ? 'Escribe un mensaje para empezar.'
+              : conv.fase === 'jugando'
+                ? 'Reproduciendo el escenario…'
+                : conv.fase === 'completo'
+                  ? TEXTOS.chat.cerrar
+                  : ''}
           </p>
+          {puedeProbar && (
+            <div
+              className="flex flex-col items-start gap-0.5"
+              style={{ width: 414 * escala }}
+              data-testid="canales-sugerencias"
+            >
+              <p className="t-eyebrow text-ink-2">{TEXTOS.chat.prueba}</p>
+              {SUGERENCIAS.map((t) => (
+                <Button
+                  key={t}
+                  variante="ghost"
+                  tamano="sm"
+                  icono={MessageCircle}
+                  disabled={conv.ocupado}
+                  onClick={() => conv.enviar(t)}
+                >
+                  {t}
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex min-w-0 flex-col gap-4">

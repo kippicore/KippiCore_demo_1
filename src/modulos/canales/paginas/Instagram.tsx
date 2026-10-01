@@ -110,7 +110,7 @@ function Vista() {
   const reproducir = conv.reproducir;
   useEffect(() => {
     reproducir(construirGuion(id, entradaRef.current));
-  }, [id, repeticion, reproducir]);
+  }, [id, repeticion, reproducir, datos.dinero]);
 
   const def = ESCENARIOS_INSTAGRAM.find((e) => e.id === id);
   const guion = conv.guion;
@@ -147,7 +147,6 @@ function Vista() {
               ahora={ahora}
               alEnviar={conv.enviar}
               bloqueado={conv.ocupado || !guion}
-              traspasado={conv.traspasado}
               vista={conv.vista}
               alCambiarVista={conv.cambiarVista}
               comentarios={conv.comentarios}

@@ -1,5 +1,5 @@
 import { Brain, CircleCheck, Database } from 'lucide-react';
-import { Badge, Card, cn, EmptyState, Icono } from '@/ui';
+import { Badge, Card, cn, Dinero, EmptyState, Icono } from '@/ui';
 import { hora } from '@/lib/formato';
 import { REGLAS, TEXTOS } from '../textos';
 import { diaYMes } from '../reglas';
@@ -200,10 +200,16 @@ export function Cerebro({ guion, traza, nodoActivo, consultas, escribiendo, regi
   );
 }
 
+const ESTILO_BARRAS = `
+@keyframes canales-barra { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) { .canales-barra { animation: none !important; } }
+`;
+
 function Consulta({ c }: { c: ConsultaInventario }) {
   const max = Math.max(1, ...c.filas.map((f) => f.unidades));
   return (
     <div data-testid="canales-consulta-fila">
+      <style>{ESTILO_BARRAS}</style>
       <p className="t-label text-ink">
         {c.producto} <span className="font-normal text-muted">· {c.variante}</span>
       </p>
@@ -213,25 +219,42 @@ function Consulta({ c }: { c: ConsultaInventario }) {
           {c.enCamino ? `. ${TEXTOS.cerebro.enCamino(c.enCamino.unidades, diaYMes(c.enCamino.fecha))}` : ''}
         </p>
       ) : (
-        <ul className="mt-2 flex flex-col gap-1.5">
-          {c.filas.map((f) => (
-            <li
-              key={f.localId}
-              className="grid grid-cols-[96px_1fr_32px] items-center gap-3 t-small"
-              data-testid="canales-consulta-local"
-              data-local={f.localId}
-            >
-              <span className="truncate text-ink-2">{f.local}</span>
-              <span className="h-2 bg-surface-2">
-                <span
-                  className="block h-full bg-ink transition-[width] duration-(--dur-slower) ease-enter"
-                  style={{ width: `${(f.unidades / max) * 100}%` }}
-                />
+        <>
+          <ul className="mt-2 flex flex-col gap-1.5">
+            {c.filas.map((f, i) => (
+              <li
+                key={f.localId}
+                className="grid grid-cols-[96px_1fr_32px] items-center gap-3 t-small"
+                data-testid="canales-consulta-local"
+                data-local={f.localId}
+              >
+                <span className="truncate text-ink-2">{f.local}</span>
+                <span className="h-2 bg-surface-2">
+                  <span
+                    className="canales-barra block h-full origin-left bg-ink"
+                    style={{
+                      width: `${(f.unidades / max) * 100}%`,
+                      animation: `canales-barra 600ms var(--ease-enter) ${i * 140}ms both`,
+                    }}
+                  />
+                </span>
+                <span className="text-right font-semibold num text-ink">{f.unidades}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 flex items-baseline justify-between gap-3 border-t border-line-soft pt-2 t-small text-muted">
+            <span>
+              {TEXTOS.cerebro.total}:{' '}
+              <span className="font-semibold num text-ink">{TEXTOS.cerebro.unidades(c.total)}</span>
+            </span>
+            <span>
+              Precio de lista{' '}
+              <span className="font-semibold num text-ink">
+                <Dinero valor={c.precio} />
               </span>
-              <span className="text-right font-semibold num text-ink">{f.unidades}</span>
-            </li>
-          ))}
-        </ul>
+            </span>
+          </p>
+        </>
       )}
     </div>
   );

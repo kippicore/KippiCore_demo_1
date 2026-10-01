@@ -46,6 +46,7 @@ export const TEXTOS = {
     pausa: (persona: string) => `${persona} tiene la conversación: el bot queda en pausa.`,
     tomo: (persona: string) => `${persona} tomó la conversación`,
     reiniciar: 'Reiniciar',
+    prueba: 'Prueba escribir',
     reproducir: 'Reproducir',
     repetir: 'Repetir escenario',
     velocidad: 'Velocidad',
