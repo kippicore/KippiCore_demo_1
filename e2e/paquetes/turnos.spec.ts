@@ -558,6 +558,9 @@ test.describe('novedades', () => {
       page,
       (kc) => Object.keys((kc.estado() as unknown as { novedades: object }).novedades).length,
     );
+    // Compartidos C-D: la semilla ya trae a alguien fuera hoy (Julián, incapacitado) y turnos por cubrir.
+    const fueraAntes = Number((await page.getByTestId('novedades-kpi-hoy').innerText()).replace(/\D/g, '') || 0);
+    const cubrirAntes = Number((await page.getByTestId('novedades-kpi-cubrir').innerText()).replace(/\D/g, '') || 0);
     await page.getByTestId('novedades-registrar').click();
     const form = page.getByTestId('novedades-dialogo');
     await page.getByTestId('novedades-guardar').click();
@@ -590,8 +593,8 @@ test.describe('novedades', () => {
     ).toBe(antes + 1);
     await expect(page).toHaveURL(new RegExp(`resaltar=${nuevaId}`));
     await expect(page.locator('[data-resaltada]')).toContainText('Sebastián');
-    await expect(page.getByTestId('novedades-kpi-hoy')).toContainText('1 persona');
-    await expect(page.getByTestId('novedades-kpi-cubrir')).toHaveText('1');
+    await expect(page.getByTestId('novedades-kpi-hoy')).toContainText(`${fueraAntes + 1} personas`);
+    await expect(page.getByTestId('novedades-kpi-cubrir')).toHaveText(String(cubrirAntes + 1));
     // La asistencia de hoy de Sebastián pasa a "Novedad".
     const dia = await conKc(
       page,
@@ -676,8 +679,13 @@ test.describe('novedades', () => {
     await abrir(page, irA, '/panel/personal/novedades');
     const todas = await page.getByTestId('novedades-tabla').locator('tbody tr').count();
     expect(todas).toBeGreaterThanOrEqual(3);
+    // Compartidos C-D: la semilla trae una próxima (las vacaciones de Santiago la semana siguiente).
     await page.getByTestId('novedades-estado').getByRole('radio', { name: 'Próximas' }).click();
-    await expect(page.getByTestId('novedades-tabla')).toContainText('Ninguna novedad con estos filtros');
+    await expect(page.getByTestId('novedades-tabla').locator('tbody tr')).toHaveCount(1);
+    await expect(page.getByTestId('novedades-tabla')).toContainText('Santiago Rojas');
+    await page.getByTestId('novedades-estado').getByRole('radio', { name: 'Vigentes' }).click();
+    await expect(page.getByTestId('novedades-tabla')).toContainText('Julián Torres');
+    await expect(page.getByTestId('novedades-tabla')).not.toContainText('Santiago Rojas');
     await page.getByRole('button', { name: 'Limpiar filtros' }).click();
     await expect(page.getByTestId('novedades-tabla').locator('tbody tr')).toHaveCount(todas);
   });

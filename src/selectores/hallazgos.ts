@@ -38,6 +38,13 @@ export interface Hallazgo {
 const r1 = (x: number) => Math.round(x * 10) / 10;
 
 /**
+ * Peso de cada patrón en la relevancia (compartidos C-D): los protagonistas del guion (la vendedora estrella, la
+ * talla que se agota y el calzado dormido) no deben quedar fuera de los cinco que se muestran por una cifra de
+ * otra escala; la comparación de domingos (P8) habla del local más flojo y pesa menos.
+ */
+const PESO_GUION: Record<string, number> = { P2: 2, P3: 1.2, P5: 1.2, P8: 0.6 };
+
+/**
  * Trozos de una plantilla: los huecos con dinero (`cifras`) quedan aparte para `<Dinero>`; el resto se rellena como
  * la frase. Sin espacios sobrantes al final (huecos opcionales vacíos).
  */
@@ -104,8 +111,9 @@ export const selHallazgos = crearSelector<{ hoy: FechaISO; localId?: Id | 'todos
   TABLAS,
   (e, { hoy, maximo = 5 }) => {
     const c: Hallazgo[] = [];
-    const agregar = (id: string, datos: Record<string, string | number>, cifra: number, relevancia: number, cifras: Record<string, COP> = {}) => {
+    const agregar = (id: string, datos: Record<string, string | number>, cifra: number, relevanciaBase: number, cifras: Record<string, COP> = {}) => {
       const p = plantilla(id);
+      const relevancia = relevanciaBase * (PESO_GUION[p?.patron ?? ''] ?? 1);
       if (!p || !Number.isFinite(relevancia) || relevancia <= 0) return;
       c.push({ id, patron: p.patron, frase: rellenarPlantilla(p.plantilla, datos).trim(), partes: partesDe(p.plantilla, datos, cifras), cifras, cifra, enlace: p.enlace, relevancia });
     };

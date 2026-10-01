@@ -119,9 +119,11 @@ function FilaAlerta({ alerta: a, primera }: { alerta: Alerta; primera: boolean }
           {a.tituloPartes ? <FraseConDinero partes={a.tituloPartes} /> : a.titulo}
         </p>
         <p className="mt-0.5 t-small text-muted">{a.contextoPartes ? <FraseConDinero partes={a.contextoPartes} /> : a.contexto}</p>
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-2" onClickCapture={marcarLeida}>
-          {a.aprobacion && <BotonesAprobacion solicitudId={a.aprobacion.solicitudId} />}
-          <EnlaceVerTodo a={a.accion.ruta}>{a.accion.texto}</EnlaceVerTodo>
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-2">
+          {a.aprobacion && <BotonesAprobacion solicitudId={a.aprobacion.solicitudId} alResolver={marcarLeida} />}
+          <span onClickCapture={marcarLeida}>
+            <EnlaceVerTodo a={a.accion.ruta}>{a.accion.texto}</EnlaceVerTodo>
+          </span>
         </div>
       </div>
       <BotonIcono
@@ -142,7 +144,7 @@ function FilaAlerta({ alerta: a, primera }: { alerta: Alerta; primera: boolean }
  * Aprobar o rechazar una solicitud de descuento sin salir del escritorio (compartidos C-D): el descuento nace en el
  * POS del vendedor y no tiene otra pantalla de escritorio; la app del celular sigue teniendo "Para aprobar".
  */
-function BotonesAprobacion({ solicitudId }: { solicitudId: string }) {
+function BotonesAprobacion({ solicitudId, alResolver }: { solicitudId: string; alResolver: () => void }) {
   const acciones = useAcciones();
   const puede = usePuede();
   const pendiente = useSel(selSolicitudesPendientes).some((s) => s.id === solicitudId);
@@ -154,6 +156,8 @@ function BotonesAprobacion({ solicitudId }: { solicitudId: string }) {
       return;
     }
     avisar({ tipo: 'exito', texto: decision === 'aprobada' ? TXT.alertas.aprobada : TXT.alertas.rechazada });
+    // Resuelta, la notificación queda leída: la alerta sale de la lista.
+    alResolver();
   };
   return (
     <span className="flex gap-2">

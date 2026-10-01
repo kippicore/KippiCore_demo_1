@@ -565,6 +565,9 @@ describe('análisis, pivote y hallazgos', () => {
     const r = selRotacion(e, { hoy: HOY });
     expect(r.categorias[0]?.categoria).toBe('calzado');
     expect((r.categorias[0]?.dias ?? 0) / (r.categorias[1]?.dias ?? 1)).toBeGreaterThanOrEqual(1.05);
+    // Los protagonistas del guion están entre los cinco hallazgos que se muestran (Análisis e Inicio).
+    const cinco = selHallazgos(e, { hoy: HOY }).map((x) => x.id);
+    for (const id of ['vendedora-estrella', 'categoria-dormida', 'talla-agotada']) expect(cinco, id).toContain(id);
     const h = selHallazgos(e, { hoy: HOY, maximo: 12 });
     expect(h.find((x) => x.id === 'vendedora-estrella')?.frase).toContain('Valentina');
     const dormida = h.find((x) => x.id === 'categoria-dormida');
