@@ -1,35 +1,41 @@
 import { CircleHelp, Eye, EyeOff, ListChecks, MessageCircle, Rocket, RotateCcw, Smartphone, DoorOpen } from 'lucide-react';
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
-import { rutas } from '@/app/rutas';
-import { MENU_AYUDA, PRUEBA_ESTO } from '@/config/textos/guia';
-import { almacenDatos, useGuia } from '@/estado';
+import { useLocation, useNavigate } from 'react-router';
+import { rutaDeUrl, rutas } from '@/app/rutas';
+import { MENU_AYUDA } from '@/config/textos/guia';
+import { almacenDatos, useGuia, useRolActivo } from '@/estado';
 import { enlaceHablarConKippicore } from '@/lib/enlaces';
 import { abrirAppDueno } from '@/movil/publico';
 import { ConfirmarEliminacion } from '@/ui/primitivos/ConfirmarEliminacion';
 import { ItemMenu, Menu, SeparadorMenu } from '@/ui/primitivos/Popover';
 import { Icono } from '@/ui/primitivos/Icono';
 import { avisar } from '@/ui/primitivos/Toast';
+import { almacenPanelLocal } from '../panelLocal';
+import { contarPrincipales } from '../progreso';
 
 /**
- * Puntos de extensión de la guía (PLAN 9.1.6). `MenuAyuda`: el menú "?" de la barra superior con la ÚNICA definición
- * de 2.6, ya funcional (F2-C). `GuiaFlotante`: el panel "Prueba esto" (E2 lo implementa; hasta entonces no se pinta).
- * El layout los importa desde publico.ts: E2 solo cambia este archivo.
+ * Menú "?" de la barra superior (PLAN 2.6, ÚNICA definición): reabre la entrada, el panel "Prueba esto" (con su
+ * conteo), la app en el celular y "Cómo arrancaríamos"; apaga o enciende las pistas; restaura los datos; y, si hay
+ * número configurado, "Hablar con KippiCore". El panel flotante vive en `GuiaFlotante.tsx`; ambos se exportan por
+ * `publico.ts` (PLAN 9.1.6).
  */
-export function GuiaFlotante() {
-  return null;
-}
-
-const IDS_PRUEBA = PRUEBA_ESTO.items.map((i) => i.id);
-
 export function MenuAyuda() {
   const navegar = useNavigate();
+  const { pathname } = useLocation();
+  const rol = useRolActivo();
   const completados = useGuia((s) => s.completados);
   const ocultas = useGuia((s) => s.pistasOcultas);
   const ocultarPistas = useGuia((s) => s.ocultarPistas);
   const minimizar = useGuia((s) => s.minimizarPanel);
   const [restaurando, setRestaurando] = useState(false);
-  const hechos = completados.filter((c) => (IDS_PRUEBA as readonly string[]).includes(c)).length;
+  const hechos = contarPrincipales(completados);
+  /** "Mostrar Prueba esto": el panel se oculta en el POS, así que desde allí primero sale a la pantalla de inicio del rol. */
+  const mostrarPrueba = () => {
+    minimizar(false);
+    almacenPanelLocal.setState({ abiertoEnRol: true });
+    const n = rutaDeUrl(pathname);
+    if (n === 'pos' || n === 'caja') navegar(rol === 'dueno' ? rutas.inicio() : rutas.miDia());
+  };
   const hablar = enlaceHablarConKippicore();
   return (
     <>
@@ -51,7 +57,7 @@ export function MenuAyuda() {
         <ItemMenu icono={DoorOpen} onSelect={() => navegar(rutas.entrada())}>
           {MENU_AYUDA.verEntrada}
         </ItemMenu>
-        <ItemMenu icono={ListChecks} onSelect={() => minimizar(false)}>
+        <ItemMenu icono={ListChecks} onSelect={mostrarPrueba}>
           {MENU_AYUDA.mostrarPruebaEsto.replace('{{hechos}}', String(hechos))}
         </ItemMenu>
         <ItemMenu icono={Smartphone} onSelect={abrirAppDueno}>
