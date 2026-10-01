@@ -4857,7 +4857,7 @@ Formato: **Archivos** (rutas exactas que le pertenecen) · **Rutas** (5.5) · **
 - **Honra**: `?sesion=`, `?resaltar=<sesionId>` en caja. **Produce**: `?resaltar=` hacia ventas, inventario, cliente y caja desde "Lo que acaba de pasar". **Emite**: — (los eventos de dominio salen solos). **Pistas**: `pos.escaneo`, `caja.arqueo`.
 - **Criterios** (PRD 7.2):
   - Buscar por nombre, referencia, SKU o EAN (`selBuscarProducto`, `selVariantePorEan`); Enter en el campo de código agrega; botón "Simular escaneo" agrega una variante con existencias en el local, con destello.
-  - Grilla talla × color con existencias del local y, en gris, las de los otros locales (`<MatrizExistencias modo="pos">`).
+  - Grilla talla × color con existencias del local y, en gris, las de los otros locales: una grilla compacta propia del POS que compone `selMatrizExistencias` (y `selDisponibilidadOtrosLocales`). `<MatrizExistencias>` no tiene modo POS y mide ≈ 330 px de alto: no cabe en el POS a 1366 × 657 (corrección del 01/10/2026, informe A1).
   - Carrito con cantidades, precio de lista, descuento por línea o global (% o valor), IVA incluido y desglosado; los totales en pantalla usan `reglas/ventas.ts` (idénticos a los del manejador).
   - Cliente: "Consumidor final" por defecto; buscar o crear rápido en el mismo paso (nombre, celular 3XX, cédula y correo opcionales, autorización de datos obligatoria) vía `clienteNuevo`.
   - **Vendedor**: con rol dueño, selector obligatorio de vendedor (por defecto, el de turno más cercano del local); con rol vendedor, fijo.
