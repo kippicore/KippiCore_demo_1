@@ -30,6 +30,7 @@ import { selHallazgos } from './hallazgos';
 import { selAlertas, selSolicitudesPendientes } from './alertas';
 import { selNarrativa } from './narrativa';
 import { selCatalogo, selBuscarProducto, selVariantePorEan, selProductoPorReferencia } from './catalogo';
+import { selMensajes } from './mensajes';
 import { selClientes, selCliente, selSegmentos, selCumpleanosMes } from './clientes';
 import { selCostoEmpleado, selVistaPreviaNomina, selPeriodoAbierto, selCostoNominaPorLocal, selComparativoModalidades } from './nomina';
 import { selEventosCalendario, selProximosEventos } from './calendario';
@@ -462,6 +463,21 @@ describe('importaciones y proveedores', () => {
     expect(selFichaProveedor(e, { proveedorId: 'pr_weiye', hoy: HOY })?.importaciones.length).toBeGreaterThan(0);
     expect(selProveedores(e, { hoy: HOY, tipo: 'fabrica' }).length).toBe(5);
     expect(selLlegadasProximas(e, { hoy: HOY, dias: 30 }).length).toBeGreaterThan(0);
+  });
+
+  it('bandeja de salida por origen y por destinatario (selMensajes), de la más reciente a la más antigua', () => {
+    const todos = selMensajes(e, {});
+    expect(todos.length).toBe(e.mensajes.length);
+    const conOrigen = e.mensajes.find((m) => m.origen.id !== null);
+    if (conOrigen?.origen.id) {
+      const r = selMensajes(e, { origenId: conOrigen.origen.id, tipos: [conOrigen.origen.tipo] });
+      expect(r.length).toBeGreaterThan(0);
+      expect(r.every((m) => m.origen.id === conOrigen.origen.id && m.origen.tipo === conOrigen.origen.tipo)).toBe(true);
+      expect(r.every((m, i) => i === 0 || (r[i - 1] as typeof m).ts >= m.ts)).toBe(true);
+    }
+    const aCliente = e.mensajes.find((m) => m.destinatario.tipo === 'cliente' && m.destinatario.refId);
+    if (aCliente?.destinatario.refId)
+      expect(selMensajes(e, { destinatarioId: aCliente.destinatario.refId }).every((m) => m.destinatario.refId === aCliente.destinatario.refId)).toBe(true);
   });
 
   it('ficha del proveedor: entregas por pedido = promedios; las importaciones eliminadas no cuentan', () => {

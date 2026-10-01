@@ -21,6 +21,7 @@ import {
   crearSelector,
   selCostoAterrizado,
   selEnCaminoPorVariante,
+  selMensajes,
   selSugerenciaPedido,
   selTasaVigente,
   type CostoAterrizadoVista,
@@ -39,14 +40,7 @@ import {
 export const selMensajesImportacion = crearSelector<{ importacionId: Id }, MensajeSaliente[]>(
   'selMensajesImportacion',
   ['mensajes'],
-  (e, { importacionId }) =>
-    e.mensajes
-      .filter(
-        (m) =>
-          m.origen.id === importacionId &&
-          (m.origen.tipo === 'importacion' || m.origen.tipo === 'pedido_sugerido'),
-      )
-      .sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0)),
+  (e, { importacionId }) => selMensajes(e, { origenId: importacionId, tipos: ['importacion', 'pedido_sugerido'] }),
 );
 
 /**

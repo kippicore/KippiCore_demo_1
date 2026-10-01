@@ -23,3 +23,4 @@ export * from './hallazgos';
 export * from './efectos';
 export * from './narrativa';
 export * from './texto';
+export * from './mensajes';
