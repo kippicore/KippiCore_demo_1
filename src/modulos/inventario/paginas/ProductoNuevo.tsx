@@ -1,6 +1,21 @@
-import { EsqueletoPagina } from '@/ui/conectados/EsqueletoPagina';
+import { useNavigate } from 'react-router';
+import { rutas } from '@/app/rutas';
+import { EncabezadoPagina } from '@/ui';
+import { FormularioProducto } from '../componentes/FormularioProducto';
+import { SUBTITULOS } from '../textos';
 
-/** Esqueleto de F2-B (PLAN 9.1.6): el paquete A2 reemplaza esta página. */
 export default function ProductoNuevo() {
-  return <EsqueletoPagina titulo="Crear producto" paquete="A2" />;
+  const navegar = useNavigate();
+  return (
+    <div className="pb-16">
+      <EncabezadoPagina
+        migas={[{ texto: 'Inicio', a: rutas.inicio() }, { texto: 'Inventario', a: rutas.inventario() }, { texto: 'Nuevo producto' }]}
+        titulo="Nuevo producto"
+        subtitulo={SUBTITULOS.nuevo}
+      />
+      <div className="mt-8">
+        <FormularioProducto alGuardar={(referencia) => navegar(rutas.producto(referencia))} alCancelar={() => navegar(rutas.inventario())} />
+      </div>
+    </div>
+  );
 }
