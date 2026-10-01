@@ -89,6 +89,7 @@ function* calibrarFlujo(g: Gen, emitir: Emitir, estado: EstadoDominio, fecha: Fe
   const dias = 90 + Math.max(0, diferenciaDias(fecha, A));
   const f = proyeccionFlujoEstado(estado, {
     hoy: fecha,
+    hora: '22:00',
     dias,
     indiceMes: INDICE_MES,
     diasCerrados: DIAS_CERRADOS,
@@ -97,9 +98,7 @@ function* calibrarFlujo(g: Gen, emitir: Emitir, estado: EstadoDominio, fecha: Fe
   let minimo = Infinity;
   for (const p of f.serie) if (p.fecha >= A && p.saldo < minimo) minimo = p.saldo;
   if (!Number.isFinite(minimo)) return;
-  // Se calibra la víspera a las 10:00 p. m.; el día del ancla, la tarde aún no vendida baja ≈ $ 5 M el punto,
-  // por eso el objetivo de la víspera es el de la semilla + 3 M (queda en ≈ 18 M al ancla).
-  const delta = Math.round((minimo - (BANDAS_SALDO.objetivoPuntoBajo + 3_000_000)) / 100_000) * 100_000;
+  const delta = Math.round((minimo - BANDAS_SALDO.objetivoPuntoBajo) / 100_000) * 100_000;
   if (delta === 0) return;
   const saldo = estado.agregados.saldosCuentas[CUENTA_CORRIENTE] ?? 0;
   if (delta > 0) {

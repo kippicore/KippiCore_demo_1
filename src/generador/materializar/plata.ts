@@ -158,6 +158,8 @@ export function* materializarApertura(g: Gen, it: IntencionGen, estado: EstadoDo
   if (g.idx.importacionesDiferidas.size) yield* materializarImportacionesDiferidas(g, it, estado);
 }
 
+const CATEGORIAS_VENCIDAS = new Set(['servicios', 'proveedor_local', 'otro', 'publicidad', 'agente_aduanas', 'transporte']);
+
 /** 07:30: pagos de las cuentas por pagar que vencen hoy (respeta programadas, pagadas y eliminadas). */
 export function* materializarPagos(g: Gen, it: IntencionGen, estado: EstadoDominio): Generator<SobreComando> {
   const fecha = fechaDe(it.ts);
@@ -165,7 +167,6 @@ export function* materializarPagos(g: Gen, it: IntencionGen, estado: EstadoDomin
   if (!ids.length) return;
   const emitir = g.emisor(it);
   const A = g.plan.ancla;
-  let vencidasNarrativas = 0;
   for (const id of [...new Set(ids)].sort()) {
     const c = estado.cuentasPorPagar[id];
     if (!c || c.eliminadoEn || saldoCxP(c) <= 0) continue;
@@ -176,14 +177,14 @@ export function* materializarPagos(g: Gen, it: IntencionGen, estado: EstadoDomin
     }
     // "Hoy quedan 1–2 vencidas pequeñas" (7.10): las de servicios de la última semana antes del ancla esperan.
     if (
-      fecha >= masDias(A, -6) &&
+      fecha >= masDias(A, -12) &&
       fecha < A &&
       c.moneda === 'COP' &&
-      c.valor <= 2_500_000 &&
-      (c.categoria === 'servicios' || c.categoria === 'proveedor_local' || c.categoria === 'otro') &&
-      vencidasNarrativas < 2
+      c.valor <= 4_000_000 &&
+      CATEGORIAS_VENCIDAS.has(c.categoria) &&
+      g.idx.vencidasNarrativas < 2
     ) {
-      vencidasNarrativas += 1;
+      g.idx.vencidasNarrativas += 1;
       g.idx.agregar(g.idx.cxpPorFecha, masDias(A, 3), id);
       continue;
     }

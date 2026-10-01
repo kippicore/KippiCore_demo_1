@@ -10,7 +10,7 @@ import type {
 import { ESTADOS_IMPORTACION } from '@/dominio/tipos';
 import { tasaVigente } from '@/dominio/comandos/comunes';
 import { saldoCxP } from '@/dominio/reglas/cuentas';
-import { copDeCentavos } from '@/dominio/reglas/dinero';
+import { copDeCentavos, prorratearMayorResiduo } from '@/dominio/reglas/dinero';
 import { fechaDe } from '@/dominio/reglas/fechas';
 import { idHijo } from '@/dominio/motor/ids';
 import { masDias } from '../calendario';
@@ -113,6 +113,13 @@ function* avanzarImportacion(
     }
     // Hoy (o la fecha planeada, si fue antes de la ventana).
     const fecha = f < g.plan.vispera ? f : hoy;
+    // Guarda: si el usuario programó el pago a la fábrica para después, el pedido espera ese pago.
+    const sufijoPago = e === 'anticipo_pagado' ? 'cxp-anticipo' : e === 'saldo_pagado' ? 'cxp-saldo' : null;
+    const programada = sufijoPago ? estado.cuentasPorPagar[idHijo(plan.id, sufijoPago)]?.programadaPara : null;
+    if (programada && programada > hoy) {
+      g.idx.importacionesDiferidas.add(plan.id);
+      break;
+    }
     if (e === 'anticipo_pagado') yield* pagarFabrica(g, emitir, estado, plan, 'cxp-anticipo', fecha);
     if (e === 'saldo_pagado') yield* pagarFabrica(g, emitir, estado, plan, 'cxp-saldo', fecha);
     if (e === 'recibido_bodega') {
@@ -160,7 +167,10 @@ function* avanzarImportacion(
         datos: {
           categoria: s.categoria,
           terceroNombre: s.tercero,
-          proveedorId: s.proveedorId && estado.proveedores[s.proveedorId] ? s.proveedorId : null,
+          proveedorId:
+            s.proveedorId && estado.proveedores[s.proveedorId] && !estado.proveedores[s.proveedorId]?.eliminadoEn
+              ? s.proveedorId
+              : null,
           empleadoId: null,
           concepto: `${s.concepto} ${tras.numero}`,
           localId: null,
@@ -255,17 +265,17 @@ function* recibir(
   const distribucion: MapaComandos['importacion.recibir']['distribucion'] = [];
   const porLocal = new Map<Id, { varianteId: Id; cantidad: number }[]>();
   for (const [v, n] of Object.entries(buenas)) {
-    if (n <= 0) continue;
+    // Guarda: una variante eliminada se queda en la bodega (no se traslada).
+    if (n <= 0 || !varianteVendible(estado, v)) continue;
     const p = g.plan.productoDeVariante.get(v);
     if (!p) continue;
     const pesos = locales.map((l) => d.unidadesLocalCategoria(l, fecha, p.categoria));
-    const total = pesos.reduce((a, x) => a + x, 0) || 1;
     const repartible = Math.floor(n * FRACCION_DISTRIBUIDA);
-    let asignado = 0;
+    if (repartible <= 0) continue;
+    const cuotas = prorratearMayorResiduo(repartible, pesos);
     locales.forEach((l, i) => {
-      const q = Math.min(repartible - asignado, Math.round((repartible * (pesos[i] ?? 0)) / total));
+      const q = cuotas[i] ?? 0;
       if (q <= 0) return;
-      asignado += q;
       const lista = porLocal.get(l.id) ?? [];
       lista.push({ varianteId: v, cantidad: q });
       porLocal.set(l.id, lista);

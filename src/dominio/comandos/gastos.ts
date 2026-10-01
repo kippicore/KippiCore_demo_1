@@ -366,9 +366,11 @@ export const gastoRecurrenteGenerarMes = manejador<'gastoRecurrente.generarMes',
     const planes: PlanGastoNuevo[] = [];
     let usados = 0;
     for (const r of Object.values(estado.gastosRecurrentes)) {
+      // Un recurrente de un local eliminado ya no se causa (el local cerró).
       if (
         r.eliminadoEn ||
         !r.activo ||
+        (r.localId !== null && !!estado.locales[r.localId]?.eliminadoEn) ||
         d.mes < r.desde ||
         (r.hasta !== null && d.mes > r.hasta) ||
         generados.has(r.id)
@@ -385,7 +387,8 @@ export const gastoRecurrenteGenerarMes = manejador<'gastoRecurrente.generarMes',
         concepto: r.nombre,
         valor: r.valor,
         iva: r.iva,
-        proveedorId: r.proveedorId,
+        // Si el proveedor se eliminó, el gasto se causa sin proveedor.
+        proveedorId: r.proveedorId && !estado.proveedores[r.proveedorId]?.eliminadoEn ? r.proveedorId : null,
         soporte: null,
         documento: null,
       };

@@ -214,6 +214,8 @@ export function egresosNomina(e: {
   dias: number;
   /** Neto a pagar por periodo (de la última liquidación o de la vista previa). */
   netoQuincena: COP;
+  /** Neto de la 2.ª quincena (lleva las comisiones del mes); por defecto, `netoQuincena`. */
+  netoSegundaQuincena?: COP;
   netoMensual: COP;
   /** Seguridad social de un mes completo: aportes del empleador + deducciones del trabajador. */
   pilaMensual: COP;
@@ -236,7 +238,7 @@ export function egresosNomina(e: {
   for (let mes = sumarMesesAMes(mesDe(e.hoy), -1); `${mes}-01` <= hasta; mes = sumarMesesAMes(mes, 1)) {
     const ultimo = `${mes}-${diasDelMes(mes)}`;
     push(`${mes}-15`, e.netoQuincena, 'nomina_neto', 'Nómina · 1.ª quincena');
-    push(ultimo, e.netoQuincena + e.netoMensual, 'nomina_neto', 'Nómina · 2.ª quincena');
+    push(ultimo, (e.netoSegundaQuincena ?? e.netoQuincena) + e.netoMensual, 'nomina_neto', 'Nómina · 2.ª quincena');
     const siguiente = sumarMesesAMes(mes, 1);
     push(
       diaHabilDelMes(siguiente, e.obligaciones.pilaDiaHabil, e.festivos),

@@ -1,0 +1,22 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`determinismo del generador > PRNG: sfc32 con cyrb128 da la misma secuencia de referencia 1`] = `
+[
+  3841191271,
+  1245572393,
+  1435762273,
+  3215435878,
+]
+`;
+
+exports[`determinismo del generador > PRNG: sfc32 con cyrb128 da la misma secuencia de referencia 2`] = `
+[
+  2887973765,
+  3130674383,
+  110248075,
+  473674295,
+  1612849600,
+]
+`;
+
+exports[`determinismo del generador > dos construcciones con las mismas entradas dan la misma huella (y la de referencia) 1`] = `"3d56dd40cf41bb3cf761ab905a74c23e"`;

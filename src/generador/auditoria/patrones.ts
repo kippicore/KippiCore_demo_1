@@ -52,7 +52,7 @@ function m(
 const fechaVenta = (v: Venta) => v.ts.slice(0, 10);
 const reconocida = (v: Venta) => !v.anulacion && v.separado?.cerrado?.resultado !== 'cancelado';
 
-export function medirPatrones(estado: EstadoDominio, hoy: FechaISO, plan: Plan): Medicion[] {
+export function medirPatrones(estado: EstadoDominio, hoy: FechaISO, plan: Plan, hora = '15:30'): Medicion[] {
   const r: Medicion[] = [];
   const ventas = Object.values(estado.ventas).filter(reconocida);
   const desde30 = masDias(hoy, -30);
@@ -405,7 +405,7 @@ export function medirPatrones(estado: EstadoDominio, hoy: FechaISO, plan: Plan):
   if (dia > 3) r.push(m('P18', 'P18 mes a la fecha / año anterior − 1', Math.round((mtd(anio) / Math.max(1, mtd(anio - 1)) - 1) * 1000) / 1000, 0.08, 'rango', { rango: [0.0, 0.2] }));
 
   // P19: punto bajo del flujo de 90 días.
-  const flujo = proyeccionFlujoEstado(estado, { hoy, dias: 90, indiceMes: INDICE_MES, diasCerrados: DIAS_CERRADOS, festivos: plan.calendario.festivos });
+  const flujo = proyeccionFlujoEstado(estado, { hoy, hora, dias: 90, indiceMes: INDICE_MES, diasCerrados: DIAS_CERRADOS, festivos: plan.calendario.festivos });
   r.push(m('P19', 'P19 punto bajo del flujo de 90 días', flujo.puntoBajo.saldo, 18_000_000, 'rango', { rango: [10_000_000, 30_000_000], detalle: flujo.puntoBajo.fecha }));
 
   // P20: top 5 del mes (unidades, últimos 30 días).

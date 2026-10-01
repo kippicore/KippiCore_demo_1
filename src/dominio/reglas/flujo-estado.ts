@@ -33,6 +33,11 @@ export interface OpcionesFlujoEstado {
   festivos: ReadonlySet<FechaISO>;
   /** Semanas de historia para el promedio de cobros por día de la semana (por defecto 8). */
   semanasHistoria?: number;
+  /**
+   * Hora actual ('HH:mm'): lo que falta por vender hoy también se proyecta (proporcional a la parte del horario
+   * que queda), así el punto bajo no salta a lo largo del día. Sin hora, el día de hoy se da por cerrado.
+   */
+  hora?: string;
 }
 
 export interface FlujoEstado extends ResultadoFlujo {
@@ -207,14 +212,21 @@ export function proyeccionFlujoEstado(estado: EstadoDominio, o: OpcionesFlujoEst
 
   // Nómina: neto de la última liquidación de cada periodicidad.
   let netoQuincena = 0;
+  let netoSegundaQuincena = 0;
   let netoMensual = 0;
   let finQ = '';
+  let finQ2 = '';
   let finM = '';
   for (const l of Object.values(estado.liquidaciones)) {
     yaCausadas.add(`nomina_neto|${l.periodo.fin}`);
-    if (l.periodo.tipo === 'quincenal' && l.periodo.fin > finQ) {
+    const primera = l.periodo.fin.slice(8, 10) === '15';
+    if (l.periodo.tipo === 'quincenal' && primera && l.periodo.fin > finQ) {
       finQ = l.periodo.fin;
       netoQuincena = l.totales.neto;
+    }
+    if (l.periodo.tipo === 'quincenal' && !primera && l.periodo.fin > finQ2) {
+      finQ2 = l.periodo.fin;
+      netoSegundaQuincena = l.totales.neto;
     }
     if (l.periodo.tipo === 'mensual' && l.periodo.fin > finM) {
       finM = l.periodo.fin;
@@ -238,7 +250,24 @@ export function proyeccionFlujoEstado(estado: EstadoDominio, o: OpcionesFlujoEst
     }));
   const prest = prestacionesEstimadas(estado, hoy);
 
+  // Lo que falta vender hoy (entre las 10:00 a. m. y las 8:00 p. m., en proporción al tiempo que queda).
+  const restanteHoy: MovimientoFlujo[] = [];
+  if (o.hora && !o.diasCerrados.includes(hoy.slice(5, 10))) {
+    const min = Number(o.hora.slice(0, 2)) * 60 + Number(o.hora.slice(3, 5));
+    const queda = Math.max(0, Math.min(1, (20 * 60 - min) / 600));
+    const ds = diaSemana(hoy) as 0;
+    const contadoHoy = Math.round((promedioContado[ds] ?? 0) * queda);
+    const tarjetaHoy = Math.round((promedioDatafonoNeto[ds] ?? 0) * queda);
+    if (contadoHoy) restanteHoy.push({ fecha: hoy, valor: contadoHoy, tipo: 'ventas', concepto: 'Ventas de contado', refId: null });
+    if (tarjetaHoy) {
+      let f = sumarDias(hoy, 1);
+      while (diaSemana(f) === 0 || diaSemana(f) === 6 || o.festivos.has(f)) f = sumarDias(f, 1);
+      restanteHoy.push({ fecha: f, valor: tarjetaHoy, tipo: 'datafono', concepto: 'Abono del datáfono', refId: null });
+    }
+  }
+
   const movimientos: MovimientoFlujo[] = [
+    ...restanteHoy,
     ...ingresosVentas({
       hoy,
       dias,
@@ -255,6 +284,7 @@ export function proyeccionFlujoEstado(estado: EstadoDominio, o: OpcionesFlujoEst
       hoy,
       dias,
       netoQuincena,
+      netoSegundaQuincena: netoSegundaQuincena || netoQuincena,
       netoMensual,
       pilaMensual,
       primaSemestral: prest.primaSemestral,

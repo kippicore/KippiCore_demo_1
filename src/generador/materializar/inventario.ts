@@ -46,7 +46,11 @@ export function* materializarReposicion(g: Gen, it: IntencionGen, estado: Estado
   }
   const reservado = new Map<Id, number>();
   const d = g.plan.demanda;
-  for (const local of g.plan.localesVenta) {
+  // Primero el local que más vende (la reserva de la bodega no se la llevan los locales lentos).
+  const locales = [...g.plan.localesVenta].sort(
+    (a, b) => (b.perfil?.ventasDiaBase ?? 0) * (b.perfil?.unidadesPorVenta ?? 0) - (a.perfil?.ventasDiaBase ?? 0) * (a.perfil?.unidadesPorVenta ?? 0),
+  );
+  for (const local of locales) {
     if (!localVivo(estado, local.id)) continue;
     const lam = d.lambdaEsperado(local, fecha) || d.lambdaEsperado(local, masDias(fecha, 1));
     const unidadesDia = lam * (local.perfil?.unidadesPorVenta ?? 1.4);
@@ -59,15 +63,18 @@ export function* materializarReposicion(g: Gen, it: IntencionGen, estado: Estado
       const totalPeso = t.acumulada[t.acumulada.length - 1] ?? 0;
       if (totalPeso <= 0) continue;
       const porProducto = (unidadesDia * part * p.pesoDemanda) / totalPeso;
+      // El local surte la curva completa de lo que vende (≥ 1 unidad en dos semanas); lo demás se pide cuando
+      // hace falta.
+      if (porProducto * 14 < 1) continue;
       const tallas = DEMANDA_TALLAS[p.curva];
       for (const [clave, v] of Object.entries(p.variantes)) {
         if (excluirOxford && v === oxfordM) continue;
         if (!varianteVendible(estado, v)) continue;
-        const actual = existencias(estado, v, local.id) + (enCamino.get(`${v}@${local.id}`) ?? 0);
-        if (actual >= minimo) continue;
         const [talla, color] = clave.split('|') as [string, Id];
         const porVariante = porProducto * (tallas[talla] ?? 0) * d.fraccionColor(p, color, fecha);
-        const objetivo = Math.max(minimo + 1, Math.round(porVariante * 14));
+        const objetivo = Math.max(1, Math.round(porVariante * 14));
+        const actual = existencias(estado, v, local.id) + (enCamino.get(`${v}@${local.id}`) ?? 0);
+        if (actual >= Math.min(minimo, objetivo)) continue;
         const disponible = existencias(estado, v, ID_BODEGA) - (reservado.get(v) ?? 0);
         const cantidad = Math.min(disponible, objetivo - actual);
         if (cantidad <= 0) continue;

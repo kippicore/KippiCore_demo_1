@@ -298,9 +298,9 @@ export function planImportaciones(e: EntradaPlanImportaciones): PlanImportacione
       if ((p.fechas.recibido_bodega as FechaISO) < e.inicio) break;
       pedidos.push(p);
     }
-    // Hacia adelante. Tras el pedido grande, Ruifeng repone antes (cinturones y billeteras; el calzado sobra) y
-    // ese pedido llega antes del ancla, así al ancla solo hay cuatro importaciones en curso (N2–N5).
-    const primero = n ? masDias(ancla0.pedido, cadencia) : masDias(ancla0.pedido, 200);
+    // Hacia adelante. Ruifeng no vuelve a pedir hasta después del ancla (el calzado sobra; P5): así al ancla hay
+    // cuatro importaciones en curso (N2–N5) y la numeración del año queda como en la narrativa.
+    const primero = n ? masDias(ancla0.pedido, cadencia) : masDias(e.ancla, 25);
     for (let p = primero; p <= horizonte; p = masDias(p, cadencia)) pedidos.push(regular(p));
   }
 
