@@ -1,25 +1,12 @@
 import type { CategoriaCxP, TipoMovimientoCuenta, TipoCuenta } from '@/dominio/tipos';
 import type { TipoMovimientoFlujo } from '@/dominio/reglas/flujo';
 import type { AbonoCxP } from '@/dominio/tipos';
+import { ETIQUETA_CATEGORIA_CXP } from '@/config/textos/categorias';
 
 /** Copy de la interfaz de Pagos (B3). Español de Colombia, lenguaje del comerciante (PLAN 8.11.4). */
 
-export const CATEGORIAS_CXP: Record<CategoriaCxP, string> = {
-  proveedor_importacion: 'Proveedor de importación',
-  tributos_aduaneros: 'Tributos aduaneros',
-  proveedor_local: 'Proveedor local',
-  arriendo: 'Arriendo',
-  servicios: 'Servicios públicos',
-  nomina: 'Nómina',
-  seguridad_social: 'Seguridad social',
-  prestaciones: 'Prestaciones',
-  impuestos: 'Impuestos',
-  agente_aduanas: 'Agente de aduanas',
-  agente_carga: 'Agente de carga',
-  transporte: 'Transporte',
-  publicidad: 'Publicidad',
-  otro: 'Otro',
-};
+/** Etiquetas compartidas (también las usa el reporte `cuentas`). */
+export const CATEGORIAS_CXP: Record<CategoriaCxP, string> = ETIQUETA_CATEGORIA_CXP;
 
 export const ORDEN_CATEGORIAS_CXP: readonly CategoriaCxP[] = [
   'proveedor_importacion',

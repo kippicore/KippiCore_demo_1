@@ -19,12 +19,22 @@ import { ItemMenu, Menu } from '../primitivos/Popover';
  * `data-formato` en cada botón o ítem.
  *
  *   <BotonExportar reporte="ventas" filtros={{ desde, hasta }} menu />
+ *   <BotonExportar reporte="ventas" filtros={filtroDeLaLista} menu />        // FiltroVentas: medio, canal, cliente…
  *   <BotonExportar reporte="contador" formatos={['excel']} etiqueta={() => 'Descargar el Excel del contador'} variante="primary" />
  */
 export interface PropsBotonExportar {
   reporte: IdReporte;
-  /** Filtros del reporte; lo que falte se completa con el contexto (mes en curso, local activo, rol). */
-  filtros?: Partial<Pick<FiltrosReporte, 'desde' | 'hasta' | 'localId' | 'productoId' | 'liquidacionId'>>;
+  /**
+   * Filtros del reporte; lo que falte se completa con el contexto (mes en curso, local activo, rol). El reporte
+   * `ventas` acepta además los filtros de la lista (vendedor, cliente, medio, canal, estado, prenda, texto): pásale el
+   * mismo `FiltroVentas` de la pantalla. El vendedor del rol vendedor siempre es el suyo (no se puede cambiar).
+   */
+  filtros?: Partial<
+    Pick<
+      FiltrosReporte,
+      'desde' | 'hasta' | 'localId' | 'productoId' | 'liquidacionId' | 'vendedorId' | 'clienteId' | 'medio' | 'canal' | 'estado' | 'texto'
+    >
+  >;
   formatos?: readonly ('pdf' | 'excel')[];
   /** Texto del botón (por defecto "Exportar a PDF" / "Exportar a Excel"). */
   etiqueta?: (formato: 'pdf' | 'excel') => string;
@@ -61,7 +71,12 @@ export function BotonExportar({ reporte, filtros, formatos = ['pdf', 'excel'], e
         productoId: filtros?.productoId ?? null,
         liquidacionId: filtros?.liquidacionId ?? null,
         rol,
-        vendedorId: rol === 'vendedor' ? (empleado?.id ?? null) : null,
+        vendedorId: rol === 'vendedor' ? (empleado?.id ?? null) : (filtros?.vendedorId ?? null),
+        clienteId: filtros?.clienteId ?? null,
+        medio: filtros?.medio ?? null,
+        canal: filtros?.canal ?? null,
+        estado: filtros?.estado ?? null,
+        texto: filtros?.texto ?? null,
       };
       const archivo = await exportarReporte(reporte, estado, f, formato, {
         marca: marca.nombre,

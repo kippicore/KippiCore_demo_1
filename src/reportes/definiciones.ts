@@ -3,9 +3,11 @@ import { estadoCxP } from '@/dominio/reglas/cuentas';
 import { diasDelMes, mesDe, rangoFechas } from '@/dominio/reglas/fechas';
 import { NOMBRES_CATEGORIA } from '@/seed/catalogo';
 import { NOTAS_LEGALES } from '@/config/textos/notas';
+import { ETIQUETA_CATEGORIA_CXP, etiquetaCategoriaGasto } from '@/config/textos/categorias';
 import {
   hechosEnFechas,
   hechosEnRango,
+  hechosFiltrados,
   nombreCliente,
   nombreEmpleado,
   resumirHechos,
@@ -23,6 +25,8 @@ import {
   selSegmentos,
   selValorizacion,
   selVentas,
+  separadoCanceladoEnSuMes,
+  type FiltroVentas,
 } from '@/selectores';
 import type { DefinicionReporte, FiltrosReporte, HojaReporte, IdReporte } from './tipos';
 
@@ -46,8 +50,27 @@ const ETIQUETA_ESTADO_VENTA = {
 const enLocal = (f: FiltrosReporte, localId: Id | null) => f.localId === 'todos' || localId === f.localId;
 const nombreLocal = (e: EstadoDominio, id: Id | null) => (id ? (e.locales[id]?.nombre ?? id) : 'General');
 
+/** Filtro de la lista de ventas (A3) que corresponde a los filtros del reporte. */
+function filtroVentasDe(f: FiltrosReporte): FiltroVentas {
+  const r: FiltroVentas = { desde: f.desde, hasta: f.hasta, localId: f.localId };
+  if (f.vendedorId) r.vendedorId = f.vendedorId;
+  if (f.clienteId) r.clienteId = f.clienteId;
+  if (f.medio) r.medio = f.medio;
+  if (f.canal) r.canal = f.canal;
+  if (f.estado) r.estado = f.estado;
+  if (f.productoId) r.productoId = f.productoId;
+  if (f.texto?.trim()) r.texto = f.texto.trim();
+  return r;
+}
+
+const anuladaOCanceladaEnSuMes = (e: EstadoDominio, ventaId: Id) => {
+  const v = e.ventas[ventaId];
+  return !v || !!v.anulacion || separadoCanceladoEnSuMes(v);
+};
+
 function ventas(e: EstadoDominio, f: FiltrosReporte): HojaReporte[] {
-  const r = selVentas(e, { desde: f.desde, hasta: f.hasta, localId: f.localId, vendedorId: f.rol === 'vendedor' ? (f.vendedorId ?? undefined) : undefined });
+  const filtro = filtroVentasDe(f);
+  const r = selVentas(e, filtro);
   const detalle: HojaReporte = {
     nombre: 'Ventas detalladas',
     columnas: [
@@ -71,19 +94,19 @@ function ventas(e: EstadoDominio, f: FiltrosReporte): HojaReporte[] {
       vendedor: nombreEmpleado(e.empleados[x.vendedorId]),
       cliente: x.clienteId ? nombreCliente(e.clientes[x.clienteId]) : 'Consumidor final',
       canal: x.canal,
-      estado: ETIQUETA_ESTADO_VENTA[x.estado],
+      estado: e.ventas[x.id]?.separado?.cerrado?.resultado === 'cancelado' ? 'Separado cancelado' : ETIQUETA_ESTADO_VENTA[x.estado],
       unidades: x.unidades,
       descuentos: x.descuentos,
-      total: x.estado === 'anulada' ? 0 : x.total,
+      // Lo que esta venta suma a "Vendido con IVA" (= selVentas.totales.ventas): 0 si se anuló o si es un separado
+      // cancelado en su mismo mes; un separado cancelado en un mes posterior sí fue venta de su periodo (V4).
+      total: anuladaOCanceladaEnSuMes(e, x.id) ? 0 : x.total,
       devuelto: x.devuelto,
       saldo: x.saldo,
     })),
     totales: { unidades: 'suma', descuentos: 'suma', total: 'suma', devuelto: 'suma', saldo: 'suma' },
   };
   // Resumen por día y local (V4: devoluciones y cancelaciones en su fecha).
-  const hechos = hechosEnRango(hechosEnFechas(e, { desde: f.desde, hasta: f.hasta }), f.desde, f.hasta, f.localId).filter(
-    (h) => f.rol !== 'vendedor' || !f.vendedorId || h.vendedorId === f.vendedorId,
-  );
+  const hechos = hechosFiltrados(e, filtro);
   const grupos = new Map<string, typeof hechos>();
   for (const h of hechos) {
     const k = `${h.fecha}|${h.localId}`;
@@ -371,7 +394,7 @@ function cuentas(e: EstadoDominio, f: FiltrosReporte): HojaReporte[] {
         numero: x.cxp.numero,
         tercero: x.cxp.terceroNombre,
         concepto: x.cxp.concepto,
-        categoria: x.cxp.categoria,
+        categoria: ETIQUETA_CATEGORIA_CXP[x.cxp.categoria] ?? x.cxp.categoria,
         vence: x.fechaPago,
         estado: estadoCxP(x.cxp, f.hoy),
         moneda: x.cxp.moneda,
@@ -429,7 +452,7 @@ function gastos(e: EstadoDominio, f: FiltrosReporte): HojaReporte[] {
       ],
       filas: [...porCat.entries()]
         .sort((a, b) => b[1].total - a[1].total)
-        .map(([c, x]) => ({ categoria: c, n: x.n, sinIva: x.total - x.iva, iva: x.iva, total: x.total })),
+        .map(([c, x]) => ({ categoria: etiquetaCategoriaGasto(c), n: x.n, sinIva: x.total - x.iva, iva: x.iva, total: x.total })),
       totales: { n: 'suma', sinIva: 'suma', iva: 'suma', total: 'suma' },
     },
     {
@@ -446,7 +469,7 @@ function gastos(e: EstadoDominio, f: FiltrosReporte): HojaReporte[] {
       filas: g.filas.map((x) => ({
         fecha: x.fecha,
         local: nombreLocal(e, x.localId),
-        categoria: x.categoria,
+        categoria: etiquetaCategoriaGasto(x.categoria),
         concepto: x.concepto,
         estado: x.estadoPago === 'pagado' ? 'Pagado' : 'Por pagar',
         iva: x.iva,

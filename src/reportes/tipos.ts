@@ -1,4 +1,5 @@
-import type { EstadoDominio, FechaHoraISO, FechaISO, Id, Moneda, Rol } from '@/dominio/tipos';
+import type { Canal, EstadoDominio, FechaHoraISO, FechaISO, Id, MedioPago, Moneda, Rol } from '@/dominio/tipos';
+import type { EstadoVenta } from '@/dominio/reglas/ventas';
 import type { TipoNotaLegal } from '@/config/textos/notas';
 import type { TipoColumnaExcel, TotalExcel, ValorCelda } from '@/lib/exportar/excel';
 
@@ -34,8 +35,18 @@ export interface FiltrosReporte {
   liquidacionId?: Id | null;
   /** Rol de quien exporta (el vendedor solo ve lo suyo y nunca costos, 5.8). */
   rol?: Rol;
-  /** Vendedor activo (filtro "sus ventas" para el rol vendedor). */
+  /**
+   * Vendedor: para el rol vendedor es SIEMPRE el suyo (lo fija `BotonExportar`); para el dueño, el filtro de vendedor
+   * de la pantalla (reporte `ventas`).
+   */
   vendedorId?: Id | null;
+  /** Reporte `ventas`: los mismos filtros de la lista de ventas (A3), con la misma regla (`coincideFiltroVentas`). */
+  clienteId?: Id | 'consumidor_final' | null;
+  medio?: MedioPago | null;
+  canal?: Canal | null;
+  estado?: EstadoVenta | null;
+  /** Número de venta, cliente o vendedor. */
+  texto?: string | null;
 }
 
 export interface ColumnaReporte {

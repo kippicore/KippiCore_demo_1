@@ -21,6 +21,11 @@ import { crearSelector } from './memo';
  * Ventas (PLAN 6.23 `ventas.ts`). `hechosDeVenta` aplica la regla V4 en UNA pasada para todo el sistema:
  * toda venta no anulada suma en la fecha de su `ts` por su total con IVA; las devoluciones restan en SU fecha y
  * la cancelación de un separado también resta en su fecha. La venta de un bono no es venta (es un anticipo).
+ * Un separado que se crea Y se cancela en el mismo mes calendario (el periodo contable) no es venta: no genera
+ * hechos (ni la venta ni la cancelación), igual que en análisis, clientes y hallazgos, y así `ventas`, `numVentas` y
+ * `devoluciones` no se inflan con un ida y vuelta (`netas` no cambia). Si la cancelación cae en un mes posterior, la
+ * venta cuenta en el suyo (ya cerrado) y la cancelación resta en su fecha (V4). La regla no depende del rango que
+ * se consulte: cualquier subrango suma lo mismo que el total.
  *
  * Convenciones de las cifras: `ventas` = Σ total con IVA de las ventas reconocidas; `devoluciones` = Σ devuelto
  * y cancelado (positivo); `netas` = ventas − devoluciones; `numVentas` = ventas distintas (no aditivo);
@@ -64,6 +69,12 @@ export interface HechoVenta {
 export interface Rango {
   desde: FechaISO;
   hasta: FechaISO;
+}
+
+/** Separado cancelado en el mismo mes calendario en que se creó: no es venta de ningún periodo (ver arriba). */
+export function separadoCanceladoEnSuMes(v: Venta): boolean {
+  const c = v.separado?.cerrado;
+  return c?.resultado === 'cancelado' && c.ts.slice(0, 7) === v.ts.slice(0, 7);
 }
 
 function hechosDeLaVenta(e: EstadoDominio, v: Venta, r: HechoVenta[]): void {
@@ -185,6 +196,7 @@ export const hechosEnFechas = crearSelector<Rango, HechoVenta[]>(
     for (const id in e.ventas) {
       const v = e.ventas[id];
       if (!v || v.anulacion) continue;
+      if (separadoCanceladoEnSuMes(v)) continue;
       const enRango = dentro(v.ts);
       const cancelado = v.separado?.cerrado?.resultado === 'cancelado' && dentro(v.separado.cerrado.ts);
       if (!enRango && !cancelado) continue;
@@ -361,6 +373,55 @@ function filaDe(v: Venta, devs: readonly Devolucion[]): FilaVenta {
 }
 
 /**
+ * Predicado de los filtros de venta (local, vendedor, cliente, canal, medio, prenda, estado, texto) que comparten la
+ * lista de ventas (A3) y el reporte `ventas`: una sola definición de "esta venta entra en el filtro".
+ */
+export function coincideFiltroVentas(
+  e: EstadoDominio,
+  f: FiltroVentas,
+  devs: Record<Id, Devolucion[]> = selDevolucionesPorVenta(e),
+): (v: Venta, fila?: FilaVenta) => boolean {
+  const texto = f.texto?.trim().toLowerCase() ?? '';
+  return (v, fila) => {
+    if (f.localId && f.localId !== 'todos' && v.localId !== f.localId) return false;
+    if (f.vendedorId && v.vendedorId !== f.vendedorId) return false;
+    if (f.clienteId === 'consumidor_final' ? v.clienteId !== null : f.clienteId && v.clienteId !== f.clienteId) return false;
+    if (f.canal && v.canal !== f.canal) return false;
+    if (f.medio && !v.pagos.some((p) => p.medio === f.medio && p.tipo !== 'reembolso')) return false;
+    if (f.productoId && !v.lineas.some((l) => l.productoId === f.productoId)) return false;
+    if (f.estado && (fila ?? filaDe(v, devs[v.id] ?? [])).estado !== f.estado) return false;
+    if (texto) {
+      const c = v.clienteId ? e.clientes[v.clienteId] : null;
+      const vend = e.empleados[v.vendedorId];
+      const t = `${v.numero} ${c ? `${c.nombres} ${c.apellidos}` : 'consumidor final'} ${vend ? `${vend.nombres} ${vend.apellidos}` : ''}`.toLowerCase();
+      if (!t.includes(texto)) return false;
+    }
+    return true;
+  };
+}
+
+/**
+ * Hechos de venta (V4) del rango que pasan los filtros de venta: los que suman los totales de la lista de ventas y
+ * el resumen del reporte `ventas`. Con `productoId`, solo las líneas de esa prenda.
+ */
+export function hechosFiltrados(e: EstadoDominio, f: FiltroVentas, coincide = coincideFiltroVentas(e, f)): HechoVenta[] {
+  const cache = new Map<Id, boolean>();
+  const base = f.desde || f.hasta ? hechosEnFechas(e, { desde: f.desde ?? '0000-00-00', hasta: f.hasta ?? '9999-12-31' }) : hechosDeVenta(e);
+  return base.filter((h) => {
+    if (f.desde && h.fecha < f.desde) return false;
+    if (f.hasta && h.fecha > f.hasta) return false;
+    if (f.productoId && h.productoId !== f.productoId) return false;
+    let ok = cache.get(h.ventaId);
+    if (ok === undefined) {
+      const v = e.ventas[h.ventaId];
+      ok = !!v && coincide(v);
+      cache.set(h.ventaId, ok);
+    }
+    return ok;
+  });
+}
+
+/**
  * Lista de ventas con filtros y totales (A3). Las FILAS son las ventas (también anuladas) con `ts` en el rango;
  * los TOTALES salen de `hechosDeVenta` con los mismos filtros (las devoluciones en su fecha, V4). Los filtros de
  * venta (medio, estado, texto) se aplican a los hechos por su venta.
@@ -370,49 +431,18 @@ export const selVentas = crearSelector<FiltroVentas, { filas: FilaVenta[]; total
   ['ventas', 'devoluciones', 'productos', 'variantes', 'clientes', 'empleados'],
   (e, f) => {
     const devs = selDevolucionesPorVenta(e);
-    const texto = f.texto?.trim().toLowerCase() ?? '';
-    const coincideVenta = (v: Venta, fila?: FilaVenta): boolean => {
-      if (f.localId && f.localId !== 'todos' && v.localId !== f.localId) return false;
-      if (f.vendedorId && v.vendedorId !== f.vendedorId) return false;
-      if (f.clienteId === 'consumidor_final' ? v.clienteId !== null : f.clienteId && v.clienteId !== f.clienteId)
-        return false;
-      if (f.canal && v.canal !== f.canal) return false;
-      if (f.medio && !v.pagos.some((p) => p.medio === f.medio && p.tipo !== 'reembolso')) return false;
-      if (f.productoId && !v.lineas.some((l) => l.productoId === f.productoId)) return false;
-      if (f.estado && (fila ?? filaDe(v, devs[v.id] ?? [])).estado !== f.estado) return false;
-      if (texto) {
-        const c = v.clienteId ? e.clientes[v.clienteId] : null;
-        const vend = e.empleados[v.vendedorId];
-        const t = `${v.numero} ${c ? `${c.nombres} ${c.apellidos}` : 'consumidor final'} ${vend ? `${vend.nombres} ${vend.apellidos}` : ''}`.toLowerCase();
-        if (!t.includes(texto)) return false;
-      }
-      return true;
-    };
+    const coincide = coincideFiltroVentas(e, f, devs);
     const filas: FilaVenta[] = [];
     for (const v of Object.values(e.ventas)) {
       const fv = v.ts.slice(0, 10);
       if (f.desde && fv < f.desde) continue;
       if (f.hasta && fv > f.hasta) continue;
       const fila = filaDe(v, devs[v.id] ?? []);
-      if (!coincideVenta(v, fila)) continue;
+      if (!coincide(v, fila)) continue;
       filas.push(fila);
     }
     filas.sort((a, b) => (a.ts > b.ts ? -1 : a.ts < b.ts ? 1 : 0));
-    const cache = new Map<Id, boolean>();
-    const base = f.desde || f.hasta ? hechosEnFechas(e, { desde: f.desde ?? '0000-00-00', hasta: f.hasta ?? '9999-12-31' }) : hechosDeVenta(e);
-    const hechos = base.filter((h) => {
-      if (f.desde && h.fecha < f.desde) return false;
-      if (f.hasta && h.fecha > f.hasta) return false;
-      if (f.productoId && h.productoId !== f.productoId) return false;
-      let ok = cache.get(h.ventaId);
-      if (ok === undefined) {
-        const v = e.ventas[h.ventaId];
-        ok = !!v && coincideVenta(v);
-        cache.set(h.ventaId, ok);
-      }
-      return ok;
-    });
-    return { filas, totales: resumirHechos(hechos) };
+    return { filas, totales: resumirHechos(hechosFiltrados(e, f, coincide)) };
   },
 );
 

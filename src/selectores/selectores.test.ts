@@ -62,6 +62,8 @@ function ingenuo(desde: string, hasta: string, localId: Id | 'todos' = 'todos') 
   const dentro = (ts: string) => ts.slice(0, 10) >= desde && ts.slice(0, 10) <= hasta;
   for (const v of Object.values(e.ventas)) {
     if (!reconocida(v) || (localId !== 'todos' && v.localId !== localId)) continue;
+    // Separado creado y cancelado en el mismo mes: no es venta (ni venta ni cancelación).
+    if (v.separado?.cerrado?.resultado === 'cancelado' && v.separado.cerrado.ts.slice(0, 7) === v.ts.slice(0, 7)) continue;
     if (dentro(v.ts)) {
       ventas += v.total;
       num += 1;

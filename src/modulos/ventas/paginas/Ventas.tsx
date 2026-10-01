@@ -286,11 +286,7 @@ export default function Ventas() {
                   <BotonExportar
                     reporte="ventas"
                     menu
-                    filtros={{
-                      desde: resueltos.rango.desde,
-                      hasta: resueltos.rango.hasta,
-                      localId: resueltos.localId,
-                    }}
+                    filtros={filtro}
                   />
                 </>
               }

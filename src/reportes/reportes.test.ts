@@ -48,6 +48,51 @@ describe('filas y totales = selectores', () => {
     expect(res.totales?.numVentas).toBe(s.totales.numVentas);
   });
 
+  it('ventas: con los filtros de la lista (medio, canal, cliente, vendedor del dueño) cuadra con selVentas', () => {
+    const nequi = selVentas(e, { desde: F.desde, hasta: F.hasta, localId: 'todos', medio: 'nequi' });
+    const det = hoja('ventas', 'Ventas detalladas', { ...F, medio: 'nequi' });
+    expect(nequi.filas.length).toBeGreaterThan(0);
+    expect(det.filas.length).toBe(nequi.filas.length);
+    expect(suma(det, 'total')).toBe(nequi.totales.ventas);
+    expect(suma(hoja('ventas', 'Ventas resumidas', { ...F, medio: 'nequi' }), 'netas')).toBe(nequi.totales.netas);
+    const todas = selVentas(e, { desde: F.desde, hasta: F.hasta, localId: 'todos' });
+    expect(nequi.totales.ventas).toBeLessThan(todas.totales.ventas);
+    // El dueño también filtra por vendedor; combinaciones de filtros.
+    const vendedorId = todas.filas[0]?.vendedorId ?? '';
+    const filtros = { vendedorId, canal: 'local' as const, clienteId: 'consumidor_final' as const };
+    const s = selVentas(e, { desde: F.desde, hasta: F.hasta, localId: 'todos', ...filtros });
+    const f2: FiltrosReporte = { ...F, rol: 'dueno', ...filtros };
+    expect(hoja('ventas', 'Ventas detalladas', f2).filas.length).toBe(s.filas.length);
+    expect(suma(hoja('ventas', 'Ventas detalladas', f2), 'total')).toBe(s.totales.ventas);
+    expect(suma(hoja('ventas', 'Ventas resumidas', f2), 'netas')).toBe(s.totales.netas);
+  });
+
+  it('ventas: un separado creado y cancelado en el mismo mes no es venta (detalle = selVentas)', () => {
+    const sep = Object.values(e.ventas).find(
+      (v) => v.tipo === 'separado' && v.ts >= '2026-09-02' && !v.anulacion && v.separado && v.separado.cerrado?.resultado !== 'cancelado',
+    );
+    expect(sep).toBeDefined();
+    if (!sep?.separado) return;
+    const cancelada = { ...sep, separado: { ...sep.separado, cerrado: { ts: `${HOY}T10:00:00`, resultado: 'cancelado' as const } } };
+    const e2: EstadoDominio = { ...e, ventas: { ...e.ventas, [sep.id]: cancelada } };
+    const antes = selVentas(e, { desde: F.desde, hasta: F.hasta });
+    const s = selVentas(e2, { desde: F.desde, hasta: F.hasta });
+    const det = REPORTES.ventas.hojas(e2, F).find((h) => h.nombre === 'Ventas detalladas') as HojaReporte;
+    expect(suma(det, 'total')).toBe(s.totales.ventas);
+    expect(det.filas.find((x) => x.numero === sep.numero)?.total).toBe(0);
+    expect(det.filas.find((x) => x.numero === sep.numero)?.estado).toBe('Separado cancelado');
+    // Ni venta ni cancelación: el bruto y las devoluciones no se inflan con el ida y vuelta.
+    const sinEl = sep.total;
+    expect(s.totales.ventas).toBe(antes.totales.ventas - sinEl);
+    expect(s.totales.devoluciones).toBe(antes.totales.devoluciones);
+    expect(s.totales.numVentas).toBe(antes.totales.numVentas - 1);
+    // Cualquier subrango suma lo mismo: el día de la creación tampoco lo cuenta.
+    const dia = sep.ts.slice(0, 10);
+    const delDia = selVentas(e2, { desde: dia, hasta: dia });
+    expect(delDia.filas.some((x) => x.id === sep.id)).toBe(true);
+    expect(selVentas(e, { desde: dia, hasta: dia }).totales.ventas - delDia.totales.ventas).toBe(sinEl);
+  });
+
   it('inventario, kárdex, cuentas, gastos y resultados', () => {
     expect(suma(hoja('inventario', 'Inventario valorizado'), 'aCosto')).toBe(selValorizacion(e, { localId: 'todos' }).total.aCosto);
     expect(suma(hoja('inventario', 'Existencias por local'), 'total')).toBe(selValorizacion(e, { localId: 'todos' }).total.unidades);

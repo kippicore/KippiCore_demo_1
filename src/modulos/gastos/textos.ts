@@ -1,4 +1,5 @@
 import type { CategoriaGasto } from '@/dominio/tipos';
+import { ETIQUETA_CATEGORIA_GASTO } from '@/config/textos/categorias';
 
 /** Copy de la interfaz de Costos y gastos (B4). Todo en español de Colombia, sin jerga contable. */
 
@@ -16,19 +17,8 @@ export const CATEGORIAS: readonly CategoriaGasto[] = [
   'otros',
 ];
 
-export const ETIQUETA_CATEGORIA: Record<CategoriaGasto, string> = {
-  arriendo: 'Arriendo',
-  servicios: 'Servicios',
-  nomina: 'Nómina',
-  seguridad_social: 'Seguridad social',
-  publicidad: 'Publicidad',
-  transporte: 'Transporte',
-  mantenimiento: 'Mantenimiento',
-  empaques: 'Empaques',
-  comisiones_datafono: 'Comisión del datáfono',
-  impuestos: 'Impuestos',
-  otros: 'Otros',
-};
+/** Etiquetas compartidas (también las usa el reporte `gastos`). */
+export const ETIQUETA_CATEGORIA: Record<CategoriaGasto, string> = ETIQUETA_CATEGORIA_GASTO;
 
 export const AYUDA_CATEGORIA: Record<CategoriaGasto, string> = {
   arriendo: 'El canon del local o de la bodega.',
