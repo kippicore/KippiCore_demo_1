@@ -226,6 +226,9 @@ export interface SugerenciaPedido extends Omit<ResultadoSugerencia, 'variantes'>
   coberturaDias: number;
   llegadaEstimada: FechaISO;
   semanasCobertura: number;
+  /** De hoy a la llegada estimada: lo que se vende mientras llega el pedido también se descuenta. */
+  semanasEspera: number;
+  /** Índice estacional de [hoy, llegada + cobertura] / índice de las últimas 12 semanas. */
   factorEstacional: number;
   tasaVigente: number;
   variantes: SugerenciaFila[];
@@ -238,8 +241,10 @@ function indicePeriodo(desde: FechaISO, dias: number): number {
 }
 
 /**
- * Sugerencia de pedido a una fábrica (6.20.13, W12): rotación de 12 semanas + demanda insatisfecha, cobertura
- * desde la llegada estimada, existencias y lo que viene en camino; FOB del último pedido y margen esperado.
+ * Sugerencia de pedido a una fábrica (6.20.13, W12): rotación de 12 semanas + demanda insatisfecha × (espera hasta
+ * la llegada estimada + cobertura) × estacionalidad de ese periodo − existencias − lo que viene en camino; FOB del
+ * último pedido y margen esperado. La espera cuenta porque lo que se vende mientras llega el pedido sale de las
+ * existencias y de lo que viene en camino (sin ella, la sugerencia restaba esas unidades dos veces).
  */
 export const selSugerenciaPedido = crearSelector<{ proveedorId: Id; coberturaDias: number; hoy: FechaISO }, SugerenciaPedido | null>(
   'selSugerenciaPedido',
@@ -266,7 +271,7 @@ export const selSugerenciaPedido = crearSelector<{ proveedorId: Id; coberturaDia
     let espera = 0;
     for (const est of ESTADOS_IMPORTACION) if (est !== 'cotizado') espera += dias[est];
     const llegada = sumarDias(hoy, espera);
-    const factor = indicePeriodo(llegada, coberturaDias) / indicePeriodo(desde, 84);
+    const factor = indicePeriodo(hoy, espera + coberturaDias) / indicePeriodo(desde, 84);
     const locales = Object.values(e.locales).filter((l) => !l.eliminadoEn);
     const entrada = [];
     const extra = new Map<Id, Omit<SugerenciaFila, keyof SugerenciaVariante>>();
@@ -302,7 +307,7 @@ export const selSugerenciaPedido = crearSelector<{ proveedorId: Id; coberturaDia
       }
     }
     const tasa = selTasaVigente(e, { moneda, fecha: hoy });
-    const r = sugerirPedido({ variantes: entrada, semanasCobertura: coberturaDias / 7, factorEstacional: factor, tasaVigente: tasa });
+    const r = sugerirPedido({ variantes: entrada, semanasCobertura: coberturaDias / 7, semanasEspera: espera / 7, factorEstacional: factor, tasaVigente: tasa });
     return {
       ...r,
       proveedorId,
@@ -310,6 +315,7 @@ export const selSugerenciaPedido = crearSelector<{ proveedorId: Id; coberturaDia
       coberturaDias,
       llegadaEstimada: llegada,
       semanasCobertura: coberturaDias / 7,
+      semanasEspera: espera / 7,
       factorEstacional: factor,
       tasaVigente: tasa,
       variantes: r.variantes.map((x) => ({ ...x, ...(extra.get(x.varianteId) as Omit<SugerenciaFila, keyof SugerenciaVariante>) })),

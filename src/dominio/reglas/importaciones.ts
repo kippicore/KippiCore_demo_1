@@ -146,7 +146,12 @@ export interface EntradaSugerencia {
   variantes: readonly EntradaSugerenciaVariante[];
   /** Semanas entre la llegada estimada del pedido y el fin de la cobertura. */
   semanasCobertura: number;
-  /** Índice estacional del periodo de cobertura / índice de las últimas 12 semanas. */
+  /**
+   * Semanas de espera: de hoy a la llegada estimada del pedido. Lo que se venda mientras tanto sale de las existencias
+   * y de lo que viene en camino, así que la demanda a cubrir va de hoy al fin de la cobertura (0 = solo la cobertura).
+   */
+  semanasEspera?: number;
+  /** Índice estacional del periodo [hoy, fin de la cobertura] / índice de las últimas 12 semanas. */
   factorEstacional: number;
   tasaVigente: number;
 }
@@ -168,15 +173,20 @@ export interface ResultadoSugerencia {
   margenEsperado: number;
 }
 
-/** Sugerencia de pedido (6.20.13): pura y determinista. */
+/**
+ * Sugerencia de pedido (6.20.13): pura y determinista.
+ * `demandaCobertura = rotación semanal × (semanas de espera + semanas de cobertura) × factor estacional`;
+ * `sugerida = max(0, redondearArriba5(demandaCobertura − existencias − en camino))`.
+ */
 export function sugerirPedido(e: EntradaSugerencia): ResultadoSugerencia {
   let unidades = 0;
   let totalOrigen = 0;
   let ventaSinIva = 0;
   let costo = 0;
+  const semanas = (e.semanasEspera ?? 0) + e.semanasCobertura;
   const variantes = e.variantes.map((v) => {
     const rotacionSemanal = (v.vendidas12s + v.insatisfecha12s) / 12;
-    const demandaCobertura = rotacionSemanal * e.semanasCobertura * e.factorEstacional;
+    const demandaCobertura = rotacionSemanal * semanas * e.factorEstacional;
     const sugerida = Math.max(0, redondearArriba5(demandaCobertura - v.existencias - v.enCamino));
     unidades += sugerida;
     totalOrigen += sugerida * v.costoUnitarioOrigen;

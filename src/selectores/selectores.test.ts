@@ -367,11 +367,38 @@ describe('importaciones y proveedores', () => {
     expect(s?.unidades).toBe(s?.variantes.reduce((a, x) => a + x.sugerida, 0));
     for (const v of s?.variantes ?? []) {
       const rot = (v.vendidas12s + v.insatisfecha12s) / 12;
-      expect(v.sugerida).toBe(Math.max(0, redondearArriba5(rot * (s?.semanasCobertura ?? 0) * (s?.factorEstacional ?? 1) - v.existencias - v.enCamino)));
+      const semanas = (s?.semanasEspera ?? 0) + (s?.semanasCobertura ?? 0);
+      expect(v.sugerida).toBe(Math.max(0, redondearArriba5(rot * semanas * (s?.factorEstacional ?? 1) - v.existencias - v.enCamino)));
     }
     expect(s?.unidades).toBeGreaterThan(0);
     const ox = s?.variantes.find((x) => x.varianteId === e.meta.narrativa.varianteOxfordM);
     expect(ox?.insatisfecha12s).toBeGreaterThan(0);
+  });
+
+  it('W12: la sugerencia descuenta lo que se vende durante la espera y da un pedido creíble y relevante', () => {
+    const s = selSugerenciaPedido(e, { proveedorId: e.meta.narrativa.proveedorSugerencia, coberturaDias: 90, hoy: HOY });
+    if (!s) throw new Error('sin sugerencia');
+    // La espera (de hoy a la llegada estimada) entra en la demanda: el pedido llega en ~3 meses.
+    expect(s.semanasEspera).toBeGreaterThan(10);
+    expect(sumarDias(HOY, Math.round(s.semanasEspera * 7))).toBe(s.llegadaEstimada);
+    // Creíble: entre 1 y 3 meses de venta de la fábrica a la rotación actual, no un puñado de prendas.
+    const rotacion = s.variantes.reduce((a, v) => a + v.rotacionSemanal, 0);
+    expect(s.unidades).toBeGreaterThan(rotacion * 4);
+    expect(s.unidades).toBeLessThan(rotacion * 26);
+    // Relevante: la Oxford (la que se agota, P3) es de lo más pedido, y la M entre sus tallas principales.
+    const porProducto = new Map<string, number>();
+    for (const v of s.variantes) porProducto.set(v.productoId, (porProducto.get(v.productoId) ?? 0) + v.sugerida);
+    const oxford = porProducto.get(e.meta.narrativa.productoOxford) ?? 0;
+    expect(oxford).toBeGreaterThanOrEqual(100);
+    const ranking = [...porProducto.values()].sort((a, b) => b - a);
+    expect(ranking.indexOf(oxford)).toBeLessThan(5);
+    const ox = s.variantes.filter((v) => v.productoId === e.meta.narrativa.productoOxford);
+    const oxM = ox.filter((v) => v.talla === 'M').reduce((a, v) => a + v.sugerida, 0);
+    const oxS = ox.filter((v) => v.talla === 'S').reduce((a, v) => a + v.sugerida, 0);
+    expect(oxM).toBeGreaterThan(oxS);
+    // Más cobertura, más pedido.
+    const s120 = selSugerenciaPedido(e, { proveedorId: e.meta.narrativa.proveedorSugerencia, coberturaDias: 120, hoy: HOY });
+    expect(s120?.unidades ?? 0).toBeGreaterThan(s.unidades);
   });
 
   it('costo aterrizado: el reparto por línea suma el total (M4) y hay precio sugerido', () => {
