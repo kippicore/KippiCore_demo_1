@@ -1,40 +1,70 @@
-import { useAhora, useDinero, useFiltroLocal, useMarca, useSel } from '@/estado';
-import { selKpisInicio } from '@/selectores';
-import { cifraCorta, entero, fechaLarga, porcentaje } from '@/lib/formato';
-import { Kpi } from '@/ui/primitivos/Card';
-import { EncabezadoPagina } from '@/ui/primitivos/EncabezadoPagina';
+import { Alertas } from '../componentes/Alertas';
+import { HallazgoSemana } from '../componentes/HallazgoSemana';
+import { SinMovimiento, TopProductos } from '../componentes/ListasProductos';
+import { ProximosEventos } from '../componentes/ProximosEventos';
+import { Saludo } from '../componentes/Saludo';
+import { SeccionSegura } from '../componentes/SeccionSegura';
+import { TarjetasKpi } from '../componentes/TarjetasKpi';
+import { TusLocales } from '../componentes/TusLocales';
+import { VentasPorLocal } from '../componentes/VentasPorLocal';
+import { TXT } from '../textos';
 
 /**
- * Esqueleto de F2-B con el diseño de F2-C (PLAN 9.1.6): el paquete D1 reemplaza esta página. Muestra las seis
- * tarjetas de indicadores con el componente `Kpi` (cifra, variación, micrográfico). Conserva `data-testid="kpis-inicio"`.
+ * Inicio del dueño (D1, PRD 7.1, PLAN 2.3): el estado del negocio hoy, esta semana y este mes en una pantalla.
+ * Orden: saludo con la frase del día · seis indicadores · ventas de 30 días por local con "Requiere tu atención" ·
+ * tus tres locales · más vendidos, sin movimiento y próximos eventos · hallazgo de la semana. Lo esencial (saludo,
+ * indicadores, gráfico y las primeras alertas) cabe arriba del pliegue a 1440 × 900 y a 1366 × 657. Cada bloque va en
+ * su propia frontera de error y todo respeta el local, la moneda y el rol activos.
  */
 export default function Inicio() {
-  const localId = useFiltroLocal();
-  const ahora = useAhora();
-  const kpis = useSel(selKpisInicio, { localId, ahora });
-  const dinero = useDinero();
-  const marca = useMarca();
-  // La cifra animada recibe el valor YA convertido a la moneda activa: se formatea con cifraCorta de esa moneda.
-  const formato = (f: string) => (n: number) => (f === 'dinero' ? cifraCorta(n, dinero.moneda) : f === 'porcentaje' ? porcentaje(n) : entero(n));
   return (
-    <>
-      <EncabezadoPagina titulo="Inicio" subtitulo={`${fechaLarga(ahora)} · ${marca.nombre}`} />
-      <ul data-testid="kpis-inicio" className="mt-8 grid grid-cols-3 gap-4 wide:grid-cols-6">
-        {kpis.tarjetas.map((k) => (
-          <li key={k.id} data-kpi={k.id}>
-            <Kpi
-              etiqueta={k.etiqueta}
-              valor={k.formato === 'dinero' ? dinero.convertir(k.valor) : k.valor}
-              formatear={formato(k.formato)}
-              completo={k.formato === 'dinero' ? dinero(k.valor) : undefined}
-              variacion={k.variacion !== null && k.comparacion ? { valor: k.variacion, comparado: k.comparacion } : undefined}
-              nota={k.detalle ?? undefined}
-              serie={k.serie}
-              className="h-full"
-            />
-          </li>
-        ))}
-      </ul>
-    </>
+    <div data-testid="inicio">
+      <SeccionSegura nombre="saludo" titulo={TXT.titulo}>
+        <Saludo />
+      </SeccionSegura>
+
+      <div className="mt-6">
+        <SeccionSegura nombre="kpis" titulo={TXT.kpis.aria}>
+          <TarjetasKpi />
+        </SeccionSegura>
+      </div>
+
+      <div className="mt-6 grid grid-cols-1 items-start gap-6 desk:grid-cols-12">
+        <div className="min-w-0 desk:col-span-6">
+          <SeccionSegura nombre="ventas-30" titulo={TXT.grafico.titulo}>
+            <VentasPorLocal />
+          </SeccionSegura>
+        </div>
+        <div className="min-w-0 desk:col-span-6">
+          <SeccionSegura nombre="alertas" titulo={TXT.alertas.titulo}>
+            <Alertas />
+          </SeccionSegura>
+        </div>
+      </div>
+
+      <div className="mt-10">
+        <SeccionSegura nombre="locales" titulo={TXT.locales.titulo}>
+          <TusLocales />
+        </SeccionSegura>
+      </div>
+
+      <div className="mt-10 grid grid-cols-1 items-stretch gap-6 desk:grid-cols-3">
+        <SeccionSegura nombre="top" titulo={TXT.top.titulo}>
+          <TopProductos />
+        </SeccionSegura>
+        <SeccionSegura nombre="dormidos" titulo={TXT.dormidos.titulo}>
+          <SinMovimiento />
+        </SeccionSegura>
+        <SeccionSegura nombre="eventos" titulo={TXT.eventos.titulo}>
+          <ProximosEventos />
+        </SeccionSegura>
+      </div>
+
+      <div className="mt-10">
+        <SeccionSegura nombre="hallazgo">
+          <HallazgoSemana />
+        </SeccionSegura>
+      </div>
+    </div>
   );
 }
