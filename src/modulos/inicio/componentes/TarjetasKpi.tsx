@@ -26,11 +26,11 @@ export function TarjetasKpi() {
   const formato = (k: DatosKpi) => (n: number) => (k.formato === 'dinero' ? cifraCorta(n, dinero.moneda) : k.formato === 'porcentaje' ? porcentaje(n) : entero(n));
   const destino: Record<DatosKpi['id'], string> = {
     ventas_hoy: ayer ? rutas.ventas({ desde: sumarDias(hoy, -1), hasta: sumarDias(hoy, -1), ...local }) : rutas.ventas({ desde: hoy, hasta: hoy, ...local }),
-    ventas_mes: rutas.ventas({ desde: `${mes}-01`, hasta: hoy, ...local }),
-    ticket: rutas.ventas({ desde: `${mes}-01`, hasta: hoy, ...local }),
-    unidades: rutas.ventas({ desde: `${mes}-01`, hasta: hoy, ...local }),
-    // Los primeros días del mes casi no hay ventas que comparar con el arriendo: se abre el último mes completo.
-    margen: rutas.estadoResultados({ ...(Number(hoy.slice(8, 10)) < 8 ? {} : { mes }), ...local }),
+    ventas_mes: rutas.ventas({ desde: kpis.periodo.desde, hasta: hoy, ...local }),
+    ticket: rutas.ventas({ desde: kpis.periodo.desde, hasta: hoy, ...local }),
+    unidades: rutas.ventas({ desde: kpis.periodo.desde, hasta: hoy, ...local }),
+    // En los primeros días del mes casi no hay ventas que comparar con el arriendo: se abre el último mes completo.
+    margen: rutas.estadoResultados({ ...(kpis.periodo.modo === '30d' ? {} : { mes }), ...local }),
     efectivo: rutas.caja(),
   };
 

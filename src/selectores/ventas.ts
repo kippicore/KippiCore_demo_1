@@ -529,6 +529,10 @@ export interface VentasHastaHora {
   variacion: number | null;
 }
 
+/** Ventas mínimas (hoy y el mismo día de la semana anterior, hasta la misma hora) para mostrar una variación. */
+export const MIN_VENTAS_HOY = 5;
+export const MIN_VENTAS_BASE = 5;
+
 /** Ventas de hoy hasta la hora actual y comparación con el mismo día de la semana anterior a la misma hora. */
 export const selVentasHoyHastaHora = crearSelector<{ hoy: FechaISO; ahora: FechaHoraISO; localId: Id | 'todos' }, VentasHastaHora>(
   'selVentasHoyHastaHora',
@@ -541,7 +545,8 @@ export const selVentasHoyHastaHora = crearSelector<{ hoy: FechaISO; ahora: Fecha
     const deAntes = hechosEnRango(hechos, antes, antes, localId).filter((h) => h.ts.slice(11, 19) <= hora);
     const a = resumirHechos(deHoy);
     const b = resumirHechos(deAntes);
-    return { hoy: a, semanaAnterior: b, variacion: b.netas > 0 ? (a.netas - b.netas) / b.netas : null };
+    // Con muestras diminutas (primeras horas del día, un día flojo) el porcentaje asusta sin decir nada: no se muestra.
+    return { hoy: a, semanaAnterior: b, variacion: b.netas > 0 && b.numVentas >= MIN_VENTAS_BASE && a.numVentas >= MIN_VENTAS_HOY ? (a.netas - b.netas) / b.netas : null };
   },
 );
 

@@ -51,7 +51,7 @@ export default function Ventas() {
         }));
 
   return (
-    <Pantalla testid="app-ventas" titulo={TXT.ventas.titulo} fecha={periodo === 'hoy' ? 'Lo vendido hoy en los locales' : periodo === 'semana' ? 'Los últimos 7 días' : 'Lo que va del mes'}>
+    <Pantalla testid="app-ventas" titulo={TXT.ventas.titulo} fecha={periodo === 'hoy' ? 'Lo vendido hoy en los locales' : periodo === 'semana' ? 'Los últimos 7 días' : p.ultimos30 ? 'Los últimos 30 días' : 'Lo que va del mes'}>
       <SegmentadoMovil
         etiqueta="Periodo"
         valor={periodo}
@@ -59,12 +59,12 @@ export default function Ventas() {
           setPeriodo(x);
           setVisibles(PASO);
         }}
-        opciones={(['hoy', 'semana', 'mes'] as const).map((k) => ({ valor: k, etiqueta: TXT.ventas.periodos[k], 'data-testid': `app-periodo-${k}` }))}
+        opciones={(['hoy', 'semana', 'mes'] as const).map((k) => ({ valor: k, etiqueta: k === 'mes' && p.ultimos30 ? '30 días' : TXT.ventas.periodos[k], 'data-testid': `app-periodo-${k}` }))}
         data-testid="app-periodos"
       />
 
       <Tarjeta className="p-4" data-testid="app-ventas-cifra">
-        <p className="t-eyebrow text-ink-2">{TXT.ventas.vendido[periodo]}</p>
+        <p className="t-eyebrow text-ink-2">{periodo === 'mes' && p.ultimos30 ? 'Vendido en 30 días' : TXT.ventas.vendido[periodo]}</p>
         <p className="mt-2" data-testid="app-ventas-total">
           <Dinero valor={totales.netas} animar className="t-kpi-xl text-ink max-[374px]:text-kpi" />
         </p>

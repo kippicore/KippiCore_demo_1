@@ -149,6 +149,8 @@ export interface PeriodoVentasApp {
   comparacion: string | null;
   /** Serie diaria (semana y mes); en "hoy" va vacía (la gráfica es por hora). */
   serie: { fecha: FechaISO; netas: COP; numVentas: number }[];
+  /** En "mes" y en los primeros días del mes: el periodo son los últimos 30 días (comparados con los 30 anteriores). */
+  ultimos30?: boolean;
 }
 
 /**
@@ -177,14 +179,16 @@ export const selPeriodoVentas = crearSelector<{ periodo: PeriodoApp; ahora: stri
         serie: selVentasPorDia(e, { desde, hasta: hoy, localId }).map((d) => ({ fecha: d.fecha, netas: d.netas, numVentas: d.numVentas })),
       };
     }
-    const desde = `${hoy.slice(0, 7)}-01`;
-    const m = selKpisInicio(e, { localId, ahora }).tarjetas.find((t) => t.id === 'ventas_mes');
+    const kpis = selKpisInicio(e, { localId, ahora });
+    const m = kpis.tarjetas.find((t) => t.id === 'ventas_mes');
+    const { desde } = kpis.periodo;
     return {
       desde,
       hasta: hoy,
       variacion: m?.variacion ?? null,
       comparacion: m?.comparacion ?? null,
       serie: selVentasPorDia(e, { desde, hasta: hoy, localId }).map((d) => ({ fecha: d.fecha, netas: d.netas, numVentas: d.numVentas })),
+      ultimos30: kpis.periodo.modo === '30d',
     };
   },
 );

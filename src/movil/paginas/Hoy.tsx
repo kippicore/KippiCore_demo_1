@@ -2,8 +2,9 @@ import { lazy, Suspense } from 'react';
 import { rutas } from '@/app/rutas';
 import { sumarDias } from '@/dominio/reglas/fechas';
 import { useAhora, useEstadoDominio, useFiltroLocal, useSel } from '@/estado';
+import { fraseAvanceMeta } from '@/lib/avanceMeta';
 import { fechaLarga, porcentaje } from '@/lib/formato';
-import { selSolicitudesPendientes } from '@/selectores';
+import { avanceMeta, selSolicitudesPendientes } from '@/selectores';
 import { AvisoNavegadorInterno, BarraProgreso, Dinero, Pista, Skeleton } from '@/ui/ligero';
 import { AvisoActualizar } from '../componentes/AvisoActualizar';
 import { AvisoLlegadaQr } from '../componentes/AvisoLlegadaQr';
@@ -87,11 +88,12 @@ function CifraProtagonista() {
 }
 
 function MetaDelMes() {
-  const hoy = useAhora().slice(0, 10);
+  const ahora = useAhora();
+  const hoy = ahora.slice(0, 10);
   const local = useFiltroLocal();
   const m = useSel(selMetaMes, { mes: hoy.slice(0, 7), hoy, localId: local });
   if (m.cumplimiento === null) return null;
-  return <BarraProgreso alto={2} meta valor={m.cumplimiento} etiqueta={TXT.hoy.metaMes} detalle={`${porcentaje(m.cumplimiento, 0)} de la meta`} />;
+  return <BarraProgreso alto={2} meta valor={m.cumplimiento} etiqueta={TXT.hoy.metaMes} detalle={fraseAvanceMeta(avanceMeta(m.cumplimiento, ahora, hoy.slice(0, 7)), m.cumplimiento)} />;
 }
 
 // ---------------------------------------------------------------------------------------------------------
