@@ -6,19 +6,22 @@ import { MARCA } from '@/config/marca';
 import { ENTRADA } from '@/config/textos/guia';
 import { almacenGuia, almacenSesion, emitirUI, useDatos, useHoy, useMarca, useSel, useSesion } from '@/estado';
 import { fechaLarga, plural } from '@/lib/formato';
-import { ModalAppDueno, abrirAppDueno } from '@/movil/publico';
 import { selClientesActivos, selLocalesQueVenden, selProductosActivos } from '@/selectores';
 import { AvisoNavegadorInterno } from '@/ui/conectados/Guia';
 import { Button } from '@/ui/primitivos/Button';
 import { Icono } from '@/ui/primitivos/Icono';
 import { Skeleton } from '@/ui/primitivos/Estados';
 import { BarraProgreso } from '@/ui/primitivos/Piezas';
-import { CartelCelular, CartelComputador } from '../componentes/Cartel';
 import { PanelPersonalizar } from '../componentes/PanelPersonalizar';
 import { Wordmark } from '../componentes/Wordmark';
 import { TEXTOS_ENTRADA } from '../textos';
 
 const QrEntrada = lazy(() => import('../componentes/QrEntrada'));
+// Lo que no hace falta para el primer pintado se carga aparte (la entrada se abre casi siempre desde un celular):
+// las ilustraciones del cartel y el modal de "ver la app" (con Radix), que solo se pide al pulsar el enlace.
+const CartelComputador = lazy(() => import('../componentes/Cartel').then((m) => ({ default: m.CartelComputador })));
+const CartelCelular = lazy(() => import('../componentes/Cartel').then((m) => ({ default: m.CartelCelular })));
+const ModalAppDuenoDiferido = lazy(() => import('@/movil/publico').then((m) => ({ default: m.ModalAppDueno })));
 
 /**
  * Pantalla de entrada `/` (PLAN 2.2, PRD 10): lo primero que ve el cliente, en computador y en celular. Se pinta sin
@@ -37,6 +40,7 @@ export default function Entrada() {
   const [panel, setPanel] = useState(false);
   const [previa, setPrevia] = useState<string | null>(null);
   const [copiado, setCopiado] = useState(false);
+  const [marcoPedido, setMarcoPedido] = useState(false);
   // ¿Ya había venido (a la entrada o al panel)? Se lee UNA vez al montar: contar esta visita no debe cambiar el botón.
   const [yaVisito] = useState(() => almacenGuia.getState().visitas >= 1 || !!almacenSesion.getState().ultimaRuta?.startsWith('/panel'));
 
@@ -71,6 +75,13 @@ export default function Entrada() {
     void navigator.clipboard?.writeText(window.location.origin).then(() => {
       setCopiado(true);
       setTimeout(() => setCopiado(false), 2000);
+    });
+  };
+  /** "o ábrela aquí en un marco de celular": carga el modal de la app (chunk aparte) y lo abre. */
+  const abrirMarcoCelular = () => {
+    void import('@/movil/publico').then((m) => {
+      setMarcoPedido(true);
+      m.abrirAppDueno();
     });
   };
   const compartir = () => {
@@ -113,11 +124,15 @@ export default function Entrada() {
             <h2 className="mt-7 text-[1.625rem] font-black uppercase leading-[1.1] tracking-[-0.005em] text-ink md:hidden">{ENTRADA.fraseCelular}</h2>
             <p className="mt-4 hidden max-w-[44ch] t-body-lg text-muted md:block [@media(max-height:760px)]:mt-2">{TEXTOS_ENTRADA.frase}</p>
             <div className="mt-6 md:hidden">
-              <CartelCelular />
+              <Suspense fallback={<div aria-hidden className="grid grid-cols-3 gap-2">{[0, 1, 2].map((i) => <div key={i} className="aspect-[3/4] border border-line-strong bg-product" />)}</div>}>
+                <CartelCelular />
+              </Suspense>
             </div>
           </div>
           <div className="hidden self-start lg:block">
-            <CartelComputador />
+            <Suspense fallback={<div aria-hidden className="mx-auto h-[392px] w-full max-w-[460px] [@media(max-height:760px)]:h-[300px]" />}>
+              <CartelComputador />
+            </Suspense>
           </div>
         </section>
 
@@ -161,7 +176,7 @@ export default function Entrada() {
             </div>
             <button
               type="button"
-              onClick={abrirAppDueno}
+              onClick={abrirMarcoCelular}
               data-testid="entrada-marco-celular"
               className="mt-5 self-start t-small text-ink underline underline-offset-4 hover:no-underline"
             >
@@ -197,7 +212,11 @@ export default function Entrada() {
           <p className="shrink-0 text-ink-2">{MARCA.firmaKippicore}</p>
         </footer>
       </div>
-      <ModalAppDueno />
+      {marcoPedido && (
+        <Suspense fallback={null}>
+          <ModalAppDuenoDiferido />
+        </Suspense>
+      )}
     </main>
   );
 }

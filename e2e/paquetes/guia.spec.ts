@@ -70,6 +70,13 @@ async function registrarCompraWeb(page: Page) {
   });
 }
 
+/** Abre el menú "?" (espera a que el anterior se haya cerrado del todo). */
+async function abrirMenuAyuda(page: Page) {
+  await expect(page.getByRole('menu')).toHaveCount(0);
+  await page.getByTestId('menu-ayuda').click();
+  await expect(page.getByRole('menu')).toBeVisible();
+}
+
 /** Deja el panel "Prueba esto" desplegado, sea cual sea el estado en que esté (píldora o panel). */
 async function desplegarPanel(page: Page) {
   const panel = page.getByTestId('guia-panel');
@@ -542,7 +549,7 @@ test.describe('Prueba esto', () => {
     const caja = await confirmar.boundingBox();
     expect(caja!.y + caja!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
     // Desde el menú "?" → "Mostrar Prueba esto" sale a Inicio y la lista se ve.
-    await page.getByTestId('menu-ayuda').click();
+    await abrirMenuAyuda(page);
     await page.getByRole('menuitem', { name: /Mostrar Prueba esto \(0 de 8\)/ }).click();
     await expect(page).toHaveURL(/\/panel\/inicio/);
     await expect(page.getByTestId('guia-panel')).toBeVisible();
@@ -578,7 +585,7 @@ test.describe('Menú "?" y pistas contextuales', () => {
     const errores = vigilar(page);
     await abrirInicioConGuia(page, irA);
     await page.getByTestId('guia-minimizar').click();
-    await page.getByTestId('menu-ayuda').click();
+    await abrirMenuAyuda(page);
     for (const nombre of [/Ver la entrada otra vez/, /Mostrar Prueba esto \(0 de 8\)/, /Ver la app en el celular/, /Cómo arrancaríamos/, /Ocultar pistas/, /Restaurar datos de la demo/]) {
       await expect(page.getByRole('menuitem', { name: nombre })).toBeVisible();
     }
@@ -586,22 +593,22 @@ test.describe('Menú "?" y pistas contextuales', () => {
     await page.getByRole('menuitem', { name: /Mostrar Prueba esto/ }).click();
     await expect(page.getByTestId('guia-panel')).toBeVisible();
     // "Ocultar pistas" ↔ "Mostrar pistas".
-    await page.getByTestId('menu-ayuda').click();
+    await abrirMenuAyuda(page);
     await page.getByRole('menuitem', { name: 'Ocultar pistas' }).click();
     expect(await conKc(page, (kc) => (kc as unknown as { guia: { getState: () => { pistasOcultas: boolean } } }).guia.getState().pistasOcultas)).toBe(true);
-    await page.getByTestId('menu-ayuda').click();
+    await abrirMenuAyuda(page);
     await expect(page.getByRole('menuitem', { name: 'Mostrar pistas' })).toBeVisible();
     await page.getByRole('menuitem', { name: 'Mostrar pistas' }).click();
     // "Ver la app en el celular" abre el modal del QR.
-    await page.getByTestId('menu-ayuda').click();
+    await abrirMenuAyuda(page);
     await page.getByRole('menuitem', { name: 'Ver la app en el celular' }).click();
     await expect(page.getByTestId('modal-app-dueno')).toBeVisible();
     await page.keyboard.press('Escape');
     // "Cómo arrancaríamos" y "Ver la entrada otra vez".
-    await page.getByTestId('menu-ayuda').click();
+    await abrirMenuAyuda(page);
     await page.getByRole('menuitem', { name: 'Cómo arrancaríamos' }).click();
     await expect(page).toHaveURL(/\/panel\/como-arrancariamos/);
-    await page.getByTestId('menu-ayuda').click();
+    await abrirMenuAyuda(page);
     await page.getByRole('menuitem', { name: 'Ver la entrada otra vez' }).click();
     await expect(page).toHaveURL(/\/\?hoy=|\/$/);
     await expect(page.getByTestId('entrada')).toBeVisible();
