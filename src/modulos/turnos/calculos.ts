@@ -1,4 +1,13 @@
-import type { FechaISO, HoraHHmm, Id, Novedad, ParametrosNomina, TipoNovedad, TipoTurno, Turno } from '@/dominio/tipos';
+import type {
+  FechaISO,
+  HoraHHmm,
+  Id,
+  Novedad,
+  ParametrosNomina,
+  TipoNovedad,
+  TipoTurno,
+  Turno,
+} from '@/dominio/tipos';
 import { diferenciaDias, lunesDe, sumarDias } from '@/dominio/reglas/fechas';
 import { horasNetasTurno, minutosBrutos, seSolapan } from '@/dominio/reglas/jornada';
 import { FRANJAS } from '@/config/turnos';
@@ -117,8 +126,16 @@ export type EvaluacionTurno =
   | { resultado: 'novedad'; novedad: Novedad };
 
 /** La novedad (vacaciones, incapacidad…) que cubre ese día para esa persona, si la hay. */
-export function novedadDelDia(novedades: readonly Novedad[], empleadoId: Id, fecha: FechaISO): Novedad | null {
-  return novedades.find((n) => !n.eliminadoEn && n.empleadoId === empleadoId && fecha >= n.desde && fecha <= n.hasta) ?? null;
+export function novedadDelDia(
+  novedades: readonly Novedad[],
+  empleadoId: Id,
+  fecha: FechaISO,
+): Novedad | null {
+  return (
+    novedades.find(
+      (n) => !n.eliminadoEn && n.empleadoId === empleadoId && fecha >= n.desde && fecha <= n.hasta,
+    ) ?? null
+  );
 }
 
 /**
@@ -126,7 +143,12 @@ export function novedadDelDia(novedades: readonly Novedad[], empleadoId: Id, fec
  * de vacaciones o incapacitado), un turno que se cruce y las horas netas de la semana frente a la jornada máxima.
  * `turnosSemana` son TODOS los turnos de esa persona en la semana (de cualquier local).
  */
-export function evaluarTurno(p: PropuestaTurno, turnosSemana: readonly Turno[], novedades: readonly Novedad[], maximo: number): EvaluacionTurno {
+export function evaluarTurno(
+  p: PropuestaTurno,
+  turnosSemana: readonly Turno[],
+  novedades: readonly Novedad[],
+  maximo: number,
+): EvaluacionTurno {
   const novedad = novedadDelDia(novedades, p.empleadoId, p.fecha);
   if (novedad) return { resultado: 'novedad', novedad };
   const otros = turnosSemana.filter((t) => t.id !== p.excluirId);
@@ -147,14 +169,34 @@ export interface DestinoArrastre {
  * Lo que se programaría al soltar `origen` sobre `destino`: un turno nuevo con el horario de la plantilla del
  * local, o el turno movido (mismo horario, otra persona u otro día). null si se suelta donde ya estaba.
  */
-export function propuestaDeArrastre(origen: OrigenArrastre, destino: DestinoArrastre, localId: Id): (PropuestaTurno & { tipo: TipoTurno }) | null {
+export function propuestaDeArrastre(
+  origen: OrigenArrastre,
+  destino: DestinoArrastre,
+  localId: Id,
+): (PropuestaTurno & { tipo: TipoTurno }) | null {
   if (origen.clase === 'plantilla') {
     const p = plantillaTurno(origen.tipo, localId);
-    return { empleadoId: destino.empleadoId, fecha: destino.fecha, inicio: p.inicio, fin: p.fin, descansoMin: p.descansoMin, tipo: p.tipo, excluirId: null };
+    return {
+      empleadoId: destino.empleadoId,
+      fecha: destino.fecha,
+      inicio: p.inicio,
+      fin: p.fin,
+      descansoMin: p.descansoMin,
+      tipo: p.tipo,
+      excluirId: null,
+    };
   }
   const t = origen.turno;
   if (t.empleadoId === destino.empleadoId && t.fecha === destino.fecha) return null;
-  return { empleadoId: destino.empleadoId, fecha: destino.fecha, inicio: t.inicio, fin: t.fin, descansoMin: t.descansoMin, tipo: t.tipo, excluirId: t.id };
+  return {
+    empleadoId: destino.empleadoId,
+    fecha: destino.fecha,
+    inicio: t.inicio,
+    fin: t.fin,
+    descansoMin: t.descansoMin,
+    tipo: t.tipo,
+    excluirId: t.id,
+  };
 }
 
 /** Frase para el aviso de exceso: "Con este turno, Mateo quedaría con 45 h (máximo 42 h): 3 h serían extra." */
@@ -187,8 +229,10 @@ export function validarBorradorTurno(b: BorradorTurno): Partial<Record<CampoTurn
   const horasOk = RE_HORA.test(b.inicio) && RE_HORA.test(b.fin);
   if (!RE_HORA.test(b.inicio)) e.inicio = 'Escribe la hora como 10:00.';
   if (!RE_HORA.test(b.fin)) e.fin = 'Escribe la hora como 18:00.';
-  if (b.descansoMin === null || b.descansoMin < 0) e.descansoMin = 'Escribe los minutos de descanso (0 si no hay).';
-  else if (horasOk && b.descansoMin >= minutosBrutos(b.inicio, b.fin)) e.descansoMin = 'El descanso debe ser menor que el turno.';
+  if (b.descansoMin === null || b.descansoMin < 0)
+    e.descansoMin = 'Escribe los minutos de descanso (0 si no hay).';
+  else if (horasOk && b.descansoMin >= minutosBrutos(b.inicio, b.fin))
+    e.descansoMin = 'El descanso debe ser menor que el turno.';
   return e;
 }
 
@@ -228,11 +272,16 @@ export function estadoDeNovedad(n: { desde: FechaISO; hasta: FechaISO }, hoy: Fe
 }
 
 /** Cómo entra la novedad a la liquidación, en palabras (sin cifras de dinero: eso lo calcula la nómina). */
-export function efectoEnNomina(tipo: TipoNovedad, remunerada: boolean, dias: number, p: ParametrosNomina['incapacidad']): string {
+export function efectoEnNomina(
+  tipo: TipoNovedad,
+  remunerada: boolean,
+  dias: number,
+  p: ParametrosNomina['incapacidad'],
+): string {
   if (tipo === 'incapacidad') {
     const aCargo = Math.min(dias, p.diasACargoEmpleador);
     return dias <= p.diasACargoEmpleador
-      ? `${aCargo} ${aCargo === 1 ? 'día' : 'días'} a cargo del negocio, pagados al ${porcentaje(p.porcentajePago, 2)}.`
+      ? `${aCargo} ${aCargo === 1 ? 'día a cargo del negocio, pagado' : 'días a cargo del negocio, pagados'} al ${porcentaje(p.porcentajePago, 2)}.`
       : `Los ${p.diasACargoEmpleador} primeros días los paga el negocio y los ${dias - p.diasACargoEmpleador} siguientes los cubre la EPS; todos al ${porcentaje(p.porcentajePago, 2)}.`;
   }
   if (tipo === 'vacaciones') return 'Se pagan como vacaciones y no cuentan como ausencia.';

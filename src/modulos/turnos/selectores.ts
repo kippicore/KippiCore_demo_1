@@ -1,7 +1,26 @@
-import type { AsistenciaDia, Cargo, FechaHoraISO, FechaISO, Id, Marcacion, Novedad, ParametrosNomina, TipoVinculacion, Turno } from '@/dominio/tipos';
+import type {
+  AsistenciaDia,
+  Cargo,
+  FechaHoraISO,
+  FechaISO,
+  Id,
+  Marcacion,
+  Novedad,
+  ParametrosNomina,
+  TipoVinculacion,
+  Turno,
+} from '@/dominio/tipos';
 import { rangoFechas, sumarDias } from '@/dominio/reglas/fechas';
 import { horasNetasTurno } from '@/dominio/reglas/jornada';
-import { crearSelector, nombreEmpleado, selAsistencia, selRecargosTurnos, selTurnosSemana, type RecargoEmpleado, type ResumenAsistencia } from '@/selectores';
+import {
+  crearSelector,
+  nombreEmpleado,
+  selAsistencia,
+  selRecargosTurnos,
+  selTurnosSemana,
+  type RecargoEmpleado,
+  type ResumenAsistencia,
+} from '@/selectores';
 import { diasDeNovedad, estadoDeNovedad, nombreCorto, repartirRecargo, type EstadoNovedad } from './calculos';
 
 /**
@@ -74,7 +93,9 @@ export const selSemanaLocal = crearSelector<{ localId: Id; lunes: FechaISO }, Se
         s.add(t.empleadoId);
       }
       const horas = turnos.reduce((a, t) => a + horasNetasTurno(t), 0);
-      const novedades = Object.values(e.novedades).filter((n) => !n.eliminadoEn && n.empleadoId === x.empleadoId && n.desde <= fin && n.hasta >= lunes);
+      const novedades = Object.values(e.novedades).filter(
+        (n) => !n.eliminadoEn && n.empleadoId === x.empleadoId && n.desde <= fin && n.hasta >= lunes,
+      );
       const contrato = em ? e.contratos[em.contratoVigenteId] : undefined;
       return {
         empleadoId: x.empleadoId,
@@ -94,7 +115,15 @@ export const selSemanaLocal = crearSelector<{ localId: Id; lunes: FechaISO }, Se
       const c = cobertura[d];
       if (c) c.personas = s.size;
     }
-    return { lunes, dias: base.dias, filas, cobertura, horasLocal, turnosLocal, conExceso: filas.filter((f) => f.exceso > 1e-9).length };
+    return {
+      lunes,
+      dias: base.dias,
+      filas,
+      cobertura,
+      horasLocal,
+      turnosLocal,
+      conExceso: filas.filter((f) => f.exceso > 1e-9).length,
+    };
   },
 );
 
@@ -129,7 +158,13 @@ export const selRecargosDetallados = crearSelector<{ localId: Id; lunes: FechaIS
     const empleados: RecargoDetallado[] = r.empleados.map((x) => {
       const em = e.empleados[x.empleadoId];
       const reparto = repartirRecargo(x, rec);
-      return { ...x, corto: em ? nombreCorto(em.nombres, em.apellidos) : x.nombre, vinculacion: em ? (e.contratos[em.contratoVigenteId]?.tipo ?? null) : null, valorNocturno: reparto.nocturno, valorDominical: reparto.dominical };
+      return {
+        ...x,
+        corto: em ? nombreCorto(em.nombres, em.apellidos) : x.nombre,
+        vinculacion: em ? (e.contratos[em.contratoVigenteId]?.tipo ?? null) : null,
+        valorNocturno: reparto.nocturno,
+        valorDominical: reparto.dominical,
+      };
     });
     return {
       empleados,
@@ -152,17 +187,21 @@ export interface ParametrosTurnos {
   porVerificar: readonly string[];
 }
 
-export const selParametrosTurnos = crearSelector<void, ParametrosTurnos>('selParametrosTurnos', ['parametros'], (e) => {
-  const p = e.parametros.nomina;
-  return {
-    recargos: p.recargos,
-    jornadaNocturna: p.jornadaNocturna,
-    jornadaMaximaHoras: p.jornadaMaximaSemanal.horas,
-    incapacidad: p.incapacidad,
-    toleranciaMin: p.toleranciaLlegadaTardeMin,
-    porVerificar: p.porVerificar,
-  };
-});
+export const selParametrosTurnos = crearSelector<void, ParametrosTurnos>(
+  'selParametrosTurnos',
+  ['parametros'],
+  (e) => {
+    const p = e.parametros.nomina;
+    return {
+      recargos: p.recargos,
+      jornadaNocturna: p.jornadaNocturna,
+      jornadaMaximaHoras: p.jornadaMaximaSemanal.horas,
+      incapacidad: p.incapacidad,
+      toleranciaMin: p.toleranciaLlegadaTardeMin,
+      porVerificar: p.porVerificar,
+    };
+  },
+);
 
 // ---------------------------------------------------------------------------------------------------------
 // Personas
@@ -176,12 +215,17 @@ export interface PersonaVista {
 }
 
 /** Todas las personas no eliminadas (activas o retiradas) por id, para nombrar filas de asistencia y novedades. */
-export const selPersonas = crearSelector<void, Record<Id, PersonaVista>>('selPersonas', ['empleados'], (e) => {
-  const r: Record<Id, PersonaVista> = {};
-  for (const x of Object.values(e.empleados))
-    if (!x.eliminadoEn) r[x.id] = { id: x.id, nombre: nombreEmpleado(x), cargo: x.cargo, localId: x.localId, slug: x.slug };
-  return r;
-});
+export const selPersonas = crearSelector<void, Record<Id, PersonaVista>>(
+  'selPersonas',
+  ['empleados'],
+  (e) => {
+    const r: Record<Id, PersonaVista> = {};
+    for (const x of Object.values(e.empleados))
+      if (!x.eliminadoEn)
+        r[x.id] = { id: x.id, nombre: nombreEmpleado(x), cargo: x.cargo, localId: x.localId, slug: x.slug };
+    return r;
+  },
+);
 
 // ---------------------------------------------------------------------------------------------------------
 // Marcaciones y turnos por rango
@@ -236,16 +280,35 @@ export const selNovedadesVista = crearSelector<{ hoy: FechaISO }, FilaNovedad[]>
       const em = e.empleados[n.empleadoId];
       if (!em || em.eliminadoEn) continue;
       let turnosPorCubrir = 0;
-      for (const f of rangoFechas(n.desde, n.hasta)) turnosPorCubrir += e.agregados.turnosDia[`${n.empleadoId}@${f}`]?.length ?? 0;
-      filas.push({ novedad: n, nombre: nombreEmpleado(em), localId: em.localId, dias: diasDeNovedad(n.desde, n.hasta), turnosPorCubrir, estado: estadoDeNovedad(n, hoy) });
+      for (const f of rangoFechas(n.desde, n.hasta))
+        turnosPorCubrir += e.agregados.turnosDia[`${n.empleadoId}@${f}`]?.length ?? 0;
+      filas.push({
+        novedad: n,
+        nombre: nombreEmpleado(em),
+        localId: em.localId,
+        dias: diasDeNovedad(n.desde, n.hasta),
+        turnosPorCubrir,
+        estado: estadoDeNovedad(n, hoy),
+      });
     }
-    return filas.sort((a, b) => (a.novedad.desde < b.novedad.desde ? 1 : a.novedad.desde > b.novedad.desde ? -1 : a.novedad.id < b.novedad.id ? -1 : 1));
+    return filas.sort((a, b) =>
+      a.novedad.desde < b.novedad.desde
+        ? 1
+        : a.novedad.desde > b.novedad.desde
+          ? -1
+          : a.novedad.id < b.novedad.id
+            ? -1
+            : 1,
+    );
   },
 );
 
 /** Novedades de una persona (las que impiden programarle turnos esos días). */
-export const selNovedadesDe = crearSelector<{ empleadoId: Id }, Novedad[]>('selNovedadesDe', ['novedades'], (e, { empleadoId }) =>
-  Object.values(e.novedades).filter((n) => !n.eliminadoEn && n.empleadoId === empleadoId),
+export const selNovedadesDe = crearSelector<{ empleadoId: Id }, Novedad[]>(
+  'selNovedadesDe',
+  ['novedades'],
+  (e, { empleadoId }) =>
+    Object.values(e.novedades).filter((n) => !n.eliminadoEn && n.empleadoId === empleadoId),
 );
 
 // ---------------------------------------------------------------------------------------------------------
@@ -268,21 +331,30 @@ export interface AsistenciaVista {
 export const selAsistenciaVista = crearSelector<
   { desde: FechaISO; hasta: FechaISO; ahora: FechaHoraISO; empleadoId?: Id; localId?: Id | 'todos' },
   AsistenciaVista
->('selAsistenciaVista', ['turnos', 'marcaciones', 'novedades', 'empleados', 'parametros', 'agregados'], (e, p) => {
-  const a = selAsistencia(e, p);
-  const filas: FilaAsistencia[] = a.dias.map((d) => {
-    const em = e.empleados[d.empleadoId];
-    return {
-      dia: d,
-      turno: d.turnoId ? (e.turnos[d.turnoId] ?? null) : null,
-      nombre: em ? nombreEmpleado(em) : d.empleadoId,
-      corto: em ? nombreCorto(em.nombres, em.apellidos) : d.empleadoId,
-      localId: d.localId ?? em?.localId ?? null,
-    };
-  });
-  const resumen = a.resumen.map((r) => {
-    const em = e.empleados[r.empleadoId];
-    return { ...r, corto: em ? nombreCorto(em.nombres, em.apellidos) : r.nombre, localId: em?.localId ?? null, cargo: em?.cargo ?? 'vendedor' };
-  });
-  return { filas, resumen };
-});
+>(
+  'selAsistenciaVista',
+  ['turnos', 'marcaciones', 'novedades', 'empleados', 'parametros', 'agregados'],
+  (e, p) => {
+    const a = selAsistencia(e, p);
+    const filas: FilaAsistencia[] = a.dias.map((d) => {
+      const em = e.empleados[d.empleadoId];
+      return {
+        dia: d,
+        turno: d.turnoId ? (e.turnos[d.turnoId] ?? null) : null,
+        nombre: em ? nombreEmpleado(em) : d.empleadoId,
+        corto: em ? nombreCorto(em.nombres, em.apellidos) : d.empleadoId,
+        localId: d.localId ?? em?.localId ?? null,
+      };
+    });
+    const resumen = a.resumen.map((r) => {
+      const em = e.empleados[r.empleadoId];
+      return {
+        ...r,
+        corto: em ? nombreCorto(em.nombres, em.apellidos) : r.nombre,
+        localId: em?.localId ?? null,
+        cargo: em?.cargo ?? 'vendedor',
+      };
+    });
+    return { filas, resumen };
+  },
+);

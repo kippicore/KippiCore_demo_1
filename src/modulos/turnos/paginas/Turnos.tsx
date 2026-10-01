@@ -1,6 +1,18 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight, Copy, Plus, Users } from 'lucide-react';
-import { BotonIcono, Button, ConfirmarEliminacion, Dialog, Dinero, EmptyState, ItemMenu, Menu, Pista, Segmentado, avisar } from '@/ui';
+import {
+  BotonIcono,
+  Button,
+  ConfirmarEliminacion,
+  Dialog,
+  Dinero,
+  EmptyState,
+  ItemMenu,
+  Menu,
+  Pista,
+  Segmentado,
+  avisar,
+} from '@/ui';
 import type { FechaISO, Id, Turno } from '@/dominio/tipos';
 import { lunesDe, sumarDias } from '@/dominio/reglas/fechas';
 import { horasNetasTurno } from '@/dominio/reglas/jornada';
@@ -40,7 +52,11 @@ export default function Turnos() {
         subtitulo={TEXTOS.turnos.subtitulo}
         local={f.localDeLaUrl ? f.local : null}
         acciones={
-          <Button icono={Plus} onClick={() => setDialogo({ turno: null, empleadoId: null, fecha: null })} data-testid="turnos-programar">
+          <Button
+            icono={Plus}
+            onClick={() => setDialogo({ turno: null, empleadoId: null, fecha: null })}
+            data-testid="turnos-programar"
+          >
             Programar turno
           </Button>
         }
@@ -59,7 +75,15 @@ interface Pendiente {
   nombre: string;
 }
 
-function CuerpoTurnos({ f, dialogo, setDialogo }: { f: FiltrosTurnos; dialogo: DialogoAbierto; setDialogo: (d: DialogoAbierto) => void }) {
+function CuerpoTurnos({
+  f,
+  dialogo,
+  setDialogo,
+}: {
+  f: FiltrosTurnos;
+  dialogo: DialogoAbierto;
+  setDialogo: (d: DialogoAbierto) => void;
+}) {
   const acciones = useAcciones();
   const hoy = useHoy();
   const locales = useSel(selLocales, { incluirBodega: true });
@@ -90,8 +114,26 @@ function CuerpoTurnos({ f, dialogo, setDialogo }: { f: FiltrosTurnos; dialogo: D
     const nombre = filaDe(destino.empleadoId)?.nombre ?? 'La persona';
     const r =
       origen.clase === 'plantilla'
-        ? acciones.asignarTurno({ empleadoId: p.empleadoId, localId: f.local, fecha: p.fecha, tipo: p.tipo, inicio: p.inicio, fin: p.fin, descansoMin: p.descansoMin, aceptarExceso })
-        : acciones.moverTurno({ turnoId: origen.turno.id, empleadoId: p.empleadoId, localId: f.local, fecha: p.fecha, tipo: p.tipo, inicio: p.inicio, fin: p.fin, aceptarExceso });
+        ? acciones.asignarTurno({
+            empleadoId: p.empleadoId,
+            localId: f.local,
+            fecha: p.fecha,
+            tipo: p.tipo,
+            inicio: p.inicio,
+            fin: p.fin,
+            descansoMin: p.descansoMin,
+            aceptarExceso,
+          })
+        : acciones.moverTurno({
+            turnoId: origen.turno.id,
+            empleadoId: p.empleadoId,
+            localId: f.local,
+            fecha: p.fecha,
+            tipo: p.tipo,
+            inicio: p.inicio,
+            fin: p.fin,
+            aceptarExceso,
+          });
     if (!r.ok) {
       avisar({ tipo: 'error', texto: r.error.mensaje });
       return;
@@ -108,11 +150,19 @@ function CuerpoTurnos({ f, dialogo, setDialogo }: { f: FiltrosTurnos; dialogo: D
     if (!ev) return;
     const nombre = filaDe(destino.empleadoId)?.nombre ?? 'La persona';
     if (ev.resultado === 'novedad') {
-      avisar({ tipo: 'alerta', texto: `${nombre} está en ${ETIQUETA_NOVEDAD[ev.novedad.tipo].toLowerCase()} ese día`, detalle: 'No se le programan turnos mientras dure la novedad.' });
+      avisar({
+        tipo: 'alerta',
+        texto: `${nombre} está en ${ETIQUETA_NOVEDAD[ev.novedad.tipo].toLowerCase()} ese día`,
+        detalle: 'No se le programan turnos mientras dure la novedad.',
+      });
       return;
     }
     if (ev.resultado === 'solapa') {
-      avisar({ tipo: 'alerta', texto: `${nombre} ya tiene un turno de ${rangoHoras(ev.con.inicio, ev.con.fin)} ese día`, detalle: 'Mueve o elimina ese turno primero.' });
+      avisar({
+        tipo: 'alerta',
+        texto: `${nombre} ya tiene un turno de ${rangoHoras(ev.con.inicio, ev.con.fin)} ese día`,
+        detalle: 'Mueve o elimina ese turno primero.',
+      });
       return;
     }
     if (ev.resultado === 'exceso') {
@@ -127,12 +177,17 @@ function CuerpoTurnos({ f, dialogo, setDialogo }: { f: FiltrosTurnos; dialogo: D
     const lunesDestino = direccion === 'anterior' ? f.lunes : sumarDias(f.lunes, 7);
     const r = acciones.copiarSemanaTurnos({ localId: f.local, lunesOrigen, lunesDestino, aceptarExceso });
     if (!r.ok) {
-      if (r.error.codigo === 'JORNADA_EXCEDIDA' && !aceptarExceso) setCopia({ direccion, mensaje: r.error.mensaje });
+      if (r.error.codigo === 'JORNADA_EXCEDIDA' && !aceptarExceso)
+        setCopia({ direccion, mensaje: r.error.mensaje });
       else avisar({ tipo: 'alerta', texto: r.error.mensaje });
       return;
     }
     const n = r.eventos.filter((e) => e.tipo === 'TurnoCambiado').length;
-    avisar({ tipo: 'exito', texto: `Se copiaron ${n} ${n === 1 ? 'turno' : 'turnos'}`, detalle: `${localNombre} · ${etiquetaSemana(lunesDestino)}` });
+    avisar({
+      tipo: 'exito',
+      texto: `Se copiaron ${n} ${n === 1 ? 'turno' : 'turnos'}`,
+      detalle: `${localNombre} · ${etiquetaSemana(lunesDestino)}`,
+    });
     if (direccion === 'siguiente') f.cambiar({ semana: lunesDestino });
   };
 
@@ -143,7 +198,11 @@ function CuerpoTurnos({ f, dialogo, setDialogo }: { f: FiltrosTurnos; dialogo: D
       avisar({ tipo: 'error', texto: r.error.mensaje });
       return;
     }
-    avisar({ tipo: 'exito', texto: 'Turno eliminado', detalle: `${ETIQUETA_TIPO_TURNO[t.tipo]} · ${fechaLarga(t.fecha)}` });
+    avisar({
+      tipo: 'exito',
+      texto: 'Turno eliminado',
+      detalle: `${ETIQUETA_TIPO_TURNO[t.tipo]} · ${fechaLarga(t.fecha)}`,
+    });
   };
 
   const personas = semana.filas.map((x) => ({ id: x.empleadoId, nombre: x.nombre }));
@@ -163,15 +222,43 @@ function CuerpoTurnos({ f, dialogo, setDialogo }: { f: FiltrosTurnos; dialogo: D
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <BotonIcono icono={ChevronLeft} etiqueta="Semana anterior" variante="secondary" onClick={() => f.cambiar({ semana: sumarDias(f.lunes, -7) })} data-testid="turnos-semana-anterior" />
-          <p className="min-w-[250px] text-center t-body font-bold text-ink num" data-testid="turnos-semana-etiqueta" aria-live="polite">
+          <BotonIcono
+            icono={ChevronLeft}
+            etiqueta="Semana anterior"
+            variante="secondary"
+            onClick={() => f.cambiar({ semana: sumarDias(f.lunes, -7) })}
+            data-testid="turnos-semana-anterior"
+          />
+          <p
+            className="min-w-[250px] text-center t-body font-bold text-ink num"
+            data-testid="turnos-semana-etiqueta"
+            aria-live="polite"
+          >
             {etiquetaSemana(f.lunes)}
           </p>
-          <BotonIcono icono={ChevronRight} etiqueta="Semana siguiente" variante="secondary" onClick={() => f.cambiar({ semana: sumarDias(f.lunes, 7) })} data-testid="turnos-semana-siguiente" />
-          <Button variante="secondary" icono={CalendarDays} disabled={esSemanaActual} onClick={() => f.cambiar({ semana: hoy })}>
+          <BotonIcono
+            icono={ChevronRight}
+            etiqueta="Semana siguiente"
+            variante="secondary"
+            onClick={() => f.cambiar({ semana: sumarDias(f.lunes, 7) })}
+            data-testid="turnos-semana-siguiente"
+          />
+          <Button
+            variante="secondary"
+            icono={CalendarDays}
+            disabled={esSemanaActual}
+            onClick={() => f.cambiar({ semana: hoy })}
+          >
             Esta semana
           </Button>
-          <Menu etiqueta="Copiar semana" disparador={<Button variante="secondary" icono={Copy} data-testid="turnos-copiar">Copiar semana</Button>}>
+          <Menu
+            etiqueta="Copiar semana"
+            disparador={
+              <Button variante="secondary" icono={Copy} data-testid="turnos-copiar">
+                Copiar semana
+              </Button>
+            }
+          >
             <ItemMenu icono={Copy} onSelect={() => copiar('anterior', false)}>
               {TEXTOS.turnos.copiarAnterior}
             </ItemMenu>
@@ -182,14 +269,20 @@ function CuerpoTurnos({ f, dialogo, setDialogo }: { f: FiltrosTurnos; dialogo: D
         </div>
       </div>
 
-      <dl className="mt-4 grid grid-cols-2 border border-line bg-surface md:grid-cols-[1fr_1fr_1.5fr_1fr]" data-testid="turnos-resumen">
+      <dl
+        className="mt-4 grid grid-cols-2 border border-line bg-surface md:grid-cols-[1fr_1fr_1.5fr_1fr]"
+        data-testid="turnos-resumen"
+      >
         <Cifra etiqueta="Horas programadas" testid="turnos-kpi-horas">
           {textoHoras(semana.horasLocal)}
         </Cifra>
         <Cifra etiqueta="Pasadas de la jornada" testid="turnos-kpi-exceso">
           {semana.conExceso} {semana.conExceso === 1 ? 'persona' : 'personas'}
         </Cifra>
-        <Cifra etiqueta={<Pista id="turnos.recargos">Recargos estimados de la semana</Pista>} testid="turnos-kpi-recargos">
+        <Cifra
+          etiqueta={<Pista id="turnos.recargos">Recargos estimados de la semana</Pista>}
+          testid="turnos-kpi-recargos"
+        >
           <Dinero valor={recargos.total} />
         </Cifra>
         <Cifra etiqueta="Horas con recargo" testid="turnos-kpi-horas-recargo">
@@ -199,7 +292,11 @@ function CuerpoTurnos({ f, dialogo, setDialogo }: { f: FiltrosTurnos; dialogo: D
 
       {semana.filas.length === 0 ? (
         <div className="mt-6 border border-line bg-surface">
-          <EmptyState icono={Users} titulo={TEXTOS.turnos.sinEquipoTitulo} texto={TEXTOS.turnos.sinEquipoTexto} />
+          <EmptyState
+            icono={Users}
+            titulo={TEXTOS.turnos.sinEquipoTitulo}
+            texto={TEXTOS.turnos.sinEquipoTexto}
+          />
         </div>
       ) : (
         <div className="mt-6">

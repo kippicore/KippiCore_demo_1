@@ -1,5 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { activarVerificacionDeTablas, selAsistencia, selHorasSemana, selRecargosTurnos, selTurnosSemana } from '@/selectores';
+import {
+  activarVerificacionDeTablas,
+  selAsistencia,
+  selHorasSemana,
+  selRecargosTurnos,
+  selTurnosSemana,
+} from '@/selectores';
 import { AHORA, estadoDe, HOY } from '@/selectores/pruebas/construir';
 import {
   selAsistenciaVista,
@@ -73,7 +79,10 @@ describe('selRecargosDetallados', () => {
 
   it('quien presta servicios no genera recargo y la bodega no tiene turnos nocturnos ni dominicales', () => {
     const usq = selRecargosDetallados(e, { localId: 'usq', lunes: LUNES });
-    expect(usq.empleados.find((x) => x.empleadoId === 'em_dmoreno')).toMatchObject({ vinculacion: 'prestacion_servicios', valor: 0 });
+    expect(usq.empleados.find((x) => x.empleadoId === 'em_dmoreno')).toMatchObject({
+      vinculacion: 'prestacion_servicios',
+      valor: 0,
+    });
     expect(selRecargosDetallados(e, { localId: 'bod', lunes: LUNES }).total).toBe(0);
   });
 });
@@ -124,13 +133,23 @@ describe('marcaciones, turnos por rango y personas', () => {
 
   it('los turnos de un rango son los de selHorasSemana de esa semana', () => {
     const r = selTurnosEnRango(e, { empleadoId: 'em_scardenas', desde: LUNES, hasta: '2026-10-04' });
-    expect(r.map((t) => t.id).sort()).toEqual(selHorasSemana(e, { empleadoId: 'em_scardenas', lunes: LUNES }).turnos.map((t) => t.id).sort());
-    expect(selTurnosEnRango(e, { empleadoId: 'em_scardenas', desde: '2026-10-04', hasta: LUNES })).toEqual([]);
+    expect(r.map((t) => t.id).sort()).toEqual(
+      selHorasSemana(e, { empleadoId: 'em_scardenas', lunes: LUNES })
+        .turnos.map((t) => t.id)
+        .sort(),
+    );
+    expect(selTurnosEnRango(e, { empleadoId: 'em_scardenas', desde: '2026-10-04', hasta: LUNES })).toEqual(
+      [],
+    );
   });
 
   it('nombra a todas las personas no eliminadas', () => {
     const p = selPersonas(e);
-    expect(p['em_scardenas']).toMatchObject({ nombre: 'Sebastián Cárdenas Ruiz', slug: 'sebastian-cardenas', localId: 'usq' });
+    expect(p['em_scardenas']).toMatchObject({
+      nombre: 'Sebastián Cárdenas Ruiz',
+      slug: 'sebastian-cardenas',
+      localId: 'usq',
+    });
     expect(Object.keys(p).length).toBe(Object.values(e.empleados).filter((x) => !x.eliminadoEn).length);
   });
 });
@@ -142,7 +161,10 @@ describe('selNovedadesVista', () => {
     const vac = v.find((x) => x.novedad.empleadoId === 'em_casuarez');
     expect(vac).toMatchObject({ dias: 10, estado: 'pasada' });
     // Los días de la novedad son los de calendario; los turnos por cubrir salen del índice de turnos.
-    expect(vac?.turnosPorCubrir).toBe(selTurnosEnRango(e, { empleadoId: 'em_casuarez', desde: vac!.novedad.desde, hasta: vac!.novedad.hasta }).length);
+    expect(vac?.turnosPorCubrir).toBe(
+      selTurnosEnRango(e, { empleadoId: 'em_casuarez', desde: vac!.novedad.desde, hasta: vac!.novedad.hasta })
+        .length,
+    );
   });
 
   it('las novedades de una persona son las suyas', () => {

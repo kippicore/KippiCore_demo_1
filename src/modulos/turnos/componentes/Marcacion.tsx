@@ -42,7 +42,11 @@ export function Marcacion({ empleado, siguiente, turnoHoy, marcacionesHoy, nombr
   };
 
   return (
-    <section className="border border-line bg-surface p-6" aria-label="Marcación de entrada y salida" data-testid="marcacion">
+    <section
+      className="border border-line bg-surface p-6"
+      aria-label="Marcación de entrada y salida"
+      data-testid="marcacion"
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="t-eyebrow text-ink-2">Marcación</p>
@@ -55,7 +59,8 @@ export function Marcacion({ empleado, siguiente, turnoHoy, marcacionesHoy, nombr
         </div>
         {turnoHoy ? (
           <Badge tono="outline" tamano="md">
-            Hoy: {ETIQUETA_TIPO_TURNO[turnoHoy.tipo].toLowerCase()} · {rangoHoras(turnoHoy.inicio, turnoHoy.fin)}
+            Hoy: {ETIQUETA_TIPO_TURNO[turnoHoy.tipo].toLowerCase()} ·{' '}
+            {rangoHoras(turnoHoy.inicio, turnoHoy.fin)}
           </Badge>
         ) : (
           <Badge tono="neutral">Hoy no tienes turno</Badge>
@@ -74,9 +79,17 @@ export function Marcacion({ empleado, siguiente, turnoHoy, marcacionesHoy, nombr
       >
         {verbo}
       </Button>
-      {sinTurno && <p className="mt-3 t-small text-muted">Hoy no tienes turno programado, así que no se puede marcar. Pídele al dueño que te asigne uno.</p>}
+      {sinTurno && (
+        <p className="mt-3 t-small text-muted">
+          Hoy no tienes turno programado, así que no se puede marcar. Pídele al dueño que te asigne uno.
+        </p>
+      )}
 
-      <ul className="mt-5 flex flex-col gap-2 border-t border-line-soft pt-4" data-testid="marcacion-hoy" aria-label="Marcaciones de hoy">
+      <ul
+        className="mt-5 flex flex-col gap-2 border-t border-line-soft pt-4"
+        data-testid="marcacion-hoy"
+        aria-label="Marcaciones de hoy"
+      >
         {marcacionesHoy.length === 0 ? (
           <li className="t-small text-muted">Todavía no has marcado hoy.</li>
         ) : (

@@ -80,11 +80,13 @@ export const TEXTOS = {
     prestacion: 'Prestación de servicios: no genera recargos.',
     parametros: 'Valores con los que se calcula',
     verificar: 'Verificar',
-    verificarAyuda: 'Los porcentajes dependen de la reforma laboral vigente. Valídalos con tu contador antes de usarlos como cálculo real.',
+    verificarAyuda:
+      'Los porcentajes dependen de la reforma laboral vigente. Valídalos con tu contador antes de usarlos como cálculo real.',
   },
   asistencia: {
     titulo: 'Asistencia',
-    subtitulo: 'Quién llegó, a qué hora, cuántas horas trabajó y cuántas fueron extra. Esto alimenta la nómina.',
+    subtitulo:
+      'Quién llegó, a qué hora, cuántas horas trabajó y cuántas fueron extra. Esto alimenta la nómina.',
     vacioTitulo: 'Sin turnos en estas fechas',
     vacioTexto: 'Cambia el rango, el local o la persona para ver la asistencia.',
     alimentaNomina: 'Lo que pasa a la nómina del periodo',
@@ -97,6 +99,7 @@ export const TEXTOS = {
   },
   miDia: {
     nunca: 'Lo que no puedes hacer sin el dueño',
-    nuncaAyuda: 'Está pensado así para cuidar la plata y el inventario del negocio. Esto es lo que haces en su lugar.',
+    nuncaAyuda:
+      'Está pensado así para cuidar la plata y el inventario del negocio. Esto es lo que haces en su lugar.',
   },
 } as const;

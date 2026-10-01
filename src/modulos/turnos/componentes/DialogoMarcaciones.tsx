@@ -13,10 +13,22 @@ const ETIQUETA = { entrada: 'Entrada', salida: 'Salida' } as const;
  * Corregir o eliminar las marcaciones de una persona en un día (solo el dueño). Siempre pide el motivo: queda en la
  * marcación (`medio: corregida`, con su nota) y la asistencia, las horas extra y la nómina se recalculan.
  */
-export function DialogoMarcaciones({ empleadoId, nombre, fecha, alCerrar }: { empleadoId: Id; nombre: string; fecha: FechaISO; alCerrar: () => void }) {
+export function DialogoMarcaciones({
+  empleadoId,
+  nombre,
+  fecha,
+  alCerrar,
+}: {
+  empleadoId: Id;
+  nombre: string;
+  fecha: FechaISO;
+  alCerrar: () => void;
+}) {
   const acciones = useAcciones();
   const marcaciones = useSel(selMarcacionesDia, { empleadoId, fecha });
-  const [horas, setHoras] = useState<Record<Id, string>>(() => Object.fromEntries(marcaciones.map((m) => [m.id, m.ts.slice(11, 16)])));
+  const [horas, setHoras] = useState<Record<Id, string>>(() =>
+    Object.fromEntries(marcaciones.map((m) => [m.id, m.ts.slice(11, 16)])),
+  );
   const [motivo, setMotivo] = useState('');
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
@@ -40,13 +52,21 @@ export function DialogoMarcaciones({ empleadoId, nombre, fecha, alCerrar }: { em
     if (Object.keys(e).length > 0) return;
     // Se aplican de una en una; si una falla (p. ej. rompe el orden entrada/salida) se detiene y se explica.
     for (const m of cambiadas) {
-      const r = acciones.corregirMarcacion({ marcacionId: m.id, ts: `${fecha}T${horas[m.id]}:00`, nota: motivo.trim() });
+      const r = acciones.corregirMarcacion({
+        marcacionId: m.id,
+        ts: `${fecha}T${horas[m.id]}:00`,
+        nota: motivo.trim(),
+      });
       if (!r.ok) {
         setError(r.error.mensaje);
         return;
       }
     }
-    avisar({ tipo: 'exito', texto: 'Marcación corregida', detalle: `${nombre} · ${fechaLarga(fecha)}. La asistencia y la nómina se recalcularon.` });
+    avisar({
+      tipo: 'exito',
+      texto: 'Marcación corregida',
+      detalle: `${nombre} · ${fechaLarga(fecha)}. La asistencia y la nómina se recalcularon.`,
+    });
     alCerrar();
   };
 
@@ -78,7 +98,11 @@ export function DialogoMarcaciones({ empleadoId, nombre, fecha, alCerrar }: { em
           <Button variante="secondary" onClick={alCerrar}>
             Cancelar
           </Button>
-          <Button onClick={guardar} disabled={marcaciones.length === 0} data-testid="asistencia-guardar-marcaciones">
+          <Button
+            onClick={guardar}
+            disabled={marcaciones.length === 0}
+            data-testid="asistencia-guardar-marcaciones"
+          >
             Guardar corrección
           </Button>
         </>
@@ -110,19 +134,35 @@ export function DialogoMarcaciones({ empleadoId, nombre, fecha, alCerrar }: { em
                     <Button variante="secondary" tamano="sm" onClick={() => setConfirmando(null)}>
                       Conservar
                     </Button>
-                    <Button variante="destructive" tamano="sm" onClick={() => eliminar(m.id)} data-testid="asistencia-confirmar-eliminar-marcacion">
+                    <Button
+                      variante="destructive"
+                      tamano="sm"
+                      onClick={() => eliminar(m.id)}
+                      data-testid="asistencia-confirmar-eliminar-marcacion"
+                    >
                       Eliminar {ETIQUETA[m.tipo].toLowerCase()}
                     </Button>
                   </div>
                 ) : (
-                  <Button variante="ghost" tamano="sm" icono={Trash2} onClick={() => setConfirmando(m.id)} data-testid={`asistencia-eliminar-${m.tipo}`}>
+                  <Button
+                    variante="ghost"
+                    tamano="sm"
+                    icono={Trash2}
+                    onClick={() => setConfirmando(m.id)}
+                    data-testid={`asistencia-eliminar-${m.tipo}`}
+                  >
                     Eliminar
                   </Button>
                 )}
               </div>
-              {m.medio === 'corregida' && m.nota && <p className="mt-1.5 t-small text-muted">Ya corregida antes: «{m.nota}»</p>}
+              {m.medio === 'corregida' && m.nota && (
+                <p className="mt-1.5 t-small text-muted">Ya corregida antes: «{m.nota}»</p>
+              )}
               {confirmando === m.id && (
-                <p className="mt-2 t-small text-ink-2">Se quita la {ETIQUETA[m.tipo].toLowerCase()} de las {hora(m.ts)} y la asistencia de ese día se recalcula. Escribe el motivo abajo antes de confirmar.</p>
+                <p className="mt-2 t-small text-ink-2">
+                  Se quita la {ETIQUETA[m.tipo].toLowerCase()} de las {hora(m.ts)} y la asistencia de ese día
+                  se recalcula. Escribe el motivo abajo antes de confirmar.
+                </p>
               )}
             </div>
           ))}

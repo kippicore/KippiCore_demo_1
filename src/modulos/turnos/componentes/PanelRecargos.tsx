@@ -1,6 +1,20 @@
 import { useState } from 'react';
 import { Info, Moon, Pencil, Sun } from 'lucide-react';
-import { Badge, Button, Dialog, Dinero, EmptyState, Icono, InputNumero, NotaLegal, Select, Table, Tooltip, avisar, type ColumnaTabla } from '@/ui';
+import {
+  Badge,
+  Button,
+  Dialog,
+  Dinero,
+  EmptyState,
+  Icono,
+  InputNumero,
+  NotaLegal,
+  Select,
+  Table,
+  Tooltip,
+  avisar,
+  type ColumnaTabla,
+} from '@/ui';
 import { useAcciones } from '@/estado';
 import { hora, numero, porcentaje } from '@/lib/formato';
 import { textoHoras } from '../calculos';
@@ -11,7 +25,15 @@ import { TEXTOS } from '../textos';
  * Recargos estimados de la semana (6.20.14): cuánto cuesta cerrar después de las 7 p. m. y abrir el domingo, por
  * persona, y los parámetros con los que se calcula, marcados "Verificar" y editables.
  */
-export function PanelRecargos({ recargos, parametros, localNombre }: { recargos: RecargosVista; parametros: ParametrosTurnos; localNombre: string }) {
+export function PanelRecargos({
+  recargos,
+  parametros,
+  localNombre,
+}: {
+  recargos: RecargosVista;
+  parametros: ParametrosTurnos;
+  localNombre: string;
+}) {
   const [editando, setEditando] = useState(false);
   const verificar = (clave: string) => parametros.porVerificar.includes(clave);
   const columnas: ColumnaTabla<RecargoDetallado>[] = [
@@ -20,16 +42,45 @@ export function PanelRecargos({ recargos, parametros, localNombre }: { recargos:
       encabezado: 'Persona',
       celda: (r) => (
         <span className="flex flex-col">
-          <span className="font-bold text-ink" title={r.nombre}>{r.corto}</span>
-          {r.vinculacion === 'prestacion_servicios' && <span className="t-small text-muted">{TEXTOS.recargos.prestacion}</span>}
+          <span className="font-bold text-ink" title={r.nombre}>
+            {r.corto}
+          </span>
+          {r.vinculacion === 'prestacion_servicios' && (
+            <span className="t-small text-muted">{TEXTOS.recargos.prestacion}</span>
+          )}
         </span>
       ),
     },
-    { id: 'nocturnas', encabezado: 'Horas nocturnas', numerica: true, celda: (r) => <span className="num">{textoHoras(r.horasNocturnas)}</span> },
-    { id: 'dominicales', encabezado: 'Horas de domingo y festivo', numerica: true, celda: (r) => <span className="num">{textoHoras(r.horasDominicalFestivo)}</span> },
-    { id: 'valorNocturno', encabezado: 'Cerrar tarde', numerica: true, celda: (r) => <Dinero valor={r.valorNocturno} /> },
-    { id: 'valorDominical', encabezado: 'Abrir domingo y festivo', numerica: true, celda: (r) => <Dinero valor={r.valorDominical} /> },
-    { id: 'total', encabezado: 'Recargo estimado', numerica: true, celda: (r) => <Dinero valor={r.valor} className="font-bold text-ink" /> },
+    {
+      id: 'nocturnas',
+      encabezado: 'Horas nocturnas',
+      numerica: true,
+      celda: (r) => <span className="num">{textoHoras(r.horasNocturnas)}</span>,
+    },
+    {
+      id: 'dominicales',
+      encabezado: 'Horas de domingo y festivo',
+      numerica: true,
+      celda: (r) => <span className="num">{textoHoras(r.horasDominicalFestivo)}</span>,
+    },
+    {
+      id: 'valorNocturno',
+      encabezado: 'Cerrar tarde',
+      numerica: true,
+      celda: (r) => <Dinero valor={r.valorNocturno} />,
+    },
+    {
+      id: 'valorDominical',
+      encabezado: 'Abrir domingo y festivo',
+      numerica: true,
+      celda: (r) => <Dinero valor={r.valorDominical} />,
+    },
+    {
+      id: 'total',
+      encabezado: 'Recargo estimado',
+      numerica: true,
+      celda: (r) => <Dinero valor={r.valor} className="font-bold text-ink" />,
+    },
   ];
   return (
     <section className="mt-10" data-testid="turnos-recargos">
@@ -51,23 +102,60 @@ export function PanelRecargos({ recargos, parametros, localNombre }: { recargos:
           valorDominical: <Dinero valor={recargos.valorDominical} />,
           total: <Dinero valor={recargos.total} className="font-bold text-ink" />,
         }}
-        vacio={<EmptyState tamano="tabla" icono={Moon} titulo="Sin turnos esta semana" texto="Programa turnos en la cuadrícula y aquí verás cuánto cuestan los cierres y los domingos." />}
+        vacio={
+          <EmptyState
+            tamano="tabla"
+            icono={Moon}
+            titulo="Sin turnos esta semana"
+            texto="Programa turnos en la cuadrícula y aquí verás cuánto cuestan los cierres y los domingos."
+          />
+        }
         data-testid="turnos-recargos-tabla"
       />
 
-      <div className="mt-4 border border-line bg-surface p-5" aria-label="Parámetros del recargo" data-testid="turnos-parametros">
+      <div
+        className="mt-4 border border-line bg-surface p-5"
+        aria-label="Parámetros del recargo"
+        data-testid="turnos-parametros"
+      >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="t-label text-ink">{TEXTOS.recargos.parametros}</h3>
-          <Button variante="secondary" tamano="sm" icono={Pencil} onClick={() => setEditando(true)} data-testid="turnos-editar-parametros">
+          <Button
+            variante="secondary"
+            tamano="sm"
+            icono={Pencil}
+            onClick={() => setEditando(true)}
+            data-testid="turnos-editar-parametros"
+          >
             Editar parámetros
           </Button>
         </div>
         <dl className="mt-4 grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-3">
-          <Parametro icono={Moon} etiqueta="Recargo nocturno" valor={porcentaje(parametros.recargos.nocturno, 0)} detalle={`Horas desde las ${hora(parametros.jornadaNocturna.inicio)}`} verificar={verificar('recargos')} />
-          <Parametro icono={Sun} etiqueta="Domingo y festivo" valor={porcentaje(parametros.recargos.dominicalFestivo, 0)} detalle="Por cada hora trabajada ese día" verificar={verificar('recargos')} />
-          <Parametro icono={Info} etiqueta="Jornada máxima semanal" valor={`${numero(parametros.jornadaMaximaHoras)} h`} detalle="Horas netas, sin el descanso" verificar={verificar('jornadaMaximaSemanal')} />
+          <Parametro
+            icono={Moon}
+            etiqueta="Recargo nocturno"
+            valor={porcentaje(parametros.recargos.nocturno, 0)}
+            detalle={`Horas desde las ${hora(parametros.jornadaNocturna.inicio)}`}
+            verificar={verificar('recargos')}
+          />
+          <Parametro
+            icono={Sun}
+            etiqueta="Domingo y festivo"
+            valor={porcentaje(parametros.recargos.dominicalFestivo, 0)}
+            detalle="Por cada hora trabajada ese día"
+            verificar={verificar('recargos')}
+          />
+          <Parametro
+            icono={Info}
+            etiqueta="Jornada máxima semanal"
+            valor={`${numero(parametros.jornadaMaximaHoras)} h`}
+            detalle="Horas netas, sin el descanso"
+            verificar={verificar('jornadaMaximaSemanal')}
+          />
         </dl>
-        <p className="mt-4 border-t border-line-soft pt-3 t-small text-muted">{TEXTOS.recargos.verificarAyuda}</p>
+        <p className="mt-4 border-t border-line-soft pt-3 t-small text-muted">
+          {TEXTOS.recargos.verificarAyuda}
+        </p>
       </div>
       <div className="mt-3">
         <NotaLegal tipo="nomina" />
@@ -78,7 +166,19 @@ export function PanelRecargos({ recargos, parametros, localNombre }: { recargos:
   );
 }
 
-function Parametro({ icono, etiqueta, valor, detalle, verificar }: { icono: typeof Moon; etiqueta: string; valor: string; detalle: string; verificar: boolean }) {
+function Parametro({
+  icono,
+  etiqueta,
+  valor,
+  detalle,
+  verificar,
+}: {
+  icono: typeof Moon;
+  etiqueta: string;
+  valor: string;
+  detalle: string;
+  verificar: boolean;
+}) {
   return (
     <div className="flex items-start gap-3">
       <Icono icono={icono} tamano={16} className="mt-1 text-ink-2" />
@@ -107,26 +207,40 @@ const HORAS_NOCTURNAS = ['18:00', '19:00', '20:00', '21:00', '22:00'];
 function DialogoParametros({ parametros, alCerrar }: { parametros: ParametrosTurnos; alCerrar: () => void }) {
   const acciones = useAcciones();
   const [nocturno, setNocturno] = useState<number | null>(Math.round(parametros.recargos.nocturno * 100));
-  const [dominical, setDominical] = useState<number | null>(Math.round(parametros.recargos.dominicalFestivo * 100));
+  const [dominical, setDominical] = useState<number | null>(
+    Math.round(parametros.recargos.dominicalFestivo * 100),
+  );
   const [desde, setDesde] = useState<string>(parametros.jornadaNocturna.inicio);
   const [errores, setErrores] = useState<{ nocturno?: string; dominical?: string }>({});
-  const hayCambios = nocturno !== Math.round(parametros.recargos.nocturno * 100) || dominical !== Math.round(parametros.recargos.dominicalFestivo * 100) || desde !== parametros.jornadaNocturna.inicio;
+  const hayCambios =
+    nocturno !== Math.round(parametros.recargos.nocturno * 100) ||
+    dominical !== Math.round(parametros.recargos.dominicalFestivo * 100) ||
+    desde !== parametros.jornadaNocturna.inicio;
 
   const guardar = () => {
     const e: { nocturno?: string; dominical?: string } = {};
-    if (nocturno === null || nocturno < 0 || nocturno > 100) e.nocturno = 'Escribe un porcentaje entre 0 y 100.';
-    if (dominical === null || dominical < 0 || dominical > 100) e.dominical = 'Escribe un porcentaje entre 0 y 100.';
+    if (nocturno === null || nocturno < 0 || nocturno > 100)
+      e.nocturno = 'Escribe un porcentaje entre 0 y 100.';
+    if (dominical === null || dominical < 0 || dominical > 100)
+      e.dominical = 'Escribe un porcentaje entre 0 y 100.';
     setErrores(e);
     if (e.nocturno || e.dominical) return;
     const r = acciones.editarParametros({
       seccion: 'nomina',
-      cambios: { recargos: { nocturno: (nocturno as number) / 100, dominicalFestivo: (dominical as number) / 100 }, jornadaNocturna: { inicio: desde } },
+      cambios: {
+        recargos: { nocturno: (nocturno as number) / 100, dominicalFestivo: (dominical as number) / 100 },
+        jornadaNocturna: { inicio: desde },
+      },
     });
     if (!r.ok) {
       setErrores({ nocturno: r.error.mensaje });
       return;
     }
-    avisar({ tipo: 'exito', texto: 'Parámetros de recargo actualizados', detalle: 'Los recargos de todas las semanas se recalculan con estos valores.' });
+    avisar({
+      tipo: 'exito',
+      texto: 'Parámetros de recargo actualizados',
+      detalle: 'Los recargos de todas las semanas se recalculan con estos valores.',
+    });
     alCerrar();
   };
 
@@ -159,8 +273,24 @@ function DialogoParametros({ parametros, alCerrar }: { parametros: ParametrosTur
           guardar();
         }}
       >
-        <InputNumero etiqueta="Recargo nocturno" sufijo="%" valor={nocturno} alCambiar={setNocturno} error={errores.nocturno} ayuda="Se suma al valor de la hora trabajada en la franja nocturna." data-testid="turnos-param-nocturno" />
-        <InputNumero etiqueta="Recargo de domingo y festivo" sufijo="%" valor={dominical} alCambiar={setDominical} error={errores.dominical} ayuda="Se suma al valor de cada hora trabajada ese día." data-testid="turnos-param-dominical" />
+        <InputNumero
+          etiqueta="Recargo nocturno"
+          sufijo="%"
+          valor={nocturno}
+          alCambiar={setNocturno}
+          error={errores.nocturno}
+          ayuda="Se suma al valor de la hora trabajada en la franja nocturna."
+          data-testid="turnos-param-nocturno"
+        />
+        <InputNumero
+          etiqueta="Recargo de domingo y festivo"
+          sufijo="%"
+          valor={dominical}
+          alCambiar={setDominical}
+          error={errores.dominical}
+          ayuda="Se suma al valor de cada hora trabajada ese día."
+          data-testid="turnos-param-dominical"
+        />
         <Select
           etiqueta="La franja nocturna empieza a las"
           valor={desde}

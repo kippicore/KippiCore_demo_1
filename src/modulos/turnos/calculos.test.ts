@@ -25,10 +25,30 @@ import {
 } from './calculos';
 
 const turno = (id: string, fecha: string, inicio: string, fin: string, extra: Partial<Turno> = {}): Turno =>
-  ({ id, empleadoId: 'e1', localId: 'usq', fecha, tipo: 'apertura', inicio, fin, descansoMin: 60, excedeJornadaAceptado: false, ...extra }) as Turno;
+  ({
+    id,
+    empleadoId: 'e1',
+    localId: 'usq',
+    fecha,
+    tipo: 'apertura',
+    inicio,
+    fin,
+    descansoMin: 60,
+    excedeJornadaAceptado: false,
+    ...extra,
+  }) as Turno;
 
 const nov = (desde: string, hasta: string): Novedad =>
-  ({ id: 'n1', empleadoId: 'e1', tipo: 'vacaciones', desde, hasta, remunerada: true, soporte: null, nota: null }) as Novedad;
+  ({
+    id: 'n1',
+    empleadoId: 'e1',
+    tipo: 'vacaciones',
+    desde,
+    hasta,
+    remunerada: true,
+    soporte: null,
+    nota: null,
+  }) as Novedad;
 
 describe('plantillas y formato de horas', () => {
   it('el cierre de Zona Rosa es de 1 a 9 p. m. y el de los demás locales de 12 m. a 8 p. m.', () => {
@@ -72,7 +92,9 @@ describe('jornada semanal en vivo', () => {
     expect(estadoHoras(42.5, 42)).toBe('exceso');
   });
 
-  const semana = ['2026-09-28', '2026-09-29', '2026-09-30', '2026-10-01', '2026-10-02', '2026-10-03'].map((f, i) => turno(`t${i}`, f, '10:00', '18:00'));
+  const semana = ['2026-09-28', '2026-09-29', '2026-09-30', '2026-10-01', '2026-10-02', '2026-10-03'].map(
+    (f, i) => turno(`t${i}`, f, '10:00', '18:00'),
+  );
   const base = { empleadoId: 'e1', inicio: '10:00', fin: '18:00', descansoMin: 60 };
 
   it('42 h exactas no son exceso: seis turnos de 7 h netas caben', () => {
@@ -83,7 +105,9 @@ describe('jornada semanal en vivo', () => {
   it('un séptimo turno de 7 h pasa de 42 h y dice cuántas horas son extra', () => {
     const e = evaluarTurno({ ...base, fecha: '2026-10-04' }, semana, [], 42);
     expect(e).toEqual({ resultado: 'exceso', horas: 49, maximo: 42, exceso: 7 });
-    expect(fraseExceso('Mateo', 49, 42)).toBe('Con este turno, Mateo quedaría con 49 h esta semana (máximo 42 h): 7 h serían horas extra.');
+    expect(fraseExceso('Mateo', 49, 42)).toBe(
+      'Con este turno, Mateo quedaría con 49 h esta semana (máximo 42 h): 7 h serían horas extra.',
+    );
   });
 
   it('un turno que se cruza con otro del mismo día se rechaza antes que el exceso', () => {
@@ -99,7 +123,9 @@ describe('jornada semanal en vivo', () => {
   it('quien está de vacaciones o incapacitado ese día no se programa', () => {
     const e = evaluarTurno({ ...base, fecha: '2026-10-05' }, [], [nov('2026-10-05', '2026-10-09')], 42);
     expect(e.resultado).toBe('novedad');
-    expect(evaluarTurno({ ...base, fecha: '2026-10-10' }, [], [nov('2026-10-05', '2026-10-09')], 42).resultado).toBe('ok');
+    expect(
+      evaluarTurno({ ...base, fecha: '2026-10-10' }, [], [nov('2026-10-05', '2026-10-09')], 42).resultado,
+    ).toBe('ok');
   });
 
   it('un turno eliminado de la novedad no la hace valer', () => {
@@ -110,32 +136,98 @@ describe('jornada semanal en vivo', () => {
 
 describe('arrastrar y soltar', () => {
   it('soltar una plantilla propone un turno nuevo con el horario del local', () => {
-    const p = propuestaDeArrastre({ clase: 'plantilla', tipo: 'cierre' }, { empleadoId: 'e2', fecha: '2026-09-30' }, 'zr');
-    expect(p).toMatchObject({ empleadoId: 'e2', fecha: '2026-09-30', tipo: 'cierre', inicio: '13:00', fin: '21:00', descansoMin: 60, excluirId: null });
+    const p = propuestaDeArrastre(
+      { clase: 'plantilla', tipo: 'cierre' },
+      { empleadoId: 'e2', fecha: '2026-09-30' },
+      'zr',
+    );
+    expect(p).toMatchObject({
+      empleadoId: 'e2',
+      fecha: '2026-09-30',
+      tipo: 'cierre',
+      inicio: '13:00',
+      fin: '21:00',
+      descansoMin: 60,
+      excluirId: null,
+    });
   });
 
   it('mover un turno conserva su horario y se excluye a sí mismo; soltarlo donde estaba no hace nada', () => {
     const t = turno('t9', '2026-09-30', '12:00', '20:00', { tipo: 'cierre' });
-    const p = propuestaDeArrastre({ clase: 'turno', turno: t }, { empleadoId: 'e2', fecha: '2026-10-01' }, 'usq');
-    expect(p).toMatchObject({ empleadoId: 'e2', fecha: '2026-10-01', tipo: 'cierre', inicio: '12:00', fin: '20:00', excluirId: 't9' });
-    expect(propuestaDeArrastre({ clase: 'turno', turno: t }, { empleadoId: 'e1', fecha: '2026-09-30' }, 'usq')).toBeNull();
+    const p = propuestaDeArrastre(
+      { clase: 'turno', turno: t },
+      { empleadoId: 'e2', fecha: '2026-10-01' },
+      'usq',
+    );
+    expect(p).toMatchObject({
+      empleadoId: 'e2',
+      fecha: '2026-10-01',
+      tipo: 'cierre',
+      inicio: '12:00',
+      fin: '20:00',
+      excluirId: 't9',
+    });
+    expect(
+      propuestaDeArrastre({ clase: 'turno', turno: t }, { empleadoId: 'e1', fecha: '2026-09-30' }, 'usq'),
+    ).toBeNull();
   });
 });
 
 describe('borradores', () => {
   it('el turno pide persona, día, tipo, horas válidas y un descanso menor que el turno', () => {
-    const e = validarBorradorTurno({ empleadoId: null, fecha: null, tipo: null, inicio: '9', fin: '', descansoMin: null });
+    const e = validarBorradorTurno({
+      empleadoId: null,
+      fecha: null,
+      tipo: null,
+      inicio: '9',
+      fin: '',
+      descansoMin: null,
+    });
     expect(Object.keys(e).sort()).toEqual(['descansoMin', 'empleadoId', 'fecha', 'fin', 'inicio', 'tipo']);
-    expect(validarBorradorTurno({ empleadoId: 'e1', fecha: '2026-09-30', tipo: 'apertura', inicio: '10:00', fin: '18:00', descansoMin: 480 }).descansoMin).toBe('El descanso debe ser menor que el turno.');
-    expect(validarBorradorTurno({ empleadoId: 'e1', fecha: '2026-09-30', tipo: 'apertura', inicio: '10:00', fin: '18:00', descansoMin: 60 })).toEqual({});
+    expect(
+      validarBorradorTurno({
+        empleadoId: 'e1',
+        fecha: '2026-09-30',
+        tipo: 'apertura',
+        inicio: '10:00',
+        fin: '18:00',
+        descansoMin: 480,
+      }).descansoMin,
+    ).toBe('El descanso debe ser menor que el turno.');
+    expect(
+      validarBorradorTurno({
+        empleadoId: 'e1',
+        fecha: '2026-09-30',
+        tipo: 'apertura',
+        inicio: '10:00',
+        fin: '18:00',
+        descansoMin: 60,
+      }),
+    ).toEqual({});
     // Un turno que cruza la medianoche también es válido.
-    expect(validarBorradorTurno({ empleadoId: 'e1', fecha: '2026-09-30', tipo: 'cierre', inicio: '18:00', fin: '02:00', descansoMin: 60 })).toEqual({});
+    expect(
+      validarBorradorTurno({
+        empleadoId: 'e1',
+        fecha: '2026-09-30',
+        tipo: 'cierre',
+        inicio: '18:00',
+        fin: '02:00',
+        descansoMin: 60,
+      }),
+    ).toEqual({});
   });
 
   it('la novedad pide persona, tipo, fechas y que la final no sea anterior a la inicial', () => {
-    expect(Object.keys(validarBorradorNovedad({ empleadoId: null, tipo: null, desde: null, hasta: null })).sort()).toEqual(['desde', 'empleadoId', 'hasta', 'tipo']);
-    expect(validarBorradorNovedad({ empleadoId: 'e1', tipo: 'permiso', desde: '2026-10-05', hasta: '2026-10-04' }).hasta).toBe('La fecha final no puede ser antes de la inicial.');
-    expect(validarBorradorNovedad({ empleadoId: 'e1', tipo: 'permiso', desde: '2026-10-05', hasta: '2026-10-05' })).toEqual({});
+    expect(
+      Object.keys(validarBorradorNovedad({ empleadoId: null, tipo: null, desde: null, hasta: null })).sort(),
+    ).toEqual(['desde', 'empleadoId', 'hasta', 'tipo']);
+    expect(
+      validarBorradorNovedad({ empleadoId: 'e1', tipo: 'permiso', desde: '2026-10-05', hasta: '2026-10-04' })
+        .hasta,
+    ).toBe('La fecha final no puede ser antes de la inicial.');
+    expect(
+      validarBorradorNovedad({ empleadoId: 'e1', tipo: 'permiso', desde: '2026-10-05', hasta: '2026-10-05' }),
+    ).toEqual({});
   });
 });
 
@@ -150,10 +242,18 @@ describe('novedades', () => {
 
   it('explica el efecto en la nómina según el tipo, sin cifras de dinero', () => {
     const p = { porcentajePago: 0.6667, diasACargoEmpleador: 2 };
-    expect(efectoEnNomina('incapacidad', true, 1, p)).toBe(`1 día a cargo del negocio, pagados al 66,67${D}%.`);
-    expect(efectoEnNomina('incapacidad', true, 5, p)).toBe(`Los 2 primeros días los paga el negocio y los 3 siguientes los cubre la EPS; todos al 66,67${D}%.`);
-    expect(efectoEnNomina('vacaciones', true, 10, p)).toBe('Se pagan como vacaciones y no cuentan como ausencia.');
-    expect(efectoEnNomina('licencia_no_remunerada', false, 3, p)).toBe('No se paga: se descuentan estos días del salario.');
+    expect(efectoEnNomina('incapacidad', true, 1, p)).toBe(
+      `1 día a cargo del negocio, pagado al 66,67${D}%.`,
+    );
+    expect(efectoEnNomina('incapacidad', true, 5, p)).toBe(
+      `Los 2 primeros días los paga el negocio y los 3 siguientes los cubre la EPS; todos al 66,67${D}%.`,
+    );
+    expect(efectoEnNomina('vacaciones', true, 10, p)).toBe(
+      'Se pagan como vacaciones y no cuentan como ausencia.',
+    );
+    expect(efectoEnNomina('licencia_no_remunerada', false, 3, p)).toBe(
+      'No se paga: se descuentan estos días del salario.',
+    );
     expect(efectoEnNomina('permiso', true, 1, p)).toBe('Se paga completa y no cuenta como ausencia.');
   });
 });
@@ -170,9 +270,18 @@ describe('recargos', () => {
   });
 
   it('sin horas con recargo o sin valor (prestación de servicios) no reparte nada', () => {
-    expect(repartirRecargo({ horasNocturnas: 2, horasDominicalFestivo: 7, valor: 0 }, rec)).toEqual({ nocturno: 0, dominical: 0 });
-    expect(repartirRecargo({ horasNocturnas: 0, horasDominicalFestivo: 0, valor: 0 }, rec)).toEqual({ nocturno: 0, dominical: 0 });
-    expect(repartirRecargo({ horasNocturnas: 6, horasDominicalFestivo: 0, valor: 18_000 }, rec)).toEqual({ nocturno: 18_000, dominical: 0 });
+    expect(repartirRecargo({ horasNocturnas: 2, horasDominicalFestivo: 7, valor: 0 }, rec)).toEqual({
+      nocturno: 0,
+      dominical: 0,
+    });
+    expect(repartirRecargo({ horasNocturnas: 0, horasDominicalFestivo: 0, valor: 0 }, rec)).toEqual({
+      nocturno: 0,
+      dominical: 0,
+    });
+    expect(repartirRecargo({ horasNocturnas: 6, horasDominicalFestivo: 0, valor: 18_000 }, rec)).toEqual({
+      nocturno: 18_000,
+      dominical: 0,
+    });
   });
 });
 

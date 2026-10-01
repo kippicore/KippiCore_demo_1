@@ -27,7 +27,11 @@ export function useFiltrosTurnos(): FiltrosTurnos {
   const ids = useMemo(() => new Set<string>(locales.map((l) => l.id)), [locales]);
   const lunes = lunesDeParametro(params.semana, hoy);
   const localDeLaUrl = !!params.local && ids.has(params.local);
-  const local = localDeLaUrl ? (params.local as string) : global !== 'todos' && ids.has(global) ? global : (locales[0]?.id ?? 'usq');
+  const local = localDeLaUrl
+    ? (params.local as string)
+    : global !== 'todos' && ids.has(global)
+      ? global
+      : (locales[0]?.id ?? 'usq');
   const cambiar = useCallback(
     (c: { semana?: FechaISO; local?: Id | null }) => {
       const nuevoLocal = c.local === undefined ? (localDeLaUrl ? local : null) : c.local;
@@ -45,14 +49,24 @@ export interface FiltrosAsistencia {
   /** 'todos' o un local (`?local=` manda; si no, el filtro global). */
   local: Id | 'todos';
   empleado: Id | null;
-  cambiar: (cambios: { desde?: FechaISO; hasta?: FechaISO; local?: Id | 'todos' | null; empleado?: Id | null }) => void;
+  cambiar: (cambios: {
+    desde?: FechaISO;
+    hasta?: FechaISO;
+    local?: Id | 'todos' | null;
+    empleado?: Id | null;
+  }) => void;
   /** Quita local, persona y fechas de la URL (vuelve al mes en curso). */
   limpiar: () => void;
 }
 
 /** `?local=&empleado=&desde=&hasta=` de Asistencia; sin fechas, del 1.º del mes a hoy. */
 export function useFiltrosAsistencia(): FiltrosAsistencia {
-  const params = useParamsRuta('asistencia') as { local: string | null; empleado: string | null; desde: string | null; hasta: string | null };
+  const params = useParamsRuta('asistencia') as {
+    local: string | null;
+    empleado: string | null;
+    desde: string | null;
+    hasta: string | null;
+  };
   const global = useFiltroLocal();
   const hoy = useHoy();
   const navegar = useNavigate();
@@ -63,7 +77,9 @@ export function useFiltrosAsistencia(): FiltrosAsistencia {
   // Un rango al revés se endereza (el enlace de una alerta o un filtro a mano no deben dejar la tabla vacía).
   const desde = desdeBase <= hastaBase ? desdeBase : hastaBase;
   const hasta = desdeBase <= hastaBase ? hastaBase : desdeBase;
-  const local = (params.local && (params.local === 'todos' || ids.has(params.local)) ? params.local : global) as Id | 'todos';
+  const local = (
+    params.local && (params.local === 'todos' || ids.has(params.local)) ? params.local : global
+  ) as Id | 'todos';
   const empleado = params.empleado;
   const cambiar = useCallback(
     (c: { desde?: FechaISO; hasta?: FechaISO; local?: Id | 'todos' | null; empleado?: Id | null }) => {

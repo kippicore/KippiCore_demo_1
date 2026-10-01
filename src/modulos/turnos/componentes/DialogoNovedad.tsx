@@ -5,7 +5,13 @@ import { PREFIJOS } from '@/dominio/motor/ids';
 import { useAcciones, useHoy, useSel } from '@/estado';
 import { nombreEmpleado, selEmpleadosActivos } from '@/selectores';
 import { fechaLarga, plural } from '@/lib/formato';
-import { diasDeNovedad, efectoEnNomina, validarBorradorNovedad, type BorradorNovedad, type CampoNovedad } from '../calculos';
+import {
+  diasDeNovedad,
+  efectoEnNomina,
+  validarBorradorNovedad,
+  type BorradorNovedad,
+  type CampoNovedad,
+} from '../calculos';
 import { selParametrosTurnos, selTurnosEnRango } from '../selectores';
 import { AYUDA_NOVEDAD, ETIQUETA_NOVEDAD, REMUNERADA_POR_DEFECTO, TIPOS_NOVEDAD } from '../textos';
 
@@ -49,16 +55,27 @@ export function DialogoNovedad({ novedad, empleadoInicial, alCerrar, alGuardar }
     setErrorGeneral(null);
     if (campo) setErrores((p) => ({ ...p, [campo]: undefined }));
   };
-  const borrador: BorradorNovedad = { empleadoId: b.empleadoId, tipo: b.tipo, desde: b.desde, hasta: b.hasta };
+  const borrador: BorradorNovedad = {
+    empleadoId: b.empleadoId,
+    tipo: b.tipo,
+    desde: b.desde,
+    hasta: b.hasta,
+  };
   const erroresForma = validarBorradorNovedad(borrador);
   const rangoOk = !erroresForma.desde && !erroresForma.hasta && !!b.desde && !!b.hasta;
-  const turnos = useSel(selTurnosEnRango, { empleadoId: b.empleadoId ?? '', desde: b.desde ?? hoy, hasta: rangoOk ? (b.hasta as FechaISO) : (b.desde ?? hoy) });
+  const turnos = useSel(selTurnosEnRango, {
+    empleadoId: b.empleadoId ?? '',
+    desde: b.desde ?? hoy,
+    hasta: rangoOk ? (b.hasta as FechaISO) : (b.desde ?? hoy),
+  });
   const dias = rangoOk ? diasDeNovedad(b.desde as FechaISO, b.hasta as FechaISO) : null;
 
   const personas = useMemo(() => {
     const lista = activos.map((x) => ({ valor: x.id, etiqueta: nombreEmpleado(x) }));
     // Una novedad de alguien ya retirado se puede editar: su nombre sigue en la lista.
-    return novedad && !lista.some((x) => x.valor === novedad.empleadoId) ? [{ valor: novedad.empleadoId, etiqueta: 'Persona retirada' }, ...lista] : lista;
+    return novedad && !lista.some((x) => x.valor === novedad.empleadoId)
+      ? [{ valor: novedad.empleadoId, etiqueta: 'Persona retirada' }, ...lista]
+      : lista;
   }, [activos, novedad]);
 
   const guardar = () => {
@@ -73,14 +90,19 @@ export function DialogoNovedad({ novedad, empleadoInicial, alCerrar, alGuardar }
       desde: b.desde as FechaISO,
       hasta: b.hasta as FechaISO,
       remunerada: b.remunerada,
-      soporte: b.soporte.trim() ? { nombreArchivo: b.soporte.trim(), estado: 'adjunto' as const, fecha: hoy } : null,
+      soporte: b.soporte.trim()
+        ? { nombreArchivo: b.soporte.trim(), estado: 'adjunto' as const, fecha: hoy }
+        : null,
       nota: b.nota.trim() || null,
     };
     const novedadId = novedad?.id ?? acciones.nuevoId(PREFIJOS.novedad);
-    const r = novedad ? acciones.editarNovedad({ novedadId, cambios: datos }) : acciones.registrarNovedad({ novedadId, datos });
+    const r = novedad
+      ? acciones.editarNovedad({ novedadId, cambios: datos })
+      : acciones.registrarNovedad({ novedadId, datos });
     if (!r.ok) {
       const campo = r.error.campo as CampoNovedad | undefined;
-      if (campo && ['empleadoId', 'tipo', 'desde', 'hasta'].includes(campo)) setErrores({ [campo]: r.error.mensaje });
+      if (campo && ['empleadoId', 'tipo', 'desde', 'hasta'].includes(campo))
+        setErrores({ [campo]: r.error.mensaje });
       else setErrorGeneral(r.error.mensaje);
       return;
     }
@@ -135,20 +157,59 @@ export function DialogoNovedad({ novedad, empleadoInicial, alCerrar, alGuardar }
           etiqueta="Tipo de novedad"
           placeholder="Elige el tipo"
           valor={b.tipo}
-          alCambiar={(v) => cambiar({ tipo: v as TipoNovedad, remunerada: REMUNERADA_POR_DEFECTO[v as TipoNovedad] }, 'tipo')}
+          alCambiar={(v) =>
+            cambiar({ tipo: v as TipoNovedad, remunerada: REMUNERADA_POR_DEFECTO[v as TipoNovedad] }, 'tipo')
+          }
           enModal
           error={errores.tipo}
           ayuda={b.tipo ? AYUDA_NOVEDAD[b.tipo] : undefined}
           opciones={TIPOS_NOVEDAD.map((t) => ({ valor: t, etiqueta: ETIQUETA_NOVEDAD[t] }))}
           data-testid="novedades-tipo"
         />
-        <SelectorFecha etiqueta="Desde" hoy={hoy} valor={b.desde} alCambiar={(f) => cambiar({ desde: f, hasta: b.hasta && b.hasta < f ? f : b.hasta }, 'desde')} error={errores.desde} enModal />
-        <SelectorFecha etiqueta="Hasta" hoy={hoy} valor={b.hasta} alCambiar={(f) => cambiar({ hasta: f }, 'hasta')} error={errores.hasta ?? (tocado ? erroresForma.hasta : undefined)} desde={b.desde ?? undefined} enModal />
+        <SelectorFecha
+          etiqueta="Desde"
+          hoy={hoy}
+          valor={b.desde}
+          alCambiar={(f) => cambiar({ desde: f, hasta: b.hasta && b.hasta < f ? f : b.hasta }, 'desde')}
+          error={errores.desde}
+          enModal
+        />
+        <SelectorFecha
+          etiqueta="Hasta"
+          hoy={hoy}
+          valor={b.hasta}
+          alCambiar={(f) => cambiar({ hasta: f }, 'hasta')}
+          error={errores.hasta ?? (tocado ? erroresForma.hasta : undefined)}
+          desde={b.desde ?? undefined}
+          enModal
+        />
         <div className="col-span-2">
-          <Switch etiqueta="Se paga" activo={b.remunerada} alCambiar={(v) => cambiar({ remunerada: v })} valorTexto={b.remunerada ? 'Sí' : 'No'} />
+          <Switch
+            etiqueta="Se paga"
+            activo={b.remunerada}
+            alCambiar={(v) => cambiar({ remunerada: v })}
+            valorTexto={b.remunerada ? 'Sí' : 'No'}
+          />
         </div>
-        <Input className="col-span-2" etiqueta="Soporte" opcional placeholder="Ej.: incapacidad-eps.pdf" value={b.soporte} onChange={(ev) => cambiar({ soporte: ev.target.value })} ayuda="Documento simulado: en la versión real se adjunta el archivo." autoComplete="off" />
-        <Textarea className="col-span-2" etiqueta="Nota" opcional rows={2} value={b.nota} onChange={(ev) => cambiar({ nota: ev.target.value })} placeholder="Ej.: Cita médica programada, regresa el lunes." />
+        <Input
+          className="col-span-2"
+          etiqueta="Soporte"
+          opcional
+          placeholder="Ej.: incapacidad-eps.pdf"
+          value={b.soporte}
+          onChange={(ev) => cambiar({ soporte: ev.target.value })}
+          ayuda="Documento simulado: en la versión real se adjunta el archivo."
+          autoComplete="off"
+        />
+        <Textarea
+          className="col-span-2"
+          etiqueta="Nota"
+          opcional
+          rows={2}
+          value={b.nota}
+          onChange={(ev) => cambiar({ nota: ev.target.value })}
+          placeholder="Ej.: Cita médica programada, regresa el lunes."
+        />
 
         {dias !== null && b.tipo && (
           <div className="col-span-2 border-t border-line-soft pt-4" data-testid="novedades-resumen">
@@ -156,13 +217,16 @@ export function DialogoNovedad({ novedad, empleadoInicial, alCerrar, alGuardar }
               <strong className="num text-ink">{plural(dias, 'día')}</strong> de calendario
               {turnos.length > 0 ? (
                 <>
-                  ; hay <strong className="num text-ink">{plural(turnos.length, 'turno')}</strong> programados que habrá que cubrir.
+                  ; hay <strong className="num text-ink">{plural(turnos.length, 'turno')}</strong>{' '}
+                  {turnos.length === 1 ? 'programado que habrá' : 'programados que habrá'} que cubrir.
                 </>
               ) : (
                 '; no tiene turnos programados en esas fechas.'
               )}
             </p>
-            <p className="mt-1 t-small text-muted">{efectoEnNomina(b.tipo, b.remunerada, dias, parametros.incapacidad)}</p>
+            <p className="mt-1 t-small text-muted">
+              {efectoEnNomina(b.tipo, b.remunerada, dias, parametros.incapacidad)}
+            </p>
           </div>
         )}
         {errorGeneral && (

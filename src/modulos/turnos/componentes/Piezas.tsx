@@ -14,13 +14,21 @@ export interface PropsEncabezadoTurnos {
   local?: string | null;
 }
 
-const NOMBRES: Record<SeccionTurnos, string> = { turnos: 'Turnos', asistencia: 'Asistencia', novedades: 'Novedades' };
+const NOMBRES: Record<SeccionTurnos, string> = {
+  turnos: 'Turnos',
+  asistencia: 'Asistencia',
+  novedades: 'Novedades',
+};
 
 /** Encabezado común de las tres pantallas del dueño: migas y pestañas Turnos · Asistencia · Novedades. */
 export function EncabezadoTurnos({ seccion, titulo, subtitulo, acciones, local }: PropsEncabezadoTurnos) {
   return (
     <EncabezadoPagina
-      migas={[{ texto: 'Inicio', a: rutas.inicio() }, { texto: 'Personal y nómina', a: rutas.personal() }, { texto: NOMBRES[seccion] }]}
+      migas={[
+        { texto: 'Inicio', a: rutas.inicio() },
+        { texto: 'Personal y nómina', a: rutas.personal() },
+        { texto: NOMBRES[seccion] },
+      ]}
       titulo={titulo}
       subtitulo={subtitulo}
       acciones={acciones}
