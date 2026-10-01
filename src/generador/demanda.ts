@@ -36,7 +36,7 @@ export const CATEGORIAS: readonly Categoria[] = [
 export const AJUSTE_ESTRELLA: Partial<Record<Categoria, number>> = {
   blazers: 2.4,
   trajes: 2.6,
-  abrigos_chaquetas: 1.6,
+  abrigos_chaquetas: 1.7,
   polos: 0.6,
   accesorios: 0.6,
 };
@@ -48,6 +48,14 @@ const PARTE_ESTRELLA = 0.42;
 export const DIAS_SIN_MOVIMIENTO = 75;
 /** Meses antes del ancla en que el beige y el camel empiezan a subir en suéteres (P12). */
 const DIAS_TENDENCIA_BEIGE = 90;
+
+/**
+ * Día dentro de un ciclo de 364 días (52 semanas exactas, mismo día de la semana): la semilla del ruido semanal
+ * y del número de ventas del día se repite año a año (pista de calibración, P18).
+ */
+export function cicloAnual(fecha: FechaISO): number {
+  return ((diaN(fecha) % 364) + 364) % 364;
+}
 
 function mesIndice(fecha: FechaISO): number {
   return Number(fecha.slice(0, 4)) * 12 + Number(fecha.slice(5, 7)) - 1;
@@ -97,12 +105,12 @@ export class Demanda {
     return (t[k] ?? 1) / (t[ka] ?? 1);
   }
 
-  /** Ruido semanal normal (σ = 6 %), uno por semana, sembrado por su lunes. */
+  /** Ruido semanal normal (σ = 6 %), uno por semana, sembrado por su semana del ciclo de 52 (ver `cicloAnual`). */
   ruidoSemana(fecha: FechaISO): number {
     const lunes = lunesDe(fecha);
     let r = this.ruido.get(lunes);
     if (r === undefined) {
-      r = Math.max(0.8, Math.min(1.2, rngPlan(this.e.semilla, `ruido:${lunes}`).normal(1, RUIDO_SEMANAL_SIGMA)));
+      r = Math.max(0.8, Math.min(1.2, rngPlan(this.e.semilla, `ruido:c${cicloAnual(lunes)}`).normal(1, RUIDO_SEMANAL_SIGMA)));
       this.ruido.set(lunes, r);
     }
     return r;
@@ -144,8 +152,10 @@ export class Demanda {
   ventasDelDia(fecha: FechaISO): { localId: Id; n: number }[] {
     const locales = this.e.locales.filter((l) => l.perfil && this.e.calendario.horario(l, fecha));
     if (locales.length === 0) return [];
-    const rng = rngPlan(this.e.semilla, `ventas:${fecha}`);
-    const r = locales.map((l) => ({ localId: l.id, n: rng.poisson(this.lambda(l, fecha)), l }));
+    // Un flujo por local y día del ciclo anual: el mismo día de la semana del año anterior usa los mismos
+    // aleatorios, así el año contra año refleja la tendencia y no el ruido (P18).
+    const c = cicloAnual(fecha);
+    const r = locales.map((l) => ({ localId: l.id, n: rngPlan(this.e.semilla, `ventas:c${c}:${l.id}`).poisson(this.lambda(l, fecha)), l }));
     const min = Math.round(RANGO_VENTAS_DIA.minimo * this.e.escala);
     const max = Math.round(RANGO_VENTAS_DIA.maximo * this.e.escala);
     let total = r.reduce((a, x) => a + x.n, 0);
@@ -156,13 +166,35 @@ export class Demanda {
         fuerte.n += min - total;
         total = min;
       }
-      while (total > max) {
-        const mayor = r.reduce((a, x) => (x.n > a.n ? x : a));
-        mayor.n -= 1;
-        total -= 1;
+      if (total > max) {
+        // Tope de capacidad proporcional (pista de calibración): cada local conserva su participación del día
+        // (P1), con el residuo para las fracciones mayores (empate: el orden de los locales).
+        const cuotas = r.map((x) => (x.n * max) / total);
+        for (let i = 0; i < r.length; i++) (r[i] as (typeof r)[number]).n = Math.floor(cuotas[i] ?? 0);
+        let faltan = max - r.reduce((a, x) => a + x.n, 0);
+        const orden = r.map((_, i) => i).sort((a, b) => ((cuotas[b] ?? 0) % 1) - ((cuotas[a] ?? 0) % 1) || a - b);
+        for (const i of orden) {
+          if (faltan <= 0) break;
+          (r[i] as (typeof r)[number]).n += 1;
+          faltan -= 1;
+        }
       }
     }
     return r.map((x) => ({ localId: x.localId, n: x.n }));
+  }
+
+  /**
+   * λ esperado de un local con el tope de capacidad del día (15–60 × escala, 7.5) repartido en proporción: lo
+   * que el modelo puede vender de verdad. Sirve para normalizar las mediciones de P1 y P7 en temporada alta.
+   */
+  lambdaAcotado(local: ConfigLocal, fecha: FechaISO): number {
+    const l = this.lambdaEsperado(local, fecha);
+    if (l <= 0) return 0;
+    const abiertos = this.e.locales.filter((x) => x.perfil && this.e.calendario.horario(x, fecha));
+    if (abiertos.length !== this.e.locales.filter((x) => x.perfil).length) return l;
+    const total = abiertos.reduce((a, x) => a + this.lambdaEsperado(x, fecha), 0);
+    const max = RANGO_VENTAS_DIA.maximo * this.e.escala;
+    return total > max ? (l * max) / total : l;
   }
 
   /** Mezcla de categorías de un local en un mes (P1, 7.6), como tabla acumulada. */
@@ -249,7 +281,7 @@ export class Demanda {
     if (p.categoria === 'camisas' && familia === 'azul')
       // La Oxford azul cielo es la combinación estrella (N1, P3); el resto del azul pesa menos para que el azul
       // sea ≈ 1 de cada 3 camisas (P12).
-      return p.id === 'pd_cam_0142' && colorId === 'col_azc' ? 1.2 : 0.2;
+      return p.id === 'pd_cam_0142' && colorId === 'col_azc' ? 1.6 : 0.15;
     if (p.categoria === 'punto' && (familia === 'beige' || familia === 'camel'))
       return fecha >= this.inicioTendenciaBeige ? 1.8 : 0.9;
     return 1;

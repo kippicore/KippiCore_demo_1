@@ -27,7 +27,7 @@ export const DEMANDA_TALLAS: Record<CurvaTallas, Record<string, number>> = {
  * caía muy por debajo del 38 % de P3).
  */
 export const CURVA_PEDIDO: Record<CurvaTallas, Record<string, number>> = {
-  superior: { S: 0.14, M: 0.33, L: 0.28, XL: 0.16, XXL: 0.09 },
+  superior: { S: 0.14, M: 0.34, L: 0.28, XL: 0.15, XXL: 0.09 },
   pantalon: { '28': 0.07, '30': 0.13, '32': 0.25, '34': 0.24, '36': 0.16, '38': 0.09, '40': 0.06 },
   calzado: { '38': 0.07, '39': 0.12, '40': 0.2, '41': 0.22, '42': 0.19, '43': 0.12, '44': 0.08 },
   sastreria: { '46': 0.12, '48': 0.22, '50': 0.27, '52': 0.21, '54': 0.12, '56': 0.06 },

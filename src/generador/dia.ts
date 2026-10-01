@@ -116,6 +116,10 @@ export function planificarDia(plan: Plan, dia: FechaISO): IntencionGen[] {
       r.push(it('conteo', `conteo:${dia}`, `${dia}T08:15`));
     // Narrativa al ancla (7.11).
     if (dia === masDias(A, -21)) r.push(it('narrativa', `narrativa:conteo:${dia}`, `${dia}T08:30`, { caso: 'conteo' }));
+    // P19 (N13): calibración del punto bajo en tres pasos (ancla − 3 a las 8:00 a. m., víspera a las 10:00 p. m. y
+    // día del ancla a las 7:40 a. m.): la cuenta corriente sola no siempre alcanza para el retiro de una vez.
+    if (dia === masDias(A, -3)) r.push(it('narrativa', `narrativa:flujo:${dia}`, `${dia}T08:00`, { caso: 'flujo' }));
+    if (dia === A) r.push(it('narrativa', `narrativa:flujo:${dia}`, `${dia}T07:40`, { caso: 'flujo' }));
     if (dia === masDias(A, -1)) {
       r.push(it('narrativa', `narrativa:flujo:${dia}`, `${dia}T22:00`, { caso: 'flujo' }));
       r.push(it('narrativa', `narrativa:solicitudes:${dia}`, `${dia}T19:00`, { caso: 'solicitudes' }));
