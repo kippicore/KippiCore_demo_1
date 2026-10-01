@@ -34,10 +34,12 @@ export default defineConfig({
       registerType: 'autoUpdate',
       // El registro del service worker se difiere hasta que el estado esté construido (5.11): lo hace src/main.tsx.
       injectRegister: false,
-      includeAssets: ['favicon.svg', 'robots.txt'],
+      includeAssets: ['favicon.svg', 'robots.txt', 'iconos/*.png', 'og/halden-og.png'],
       manifest: {
         id: '/app',
         name: 'HALDEN · App del dueño',
+        description: 'Cómo va el día y cómo cerraron las cajas de los tres locales. Demo de KippiCore CRM con datos de ejemplo.',
+        categories: ['business', 'productivity'],
         short_name: 'HALDEN',
         lang: 'es-CO',
         start_url: '/app?fuente=pwa',

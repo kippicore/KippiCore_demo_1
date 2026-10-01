@@ -22,7 +22,8 @@
     "test:e2e:rendimiento": "playwright test --project=rendimiento --no-deps --workers=1",
     "medir:arranque": "node scripts/medir-arranque.mjs",
     "medir": "tsx scripts/medir-generador.ts",
-    "informe": "tsx scripts/informe-coherencia.ts"
+    "informe": "tsx scripts/informe-coherencia.ts",
+    "iconos": "python3 scripts/contornos-wordmark.py && node scripts/generar-iconos.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -5,7 +5,6 @@ import {
   CartesianGrid,
   Cell,
   ComposedChart,
-  LabelList,
   Line,
   ReferenceLine,
   ResponsiveContainer,
@@ -82,14 +81,6 @@ const COLOR: Record<string, string> = {
   '4': 'var(--c-chart-4)',
   acento: 'var(--c-accent)',
 };
-/** Texto legible sobre el color de una serie (sobre chart-1 va en inverse). */
-const TEXTO_SOBRE: Record<string, string> = {
-  '1': 'var(--c-inverse)',
-  '2': 'var(--c-inverse)',
-  '3': 'var(--c-ink)',
-  '4': 'var(--c-ink)',
-  acento: 'var(--c-inverse)',
-};
 
 export function colorSerie(c: ColorSerie | undefined, i: number): string {
   return COLOR[String(c ?? ((i % 4) + 1))] ?? COLOR['1']!;
@@ -151,39 +142,30 @@ export function GraficoBase({
   const fmtValor = formatoValor ?? formatoY;
   const directas = etiquetasDirectas ?? series.length > 1;
   const altura = alto ?? (movil ? 160 : 280);
-  const ultimo = datos.length - 1;
 
   const datosNum = useMemo(() => datos.map((d) => ({ ...d, __x: String(d[x] ?? '') })), [datos, x]);
 
-  const etiquetaFinal = (s: SerieGrafico, i: number) =>
-    function EtiquetaFinal(p: { x?: number | string; y?: number | string; width?: number | string; height?: number | string; index?: number; value?: unknown }) {
-      if (p.index !== ultimo || p.value === null || p.value === undefined) return null;
-      const px = Number(p.x ?? 0);
-      const py = Number(p.y ?? 0);
-      const w = Number(p.width ?? 0);
-      const h = Number(p.height ?? 0);
-      const t = tipo === 'barras' || s.tipo === 'barras' ? 'barras' : 'linea';
-      const clave = String(s.color ?? (i % 4) + 1);
-      if (t === 'barras' && apiladas && h >= 18) {
-        return (
-          <text x={px + w / 2} y={py + h / 2} dy="0.35em" textAnchor="middle" fontSize={12} fontWeight={600} fontFamily="var(--font-sans)" fill={TEXTO_SOBRE[clave]}>
-            {s.nombre.split(' ')[0]}
-          </text>
-        );
+  // Escala propia del eje Y (0 → máximo "redondo"): así las etiquetas directas se ubican sin medir el SVG.
+  const escala = useMemo(() => {
+    let max = 0;
+    let min = 0;
+    for (const f of datos) {
+      let pila = 0;
+      for (const s of series) {
+        const v = f[s.clave];
+        if (typeof v !== 'number') continue;
+        if (apiladas && (s.tipo ?? tipo) === 'barras') pila += v;
+        else {
+          max = Math.max(max, v);
+          min = Math.min(min, v);
+        }
       }
-      const lx = t === 'barras' ? px + w + 6 : px + 6;
-      const ly = t === 'barras' ? py + h / 2 : py;
-      return (
-        <g>
-          {t === 'barras' && <line x1={px + w} x2={px + w + 4} y1={ly} y2={ly} stroke="var(--c-ink-2)" strokeWidth={1} />}
-          <text x={lx} y={ly} dy="0.35em" fontSize={12} fontWeight={600} fontFamily="var(--font-sans)" fill="var(--c-ink-2)">
-            {s.nombre}
-          </text>
-        </g>
-      );
-    };
-
-  const margenDerecho = directas ? (tipo === 'linea' || series.some((s) => s.tipo === 'linea') ? 92 : apiladas ? 16 : 84) : 8;
+      max = Math.max(max, pila);
+    }
+    return escalaRedonda(min, max);
+  }, [datos, series, apiladas, tipo]);
+  const etiquetas = useMemo(() => (directas ? posicionesEtiquetas(datos, series, apiladas ?? false, tipo, escala, altura) : []), [directas, datos, series, apiladas, tipo, escala, altura]);
+  const margenDerecho = etiquetas.length ? 104 : 8;
 
   return (
     <figure className={cn('min-w-0', className)} data-testid={resto['data-testid']}>
@@ -220,7 +202,17 @@ export function GraficoBase({
             : ''}
         </p>
       )}
-      <div style={{ height: altura }} className="w-full">
+      <div style={{ height: altura }} className="relative w-full">
+        {etiquetas.length > 0 && (
+          <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-[100px]">
+            {etiquetas.map((et) => (
+              <span key={et.clave} className="absolute left-0 flex -translate-y-1/2 items-center gap-1.5 whitespace-nowrap t-micro font-semibold text-ink-2" style={{ top: et.y }}>
+                <span className="h-px w-2.5 bg-ink-2" />
+                {et.nombre}
+              </span>
+            ))}
+          </div>
+        )}
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={datosNum}
@@ -241,7 +233,7 @@ export function GraficoBase({
               tickFormatter={(v: string) => formatoX(v)}
               minTickGap={12}
             />
-            {!movil && <YAxis axisLine={false} tickLine={false} tick={TICK} width={56} tickCount={5} tickFormatter={(n: number) => formatoY(n)} />}
+            <YAxis hide={movil} axisLine={false} tickLine={false} tick={TICK} width={movil ? 0 : 56} domain={[escala.min, escala.max]} ticks={escala.marcas} allowDataOverflow tickFormatter={(n: number) => formatoY(n)} />
             {!movil && (
               <RTooltip
                 isAnimationActive={false}
@@ -269,7 +261,6 @@ export function GraficoBase({
               const t = s.tipo ?? tipo;
               const color = s.punteada ? 'var(--c-chart-3)' : colorSerie(s.color, i);
               const opacidad = atenuar && atenuar !== s.clave ? 0.25 : 1;
-              const etiqueta = directas && !s.punteada ? <LabelList dataKey={s.clave} content={etiquetaFinal(s, i)} /> : null;
               if (t === 'barras')
                 return (
                   <Bar
@@ -290,7 +281,6 @@ export function GraficoBase({
                     {destacarX !== undefined &&
                       destacarX !== null &&
                       datosNum.map((d, j) => <Cell key={j} fill={d.__x === destacarX && (!apiladas || i === series.length - 1) ? 'var(--c-accent)' : color} />)}
-                    {etiqueta}
                   </Bar>
                 );
               if (t === 'area')
@@ -326,9 +316,7 @@ export function GraficoBase({
                   isAnimationActive={animar}
                   animationDuration={600}
                   connectNulls
-                >
-                  {etiqueta}
-                </Line>
+                />
               );
             })}
           </ComposedChart>
@@ -392,4 +380,76 @@ export function GraficoLineas(p: Omit<PropsGraficoBase, 'tipo'>) {
 /** Área: solo para el flujo de caja proyectado (línea ink 2 px + relleno al 6 %). */
 export function GraficoArea(p: Omit<PropsGraficoBase, 'tipo' | 'apiladas'>) {
   return <GraficoBase {...p} tipo="area" />;
+}
+
+/** Máximo "redondo" y marcas (4 tramos con paso 1 · 2 · 2,5 · 5 × 10ⁿ). */
+export function escalaRedonda(min: number, max: number): { min: number; max: number; marcas: number[] } {
+  const rango = Math.max(max - Math.min(0, min), 1);
+  const bruto = rango / 4;
+  const pot = Math.pow(10, Math.floor(Math.log10(bruto)));
+  const paso = ([1, 2, 2.5, 5, 10].find((m) => m * pot >= bruto) ?? 10) * pot;
+  const lo = min < 0 ? -Math.ceil(-min / paso) * paso : 0;
+  const hi = Math.max(paso, Math.ceil(max / paso) * paso);
+  const marcas: number[] = [];
+  for (let v = lo; v <= hi + paso / 2; v += paso) marcas.push(Math.round(v * 1000) / 1000);
+  return { min: lo, max: hi, marcas };
+}
+
+const MARGEN_SUPERIOR = 8;
+const ALTO_EJE_X = 30;
+
+/**
+ * Posición vertical (px) de la etiqueta directa de cada serie (8.9.1): a la altura del último punto de cada línea o
+ * del centro de su tramo en la última barra apilada, separadas al menos 15 px (sin encimarse).
+ */
+function posicionesEtiquetas(
+  datos: readonly Fila[],
+  series: readonly SerieGrafico[],
+  apiladas: boolean,
+  tipo: TipoSerie,
+  escala: { min: number; max: number },
+  altura: number,
+): { clave: string; nombre: string; y: number }[] {
+  const visibles = series.filter((s) => !s.punteada);
+  if (visibles.length < 2 || !datos.length) return [];
+  const alto = altura - MARGEN_SUPERIOR - ALTO_EJE_X;
+  const aY = (v: number) => MARGEN_SUPERIOR + (1 - (v - escala.min) / (escala.max - escala.min || 1)) * alto;
+  // Para barras apiladas se usa la barra más alta de las últimas 7 (la de hoy suele estar a medias).
+  let i = datos.length - 1;
+  if (apiladas && tipo === 'barras') {
+    let mejor = -1;
+    for (let j = Math.max(0, datos.length - 7); j < datos.length; j++) {
+      const t = visibles.reduce((s, x) => s + (typeof datos[j]?.[x.clave] === 'number' ? (datos[j]?.[x.clave] as number) : 0), 0);
+      if (t > mejor) {
+        mejor = t;
+        i = j;
+      }
+    }
+  }
+  const fila = datos[i] ?? {};
+  let acumulado = 0;
+  const r = visibles.map((s) => {
+    const v = typeof fila[s.clave] === 'number' ? (fila[s.clave] as number) : 0;
+    if (apiladas && (s.tipo ?? tipo) === 'barras') {
+      const y = aY(acumulado + v / 2);
+      acumulado += v;
+      return { clave: s.clave, nombre: s.nombre, y };
+    }
+    return { clave: s.clave, nombre: s.nombre, y: aY(v) };
+  });
+  // Separación mínima de 15 px (de arriba abajo) y dentro del área.
+  const orden = [...r].sort((a, b) => a.y - b.y);
+  for (let k = 1; k < orden.length; k++) {
+    const prev = orden[k - 1]!;
+    const act = orden[k]!;
+    if (act.y - prev.y < 15) act.y = prev.y + 15;
+  }
+  const limite = MARGEN_SUPERIOR + alto;
+  for (let k = orden.length - 1; k >= 0; k--) {
+    const act = orden[k]!;
+    const sig = orden[k + 1];
+    const tope = sig ? sig.y - 15 : limite;
+    if (act.y > tope) act.y = tope;
+  }
+  return orden;
 }

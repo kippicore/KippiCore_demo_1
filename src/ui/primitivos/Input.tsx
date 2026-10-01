@@ -17,7 +17,10 @@ export type TamanoCampo = 'sm' | 'md' | 'lg';
 const ALTOS: Record<TamanoCampo, string> = { sm: 'h-8', md: 'h-10', lg: 'h-12' };
 
 export const CLASE_CAMPO =
-  'w-full rounded-none border border-line-strong bg-surface text-ink t-body outline-none transition-[border-color,box-shadow] duration-(--dur-instant) placeholder:text-placeholder hover:border-control focus:border-ink focus:shadow-[inset_0_0_0_1px_var(--c-ink)] disabled:cursor-not-allowed disabled:border-line disabled:bg-surface-2 disabled:text-disabled read-only:bg-surface-2 read-only:hover:border-line-strong aria-[invalid=true]:border-danger aria-[invalid=true]:focus:shadow-[inset_0_0_0_1px_var(--c-danger)]';
+  'w-full rounded-none border border-line-strong bg-surface text-ink outline-none transition-[border-color,box-shadow] duration-(--dur-instant) placeholder:text-placeholder hover:border-control focus:border-ink focus:shadow-[inset_0_0_0_1px_var(--c-ink)] disabled:cursor-not-allowed disabled:border-line disabled:bg-surface-2 disabled:text-disabled aria-[invalid=true]:border-danger aria-[invalid=true]:focus:shadow-[inset_0_0_0_1px_var(--c-danger)]';
+
+/** Solo lectura (solo para <input> y <textarea>: los botones también son `:read-only`). */
+const SOLO_LECTURA = 'read-only:bg-surface-2 read-only:hover:border-line-strong';
 
 export interface PropsCampo {
   etiqueta?: ReactNode;
@@ -86,10 +89,12 @@ export const Input = forwardRef<HTMLInputElement, PropsInput>(function Input(
           aria-describedby={describe}
           className={cn(
             CLASE_CAMPO,
+            SOLO_LECTURA,
             ALTOS[tamano],
             IconoIzq ? 'pl-9' : prefijo ? 'pl-8' : 'pl-3',
             sufijo ? 'pr-14' : 'pr-3',
             numerico && 'num text-right',
+            tamano === 'sm' ? 't-small' : 't-body',
             claseCampo,
           )}
           {...resto}
@@ -155,7 +160,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, PropsTextarea>(function 
         id={id}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : ayuda ? `${id}-ayuda` : undefined}
-        className={cn(CLASE_CAMPO, 'min-h-24 resize-y px-3 py-2.5')}
+        className={cn(CLASE_CAMPO, SOLO_LECTURA, 't-body min-h-24 resize-y px-3 py-2.5')}
         {...resto}
       />
     </Campo>

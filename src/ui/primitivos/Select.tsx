@@ -53,7 +53,7 @@ export function Select({ valor, alCambiar, opciones, placeholder = 'Elige una op
           className={cn(
             'group inline-flex items-center justify-between gap-2 px-3 text-left',
             variante === 'campo'
-              ? CLASE_CAMPO
+              ? cn(CLASE_CAMPO, tamano === 'sm' ? 't-small' : 't-body')
               : 'rounded-none bg-transparent t-nav text-ink hover:bg-surface/70 focus-visible:outline-2 focus-visible:outline-focus',
             ALTO[tamano],
             'data-[placeholder]:text-placeholder',

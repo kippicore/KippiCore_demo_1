@@ -87,7 +87,7 @@ const NAVEGADOR = ['window', 'document', 'localStorage', 'sessionStorage', 'navi
 
 export default tseslint.config(
   {
-    ignores: ['dist', 'dev-dist', 'node_modules', 'coverage', 'playwright-report', 'test-results', 'docs', 'public'],
+    ignores: ['dist', 'dev-dist', '.qa', 'node_modules', 'coverage', 'playwright-report', 'test-results', 'docs', 'public'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

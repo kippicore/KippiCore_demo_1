@@ -101,7 +101,7 @@ export const Combobox = forwardRef<HTMLInputElement, PropsCombobox>(function Com
               placeholder={placeholder}
               aria-label={etiqueta ?? placeholder}
               data-testid={resto['data-testid']}
-              className={cn(CLASE_CAMPO, tamano === 'sm' ? 'h-8' : 'h-9', 'pl-9', atajo ? 'pr-3 wide:pr-14' : 'pr-3', claseCampo)}
+              className={cn(CLASE_CAMPO, tamano === 'sm' ? 'h-8 t-small' : 'h-9 t-body', 'pl-9', atajo ? 'pr-3 wide:pr-14' : 'pr-3', claseCampo)}
             />
             {atajo && <kbd className="pointer-events-none absolute right-3 font-sans t-micro text-ink-2 max-wide:hidden">{atajo}</kbd>}
           </div>

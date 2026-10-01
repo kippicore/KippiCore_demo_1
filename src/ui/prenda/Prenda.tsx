@@ -118,5 +118,9 @@ export const Prenda = memo(PrendaBase);
 /** Miniatura de tabla (30 × 40) o de combobox (32 × 43). */
 export function MiniaturaPrenda({ tamano = 'tabla', ...p }: Omit<PropsPrenda, 'tamano'> & { tamano?: 'tabla' | 'buscador' | 'bolsa' }) {
   const ancho = tamano === 'tabla' ? 'w-[30px]' : tamano === 'buscador' ? 'w-8' : 'w-[72px]';
-  return <Prenda {...p} tamano="miniatura" className={cn('shrink-0', ancho, p.className)} />;
+  return (
+    <span className={cn('block shrink-0', ancho, p.className)}>
+      <Prenda {...p} className={undefined} tamano="miniatura" />
+    </span>
+  );
 }
