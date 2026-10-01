@@ -384,7 +384,7 @@ test('datos: restaurar regresa todo al estado inicial exacto (venta registrada �
   await page.getByTestId('datos-restaurar-boton').click();
   const dlg = page.getByRole('alertdialog');
   await expect(dlg).toContainText('¿Restaurar los datos de demostración?');
-  await expect(dlg).toContainText('Hoy hay 1 cambio tuyos');
+  await expect(dlg).toContainText('Hoy hay 1 cambio tuyo');
   await expect(dlg.getByRole('button', { name: 'Restaurar datos de demostración' })).toBeDisabled();
   await dlg.getByRole('button', { name: 'Cancelar' }).click();
   expect(await conKc(page, (kc) => kc.datos.getState().registro.length)).toBe(1);
