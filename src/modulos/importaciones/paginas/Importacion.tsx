@@ -97,6 +97,11 @@ export default function ImportacionPagina() {
   return <Ficha imp={imp} pestana={valida ? pestana : ''} />;
 }
 
+/** "A, B y C" (sin coma antes de la "y"). */
+function unirConY(lista: readonly string[]): string {
+  return lista.length <= 1 ? (lista[0] ?? '') : `${lista.slice(0, -1).join(', ')} y ${lista[lista.length - 1] ?? ''}`;
+}
+
 function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
   const hoy = useHoy();
   const navegar = useNavigate();
@@ -337,7 +342,7 @@ function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
 
             <div className="grid gap-6 desk:grid-cols-[minmax(0,1fr)_380px]">
               <div className="space-y-6">
-                <Card titulo="Dónde viene" data-testid="card-ruta">
+                <Card titulo="Por dónde va" data-testid="card-ruta">
                   <RutaChina
                     barcos={[
                       {
@@ -406,10 +411,7 @@ function Ficha({ imp, pestana }: { imp: TImportacion; pestana: string }) {
                           <div>
                             <dt className="t-small text-muted">Se avisará a</dt>
                             <dd className="text-ink">
-                              {avisosSiguiente.destinatarios
-                                .filter((d) => d.preseleccionado)
-                                .map((d) => (d.tipo === 'dueno' ? 'ti' : d.nombre))
-                                .join(', ')}
+                              {unirConY(avisosSiguiente.destinatarios.filter((d) => d.preseleccionado).map((d) => (d.tipo === 'dueno' ? 'ti' : d.nombre)))}
                             </dd>
                           </div>
                         )}

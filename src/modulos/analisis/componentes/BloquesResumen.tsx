@@ -102,7 +102,7 @@ export function BloqueProyeccion() {
               valor={avance}
               etiqueta={
                 <span>
-                  Llevas <Dinero valor={p.aLaFecha} corta /> de los <Dinero valor={p.proyeccion} corta /> proyectados
+                  Hasta ayer llevas <Dinero valor={p.aLaFecha} corta /> vendidos (con IVA, antes de devoluciones) de los <Dinero valor={p.proyeccion} corta /> proyectados
                 </span>
               }
               detalle={`Han pasado ${String(p.diasTranscurridos)} de ${String(diasDelMes(p.mes))} días`}

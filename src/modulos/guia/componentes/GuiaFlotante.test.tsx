@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { MemoryRouter, useNavigate } from 'react-router';
@@ -33,10 +34,13 @@ afterEach(() => {
 });
 
 const fijarAlto = (alto: number) => Object.defineProperty(window, 'innerHeight', { value: alto, configurable: true, writable: true });
-let irA: (ruta: string) => void = () => undefined;
+const navegacion: { ir: (ruta: string) => void } = { ir: () => undefined };
+const irA = (ruta: string) => navegacion.ir(ruta);
 function Navegador() {
   const navegar = useNavigate();
-  irA = (ruta) => navegar(ruta);
+  useEffect(() => {
+    navegacion.ir = (ruta) => navegar(ruta);
+  }, [navegar]);
   return null;
 }
 const montar = (ruta: string) =>

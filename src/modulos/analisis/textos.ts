@@ -25,7 +25,7 @@ export const TXT = {
     pronto: 'Todavía es muy pronto para proyectar',
     prontoTexto: 'Con el primer día completo del mes calculamos tu ritmo y te decimos cuánto cerrarías.',
     comoSeCalcula: (dias: number, diasMes: number) =>
-      `Calculado con el promedio diario de los ${String(dias)} días ya cerrados, extendido a los ${String(diasMes)} del mes.`,
+      `Calculado con el promedio diario de los ${String(dias)} días ya cerrados (sin contar hoy), con IVA y antes de devoluciones, extendido a los ${String(diasMes)} del mes. Por eso no es la cifra de "Ventas del mes" de Inicio, que es neta de devoluciones e incluye hoy.`,
   },
   mes: {
     titulo: 'Ventas por mes, con el año anterior',

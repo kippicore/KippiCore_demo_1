@@ -49,7 +49,7 @@ function Cuerpo() {
     impuestos: `IVA del ${porcentaje(params.impuestos.ivaGeneral, 0)}`,
     aduanas: `Arancel del ${porcentaje(params.aduanas.arancelPct, 0)} · IVA del ${porcentaje(params.aduanas.ivaImportacionPct, 0)}`,
     usuarios: `${plural(usuarios.length, 'usuario')} · 3 roles`,
-    datos: cambios === 0 ? 'Demo original, sin cambios' : `${plural(cambios, 'cambio')} tuyos`,
+    datos: cambios === 0 ? 'Demo original, sin cambios' : `${cambios === 1 ? '1 cambio tuyo' : `${plural(cambios, 'cambio')} tuyos`}`,
   };
 
   return (

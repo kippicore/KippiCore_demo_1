@@ -4,7 +4,7 @@ import { BarraProgreso, Badge, BotonExportar, Card, Dinero, EmptyState, GraficoC
 import { GLOSARIO } from '@/config/textos/glosario';
 import type { CategoriaGasto, COP } from '@/dominio/tipos';
 import { useDinero, useSel } from '@/estado';
-import { mesAnio, mesCorto, porcentaje } from '@/lib/formato';
+import { MESES, mesAnio, mesCorto, porcentaje } from '@/lib/formato';
 import { sumarMesesAMes } from '@/lib/fechas';
 import { compararLocales, explicarResultados, pasosCascada, porCada100, rangoDeMes, variacionUtilidad, type FilaLocalResultado } from '../calculos';
 import { EncabezadoGastos, FraseVista, LimiteError, SelectorMes } from '../componentes/Piezas';
@@ -157,7 +157,7 @@ function CuerpoResultados({ f, prorratear, setProrratear }: { f: ReturnType<type
           completo={dinero(er.utilidadOperativa)}
           destacada
           variacion={
-            erPrevio ? { valor: variacionUtilidad(er.utilidadOperativa, erPrevio.utilidadOperativa), comparado: `vs. ${mesCorto(anteriorMes)}`, buenoCuando: 'sube' } : undefined
+            erPrevio ? { valor: variacionUtilidad(er.utilidadOperativa, erPrevio.utilidadOperativa), comparado: `vs. ${MESES[Number(anteriorMes.slice(5, 7)) - 1] ?? mesCorto(anteriorMes)}`, buenoCuando: 'sube' } : undefined
           }
           nota={er.ventasNetas > 0 ? `${porCada100(er.margenOperativo)} de cada 100 que vendes` : undefined}
           data-testid="resultados-kpi-final"

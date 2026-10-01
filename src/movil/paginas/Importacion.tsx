@@ -122,7 +122,7 @@ export default function Importacion() {
       </Tarjeta>
 
       <Tarjeta data-testid="app-imp-linea">
-        <TarjetaTitulo titulo="Dónde viene" />
+        <TarjetaTitulo titulo="Por dónde va" />
         <div className="px-4 pb-1 pt-2">
           <Timeline pasos={pasos} />
         </div>

@@ -78,7 +78,7 @@ export default function Seguimiento() {
       <p className="mt-1 t-small text-muted">{TEXTOS_PORTAL.soloLectura}</p>
 
       <div className="mt-8 space-y-6">
-        <Card titulo="Dónde va" padding="compacta">
+        <Card titulo="Por dónde va" padding="compacta">
           <RutaChina
             className="px-12"
             barcos={[

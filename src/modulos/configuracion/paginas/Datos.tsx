@@ -135,7 +135,7 @@ export default function Datos() {
         consecuencias={
           intactos
             ? 'Todavía no has cambiado nada, así que no se borra nada. La demo se vuelve a armar con la fecha de hoy.'
-            : `${TEXTOS.datos.restaurarConsecuencias} Hoy hay ${plural(resumen.total, 'cambio')} tuyos.`
+            : `${TEXTOS.datos.restaurarConsecuencias} Hoy hay ${resumen.total === 1 ? '1 cambio tuyo' : `${plural(resumen.total, 'cambio')} tuyos`}.`
         }
         nota={TEXTOS.datos.restaurarNota}
         palabraClave="RESTAURAR"
