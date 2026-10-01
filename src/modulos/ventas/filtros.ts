@@ -18,6 +18,8 @@ export interface ParamsVentas {
   canal: Canal | null;
   estado: EstadoVenta | null;
   producto: string | null;
+  /** Búsqueda por número, cliente o vendedor (`?texto=`). */
+  texto?: string | null;
   resaltar?: string | null;
 }
 
@@ -130,6 +132,7 @@ export function paramsConCambios(actual: ParamsVentas, cambios: Partial<ParamsVe
     canal: actual.canal,
     estado: actual.estado,
     producto: actual.producto,
+    texto: actual.texto ?? null,
     ...cambios,
     resaltar: null,
   };

@@ -160,7 +160,7 @@ export function ResultadoDevolucion({ efectos }: { efectos: EfectosDevolucion })
           Ver la venta
         </BotonEnlace>
         {cambio && (
-          <BotonEnlace to={rutas.pos()} data-testid="resultado-abrir-pos">
+          <BotonEnlace to={rutas.pos(efectos.clienteId ? { cliente: efectos.clienteId } : undefined)} data-testid="resultado-abrir-pos">
             Abrir el punto de venta
           </BotonEnlace>
         )}

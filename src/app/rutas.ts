@@ -108,7 +108,8 @@ export const RUTAS = {
   // --- D1 Inicio ---
   inicio: ruta('/panel/inicio', 'D1', [D], 'Inicio', []),
   // --- A1 Punto de venta y caja ---
-  pos: ruta('/panel/pos', 'A1', [D, V], 'Punto de venta', []),
+  // ?cliente=<clienteId>: abre la venta con ese cliente y su saldo a favor cargados (el cambio de A3).
+  pos: ruta('/panel/pos', 'A1', [D, V], 'Punto de venta', [], { cliente: texto }),
   caja: ruta('/panel/pos/caja', 'A1', [D, V], 'Caja', [], { sesion: texto, ...resaltar }),
   // --- A3 Ventas ---
   ventas: ruta('/panel/ventas', 'A3', [D, V], 'Ventas', [], {
@@ -120,6 +121,8 @@ export const RUTAS = {
     canal: enumeracion('local', 'whatsapp', 'instagram', 'web'),
     estado: enumeracion('pagada', 'separado', 'credito', 'devuelta', 'devuelta_parcial', 'anulada'),
     producto: texto,
+    /** Búsqueda por número de venta, cliente o vendedor. */
+    texto,
     ...resaltar,
   }),
   venta: ruta('/panel/ventas/:ventaId', 'A3', [D, V], 'Detalle de venta', ['ventaId']),

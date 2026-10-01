@@ -74,6 +74,8 @@ export type AccionPos =
   | { t: 'dividir'; medio: MedioPago; valorActual: COP }
   | { t: 'quitarPago'; indice: number }
   | { t: 'aprobacion'; id: Id | null }
+  /** Cliente que llega con saldo a favor (`?cliente=`): el saldo paga primero y otro medio el resto, si falta. */
+  | { t: 'pagosSaldoFavor'; saldo: COP; total: COP }
   | { t: 'vaciar' };
 
 function sustituir<T>(lista: readonly T[], i: number, f: (x: T) => T): T[] {
@@ -145,6 +147,16 @@ export function reducirPos(s: EstadoPos, a: AccionPos): EstadoPos {
       return s.pagos.length <= 1 ? s : { ...s, pagos: s.pagos.filter((_, i) => i !== a.indice) };
     case 'aprobacion':
       return { ...s, aprobacionId: a.id };
+    case 'pagosSaldoFavor': {
+      const alcanza = a.total <= a.saldo;
+      const actual = s.pagos.map((p) => `${p.medio}:${p.valor ?? ''}`).join('|');
+      const nuevo = alcanza ? 'saldo_a_favor:' : `saldo_a_favor:${a.saldo}|efectivo:`;
+      if (actual === nuevo) return s;
+      const pagos = alcanza
+        ? [pagoNuevo(`p${s.seq}`, 'saldo_a_favor')]
+        : [{ ...pagoNuevo(`p${s.seq}`, 'saldo_a_favor'), valor: a.saldo }, pagoNuevo(`p${s.seq + 1}`, 'efectivo')];
+      return { ...s, seq: s.seq + 2, pagos };
+    }
     case 'vaciar':
       return { ...ESTADO_INICIAL, seq: s.seq + 1, vendedorId: s.vendedorId };
   }

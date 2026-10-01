@@ -630,3 +630,32 @@ test('W11 arqueo ciego: el vendedor cuenta sin ver el esperado y lo ve solo desp
   expect(cierre).toMatchObject({ estado: 'cerrada', ciego: true, contado: 500_000 });
   expect(errores).toEqual([]);
 });
+
+test('?cliente= abre la venta con ese cliente y su saldo a favor como medio de pago (el cambio de Ventas)', async ({ page, irA }, info) => {
+  omitirEn1280(info);
+  const errores = vigilar(page);
+  await entrarAlPos(page, irA);
+  const c = await evaluar(
+    page,
+    (kc) => {
+      const m = kc.sel('selMetricasClientes', { hoy: '2026-09-30' }) as Record<string, { saldoAFavor: number }>;
+      const [id, x] = Object.entries(m).sort((a, b) => b[1].saldoAFavor - a[1].saldoAFavor)[0] ?? ['', { saldoAFavor: 0 }];
+      const cl = (kc.estado() as unknown as { clientes: Record<string, { nombres: string }> }).clientes[id];
+      return { id, saldo: x.saldoAFavor, nombres: cl?.nombres ?? '' };
+    },
+    null,
+  );
+  expect(c.saldo).toBeGreaterThan(0);
+  await irA(`/panel/pos?cliente=${c.id}`);
+  await esperarDatos(page);
+  await expect(page.getByTestId('pos-cliente-nombre')).toContainText(c.nombres);
+  // El parámetro se consume: recargar no vuelve a precargar.
+  await expect(page).not.toHaveURL(/cliente=/);
+  await agregarChino(page);
+  await expect(page.getByTestId('pos')).toContainText('Sale del saldo a favor del cliente.');
+  // Un id que no existe abre con Consumidor final y avisa.
+  await irA('/panel/pos?cliente=cl_no_existe');
+  await esperarDatos(page);
+  await expect(page.getByText('Ese cliente ya no está')).toBeVisible();
+  expect(errores).toEqual([]);
+});

@@ -62,7 +62,9 @@ export default function Ventas() {
   const estado = useEstadoDominio();
   const esVendedor = rol === 'vendedor';
   const [densidad, setDensidad] = useDensidadTabla('ventas');
-  const [texto, setTexto] = useState('');
+  // La búsqueda viaja a la URL (`?texto=`) como el resto de filtros; el campo usa su propio estado para no esperar
+  // a la navegación en cada tecla.
+  const [texto, setTextoLocal] = useState(params.texto ?? '');
   const textoDiferido = useDeferredValue(texto);
 
   const fechaResaltada = useSel(selFechaVenta, { ventaId: params.resaltar ?? '' });
@@ -95,7 +97,14 @@ export default function Ventas() {
 
   const cambiar = (c: Partial<ParamsVentas>) =>
     navigate(rutas.ventas(paramsConCambios(params, c)), { replace: true });
-  const limpiar = () => navigate(rutas.ventas(), { replace: true });
+  const limpiar = () => {
+    setTextoLocal('');
+    navigate(rutas.ventas(), { replace: true });
+  };
+  const setTexto = (t: string) => {
+    setTextoLocal(t);
+    navigate(rutas.ventas(paramsConCambios(params, { texto: t.trim() ? t : null })), { replace: true });
+  };
 
   // Enlace profundo a una venta que no está (o quedó fuera de los filtros): la pantalla se muestra sin el efecto.
   useEffect(() => {
@@ -112,10 +121,7 @@ export default function Ventas() {
       accion={
         <Button
           variante="secondary"
-          onClick={() => {
-            setTexto('');
-            limpiar();
-          }}
+          onClick={limpiar}
         >
           {TEXTOS.lista.limpiar}
         </Button>

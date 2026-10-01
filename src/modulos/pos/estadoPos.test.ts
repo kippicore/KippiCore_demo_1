@@ -72,4 +72,17 @@ describe('pagos y tipo de venta', () => {
     expect(s.vendedorId).toBe('em_x');
     expect(s.cliente.tipo).toBe('consumidor');
   });
+
+  it('saldo a favor precargado: cubre todo si alcanza; si no, paga lo que tiene y el resto va en efectivo', () => {
+    const cliente = { tipo: 'existente' as const, id: 'cl_1' };
+    const alcanza = aplicar([{ t: 'cliente', cliente }, { t: 'pagosSaldoFavor', saldo: 300_000, total: 189_900 }]);
+    expect(alcanza.pagos.map((p) => [p.medio, p.valor])).toEqual([['saldo_a_favor', null]]);
+    const falta = aplicar([{ t: 'pagosSaldoFavor', saldo: 100_000, total: 189_900 }], alcanza);
+    expect(falta.pagos.map((p) => [p.medio, p.valor])).toEqual([
+      ['saldo_a_favor', 100_000],
+      ['efectivo', null],
+    ]);
+    // Sin cambios, el estado es el mismo (no re-renderiza en bucle).
+    expect(reducirPos(falta, { t: 'pagosSaldoFavor', saldo: 100_000, total: 250_000 })).toBe(falta);
+  });
 });

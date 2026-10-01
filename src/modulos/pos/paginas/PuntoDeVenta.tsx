@@ -1,9 +1,10 @@
 import { Gift, MapPin, Undo2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import type { Id } from '@/dominio/tipos';
 import { sumarDias } from '@/dominio/reglas/fechas';
 import { rutas } from '@/app/rutas';
+import { useParamsRuta } from '@/app/useParamsRuta';
 import { useAcciones, useAhora, useDinero, useEstadoDominio, useFiltroLocal, useRolActivo, useSel, useUsuarioActivo } from '@/estado';
 import {
   existencia,
@@ -27,7 +28,7 @@ import {
   valoresPagos,
 } from '../calculos';
 import { efectosPos, type EfectoPos } from '../efectos';
-import { ESTADO_INICIAL, enCarrito, reducirPos } from '../estadoPos';
+import { ESTADO_INICIAL, enCarrito, reducirPos, type AccionPos } from '../estadoPos';
 import { selBonoPorCodigo, selSolicitudesDescuento, selVendedoresPos, type SolicitudDescuento } from '../selectores';
 import { AvisoDescuento, DialogoAprobacion } from '../componentes/Aprobacion';
 import { Carrito } from '../componentes/Carrito';
@@ -66,7 +67,24 @@ export default function PuntoDeVenta() {
   const local = e.locales[localId];
   const selectorLocal = contexto === 'todos';
 
-  const [s, despachar] = useReducer(reducirPos, ESTADO_INICIAL);
+  // `?cliente=<id>` (el cambio de Ventas): la venta abre con ese cliente y, si tiene saldo a favor, con el saldo como
+  // primer medio de pago mientras no se toque el pago. El parámetro se quita de la URL al leerlo.
+  const params = useParamsRuta('pos');
+  const navegar = useNavigate();
+  const [clienteUrl] = useState(() => {
+    const id = params.cliente;
+    return id && e.clientes[id] && !e.clientes[id]?.eliminadoEn ? id : null;
+  });
+  const [s, despachar] = useReducer(reducirPos, ESTADO_INICIAL, (ini) =>
+    clienteUrl ? { ...ini, cliente: { tipo: 'existente' as const, id: clienteUrl } } : ini,
+  );
+  const [saldoPrecargado, setSaldoPrecargado] = useState(clienteUrl !== null);
+  useEffect(() => {
+    if (!params.cliente) return;
+    if (!clienteUrl) avisar({ tipo: 'info', texto: 'Ese cliente ya no está: la venta abre con Consumidor final.' });
+    navegar(rutas.pos(), { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al llegar
+  }, []);
   const [productoId, setProductoId] = useState<Id | null>(null);
   const [ultimoEscaneo, setUltimoEscaneo] = useState<string | null>(null);
   const [exito, setExito] = useState<{ ventaId: Id; efectos: EfectoPos[] } | null>(null);
@@ -106,6 +124,17 @@ export default function PuntoDeVenta() {
 
   const clienteExistente = s.cliente.tipo === 'existente' ? e.clientes[s.cliente.id] : null;
   const saldoAFavor = s.cliente.tipo === 'existente' ? (selMetricasClientes(e, { hoy })[s.cliente.id]?.saldoAFavor ?? 0) : 0;
+  // Cliente que llegó por `?cliente=` con saldo a favor: el saldo cubre lo que alcance y el resto va en efectivo,
+  // hasta que se toque el pago o se cambie el cliente.
+  const conSaldoPrecargado =
+    saldoPrecargado && s.tipo === 'contado' && saldoAFavor > 0 && s.cliente.tipo === 'existente' && s.cliente.id === clienteUrl;
+  useEffect(() => {
+    if (conSaldoPrecargado) despachar({ t: 'pagosSaldoFavor', saldo: saldoAFavor, total: totales.total });
+  }, [conSaldoPrecargado, saldoAFavor, totales.total]);
+  const despacharPago = (a: AccionPos) => {
+    setSaldoPrecargado(false);
+    despachar(a);
+  };
   const identificado = s.cliente.tipo !== 'consumidor';
 
   // Aprobación de descuento (solo el vendedor la necesita).
@@ -359,6 +388,7 @@ export default function PuntoDeVenta() {
                 cliente={s.cliente}
                 alCliente={(c) => {
                   setErrorCliente(null);
+                  setSaldoPrecargado(false);
                   despachar({ t: 'cliente', cliente: c });
                 }}
                 errorCliente={errorCliente}
@@ -419,7 +449,7 @@ export default function PuntoDeVenta() {
                 maxFecha={maxFecha}
                 saldoAFavor={clienteExistente ? saldoAFavor : 0}
                 alTipo={cambiarTipo}
-                despachar={despachar}
+                despachar={despacharPago}
               />
               {s.pagos.some((p) => p.medio === 'efectivo') && !cajaAbierta && (
                 <p role="status" className="flex flex-wrap items-center gap-2 t-small text-ink-2" data-testid="pos-aviso-caja">

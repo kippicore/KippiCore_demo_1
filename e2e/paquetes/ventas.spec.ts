@@ -298,6 +298,8 @@ test.describe('Ventas · lista', () => {
     ).filas[4000]!;
     await page.getByPlaceholder('Buscar venta, cliente o vendedor').fill(alguna.numero);
     await expect(page.locator('[data-fila]')).toHaveCount(1);
+    // La búsqueda viaja a la URL (?texto=) como los demás filtros.
+    await expect(page).toHaveURL(new RegExp(`texto=${alguna.numero}`));
     const unaSola = await sel<{ totales: Totales }>(page, 'selVentas', {
       desde: historial.desde,
       hasta: historial.hasta,
@@ -305,6 +307,18 @@ test.describe('Ventas · lista', () => {
       texto: alguna.numero,
     });
     await esperarTotales(page, unaSola.totales);
+    expect(errores, errores.join('\n')).toEqual([]);
+  });
+
+  test('?texto= abre la lista ya buscada', async ({ page, irA }) => {
+    const errores = vigilarConsola(page);
+    await irA('/panel/ventas');
+    await esperarDatos(page);
+    const una = (await sel<{ filas: { numero: string }[] }>(page, 'selVentas', { desde: '2026-09-01', hasta: HOY, localId: 'todos' })).filas[3]!;
+    await irA(`/panel/ventas?texto=${una.numero}`);
+    await esperarDatos(page);
+    await expect(page.getByPlaceholder('Buscar venta, cliente o vendedor')).toHaveValue(una.numero);
+    await expect(page.locator('[data-fila]')).toHaveCount(1);
     expect(errores, errores.join('\n')).toEqual([]);
   });
 
