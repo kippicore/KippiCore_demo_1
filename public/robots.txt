@@ -1,0 +1,15 @@
+# Demo privada de KippiCore: no se indexa, pero se permite la vista previa del enlace.
+User-agent: WhatsApp
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: *
+Disallow: /

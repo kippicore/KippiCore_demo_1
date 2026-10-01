@@ -1,0 +1,10 @@
+/* Base mínima de fase 2 (F2-A1). F2-C la reemplaza con tokens.css y la base completa (8.14). */
+@import 'tailwindcss';
+@import '@fontsource-variable/figtree';
+
+html {
+  font-family: 'Figtree Variable', system-ui, sans-serif;
+  font-size: 15px;
+  color: #0a0a0a;
+  background: #fafafa;
+}
