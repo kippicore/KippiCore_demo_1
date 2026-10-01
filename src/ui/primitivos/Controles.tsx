@@ -21,6 +21,8 @@ export interface PropsCheckbox {
   deshabilitado?: boolean;
   className?: string;
   'aria-label'?: string;
+  /** Va en el control (el botón con role="checkbox"), no en el contenedor (compartidos C-D). */
+  'data-testid'?: string;
 }
 
 export function Checkbox({ etiqueta, marcado, alCambiar, deshabilitado, className, ...resto }: PropsCheckbox) {
@@ -33,6 +35,7 @@ export function Checkbox({ etiqueta, marcado, alCambiar, deshabilitado, classNam
         disabled={deshabilitado}
         onCheckedChange={(v) => alCambiar(v === true)}
         aria-label={resto['aria-label']}
+        data-testid={resto['data-testid']}
         className="peer inline-flex size-4 shrink-0 items-center justify-center rounded-none border border-control bg-surface transition-colors duration-(--dur-instant) hover:border-ink data-[state=checked]:border-ink data-[state=checked]:bg-ink data-[state=indeterminate]:border-ink data-[state=indeterminate]:bg-ink disabled:border-line disabled:bg-surface-2"
       >
         <RC.Indicator className="text-inverse">

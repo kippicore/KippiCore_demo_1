@@ -83,9 +83,12 @@ export interface PropsSelectorFecha extends PropsCampo {
   hasta?: FechaISO;
   placeholder?: string;
   enModal?: boolean;
+  /** Fecha opcional: con valor, el calendario ofrece "Quitar la fecha" y llama a esto (compartidos C-D). */
+  alBorrar?: () => void;
+  textoBorrar?: string;
 }
 
-export function SelectorFecha({ hoy, valor, alCambiar, desde, hasta, placeholder = 'Elige una fecha', enModal, ...campo }: PropsSelectorFecha) {
+export function SelectorFecha({ hoy, valor, alCambiar, desde, hasta, placeholder = 'Elige una fecha', enModal, alBorrar, textoBorrar = 'Quitar la fecha', ...campo }: PropsSelectorFecha) {
   const id = useId();
   const [abierto, setAbierto] = useState(false);
   return (
@@ -114,6 +117,20 @@ export function SelectorFecha({ hoy, valor, alCambiar, desde, hasta, placeholder
               formatters={formatters}
               components={componentes}
             />
+            {alBorrar && valor && (
+              <div className="mt-3 border-t border-line-soft pt-3">
+                <button
+                  type="button"
+                  className="t-label font-bold text-ink underline-offset-4 hover:underline"
+                  onClick={() => {
+                    alBorrar();
+                    setAbierto(false);
+                  }}
+                >
+                  {textoBorrar}
+                </button>
+              </div>
+            )}
           </RP.Content>
         </RP.Portal>
       </RP.Root>

@@ -190,24 +190,19 @@ export function CamposContrato({ borrador: b, alCambiar, alPerderFoco, errores, 
         data-testid="personal-esquema"
       />
       <SelectorFecha etiqueta="Empieza el" hoy={hoy} valor={b.inicio} alCambiar={(f) => alCambiar({ inicio: f }, 'inicio')} error={errores.inicio} desde={desde} enModal={enModal} />
-      <div>
-        <SelectorFecha
-          etiqueta="Termina el"
-          opcional
-          hoy={hoy}
-          valor={b.fin}
-          alCambiar={(f) => alCambiar({ fin: f }, 'fin')}
-          error={errores.fin}
-          desde={b.inicio ?? undefined}
-          enModal={enModal}
-          ayuda={b.fin ? undefined : laboral && b.modalidadLaboral === 'fijo' ? 'En un contrato a término fijo, la fecha final.' : 'Sin fecha final.'}
-        />
-        {b.fin && (
-          <button type="button" className="mt-1.5 t-small font-bold text-ink underline underline-offset-4" onClick={() => alCambiar({ fin: null }, 'fin')}>
-            Quitar la fecha final
-          </button>
-        )}
-      </div>
+      <SelectorFecha
+        etiqueta="Termina el"
+        opcional
+        hoy={hoy}
+        valor={b.fin}
+        alCambiar={(f) => alCambiar({ fin: f }, 'fin')}
+        alBorrar={() => alCambiar({ fin: null }, 'fin')}
+        textoBorrar="Quitar la fecha final"
+        error={errores.fin}
+        desde={b.inicio ?? undefined}
+        enModal={enModal}
+        ayuda={b.fin ? undefined : laboral && b.modalidadLaboral === 'fijo' ? 'En un contrato a término fijo, la fecha final.' : 'Sin fecha final.'}
+      />
       <CostoDelContrato b={b} parametros={parametros} />
     </div>
   );

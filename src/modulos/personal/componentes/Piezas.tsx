@@ -115,11 +115,9 @@ export function InsigniasPersona({ tipo, riesgo, retirado, tamano = 'sm' }: { ti
         </Badge>
       )}
       {riesgo && (
-        <span data-testid="personal-insignia-riesgo">
-          <Badge tono={ESTADOS_PERSONAL.riesgo_contrato_realidad.tono} tamano={tamano}>
-            {ESTADOS_PERSONAL.riesgo_contrato_realidad.etiqueta}
-          </Badge>
-        </span>
+        <Badge tono={ESTADOS_PERSONAL.riesgo_contrato_realidad.tono} tamano={tamano} data-testid="personal-insignia-riesgo">
+          {ESTADOS_PERSONAL.riesgo_contrato_realidad.etiqueta}
+        </Badge>
       )}
       {retirado && (
         <Badge tono={ESTADOS_PERSONAL.retirado.tono} tamano={tamano}>

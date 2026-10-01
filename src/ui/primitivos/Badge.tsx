@@ -31,13 +31,15 @@ export interface PropsBadge {
   children: ReactNode;
   className?: string;
   title?: string;
+  'data-testid'?: string;
 }
 
-export function Badge({ tono = 'neutral', tamano = 'md', icono, children, className, title }: PropsBadge) {
+export function Badge({ tono = 'neutral', tamano = 'md', icono, children, className, title, ...resto }: PropsBadge) {
   const t = TONOS[tono];
   return (
     <span
       title={title}
+      data-testid={resto['data-testid']}
       className={cn(
         'inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-none px-2 t-eyebrow tracking-[0.06em]',
         tamano === 'sm' ? 'h-5' : 'h-6',
@@ -53,9 +55,9 @@ export function Badge({ tono = 'neutral', tamano = 'md', icono, children, classN
 }
 
 /** Insignia desde una entrada del mapa canónico: `<BadgeEstado estado={ESTADOS_CAJA.cuadro} />`. */
-export function BadgeEstado({ estado, tamano, icono }: { estado: EstiloEstado; tamano?: 'sm' | 'md'; icono?: LucideIcon }) {
+export function BadgeEstado({ estado, tamano, icono, ...resto }: { estado: EstiloEstado; tamano?: 'sm' | 'md'; icono?: LucideIcon; 'data-testid'?: string }) {
   return (
-    <Badge tono={estado.tono} tamano={tamano} icono={icono}>
+    <Badge tono={estado.tono} tamano={tamano} icono={icono} data-testid={resto['data-testid']}>
       {estado.etiqueta}
     </Badge>
   );

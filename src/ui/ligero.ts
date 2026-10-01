@@ -8,7 +8,7 @@ export { Icono, type TamanoIcono } from './primitivos/Icono';
 export { Button, BotonEnlace, clasesBoton, type VarianteBoton, type TamanoBoton } from './primitivos/Button';
 export { Badge, BadgeEstado, PuntoEstado } from './primitivos/Badge';
 export { EmptyState, Skeleton, FilasEsqueleto, Retrasado } from './primitivos/Estados';
-export { Avatar, GrupoAvatares, MuestraColor, CajaTalla, ChipFiltro, BarraProgreso, Stepper, ListaQueCambio, MarcaAguaDocumento, iniciales } from './primitivos/Piezas';
+export { Avatar, GrupoAvatares, MuestraColor, CajaTalla, ChipFiltro, BarraProgreso, Stepper, ListaQueCambio, MarcaAguaDocumento, iniciales, type FilaCambio } from './primitivos/Piezas';
 export { Segmentado } from './primitivos/Segmentado';
 export { Timeline, TimelineCompacta, pasosImportacion } from './primitivos/Timeline';
 export { Toaster, avisar, quitarAviso, type TipoAviso } from './primitivos/Toast';

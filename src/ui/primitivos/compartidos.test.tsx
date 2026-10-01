@@ -1,6 +1,10 @@
 import { act, fireEvent, render } from '@testing-library/react';
 import { StrictMode, createRef, useState } from 'react';
 import { Cifra } from '../texto/Cifra';
+import { anchoEjeY } from '../graficos/GraficoBase';
+import { Badge, BadgeEstado } from './Badge';
+import { Checkbox } from './Controles';
+import { SelectorFecha } from './DatePicker';
 import { InputNumero } from './Input';
 import { BotonAccionesFila, Table } from './Table';
 
@@ -81,5 +85,39 @@ describe('componentes compartidos (oleadas A y B)', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+/** Pedidos de las oleadas C y D (docs/informes/pendientes_compartidos_CD.md). */
+describe('componentes compartidos (oleadas C y D)', () => {
+  it('Badge, BadgeEstado y Checkbox reenvían data-testid (el Checkbox, al control con role="checkbox")', () => {
+    const { getByTestId } = render(
+      <>
+        <Badge data-testid="b">Riesgo</Badge>
+        <BadgeEstado estado={{ tono: 'success', etiqueta: 'Cuadró' }} data-testid="be" />
+        <Checkbox etiqueta="Acepto" marcado={false} alCambiar={() => {}} data-testid="c" />
+      </>,
+    );
+    expect(getByTestId('b').textContent).toBe('Riesgo');
+    expect(getByTestId('be').textContent).toBe('Cuadró');
+    expect(getByTestId('c').getAttribute('role')).toBe('checkbox');
+  });
+
+  it('SelectorFecha opcional ofrece "Quitar la fecha" cuando hay una elegida', () => {
+    const borrar = vi.fn();
+    const { getByRole, queryByRole, rerender } = render(<SelectorFecha etiqueta="Termina el" hoy="2026-09-30" valor="2026-12-31" alCambiar={() => {}} alBorrar={borrar} textoBorrar="Quitar la fecha final" />);
+    fireEvent.click(getByRole('button', { name: /Termina el/ }));
+    fireEvent.click(getByRole('button', { name: 'Quitar la fecha final' }));
+    expect(borrar).toHaveBeenCalledTimes(1);
+    // Sin fecha no hay nada que quitar.
+    rerender(<SelectorFecha etiqueta="Termina el" hoy="2026-09-30" valor={null} alCambiar={() => {}} alBorrar={borrar} textoBorrar="Quitar la fecha final" />);
+    fireEvent.click(getByRole('button', { name: /Termina el/ }));
+    expect(queryByRole('button', { name: 'Quitar la fecha final' })).toBeNull();
+  });
+
+  it('el eje Y del gráfico se ensancha para "US$ 8 mil" y "CN¥ 60 mil" (antes 56 px fijos)', () => {
+    expect(anchoEjeY([0, 4000, 8000], (n) => `US$ ${n / 1000} mil`)).toBeGreaterThanOrEqual(64);
+    expect(anchoEjeY([0, 60_000], (n) => `CN¥ ${n / 1000} mil`)).toBeGreaterThanOrEqual(70);
+    expect(anchoEjeY([0, 10], (n) => `$ ${n} M`)).toBeLessThanOrEqual(56);
   });
 });
