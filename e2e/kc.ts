@@ -6,7 +6,26 @@ import type { Page } from '@playwright/test';
  * otros módulos por aquí (PLAN 5.16, 9.1.9).
  */
 export async function esperarDatos(page: Page, timeout = 30_000): Promise<void> {
-  await page.waitForFunction(() => typeof (globalThis as unknown as { __kc?: unknown }).__kc === 'object', null, { timeout });
+  try {
+    // Sondeo por intervalo (no por requestAnimationFrame: una pestaña sin pintar no lo dispara).
+    await page.waitForFunction(() => typeof (globalThis as unknown as { __kc?: unknown }).__kc === 'object', null, {
+      timeout,
+      polling: 100,
+    });
+  } catch (e) {
+    const diagnostico = await page
+      .evaluate(() => {
+        const g = globalThis as unknown as { __kcDatos?: { getState: () => { fase: string } }; location: Location };
+        return {
+          url: g.location.href,
+          listo: document.readyState,
+          visible: document.visibilityState,
+          fase: g.__kcDatos?.getState().fase ?? null,
+        };
+      })
+      .catch(() => null);
+    throw new Error(`window.__kc no apareció: ${JSON.stringify(diagnostico)} · ${(e as Error).message}`);
+  }
   await page.evaluate(async () => {
     const kc = (globalThis as unknown as { __kc: { listo: () => Promise<unknown> } }).__kc;
     await kc.listo();
