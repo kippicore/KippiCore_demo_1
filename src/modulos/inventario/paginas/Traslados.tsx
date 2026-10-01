@@ -57,15 +57,26 @@ export default function Traslados() {
       id: 'numero',
       encabezado: 'Traslado',
       ordenar: (f) => f.traslado.numero,
-      celda: (f) => <span className="t-ref font-bold">{f.traslado.numero}</span>,
+      ancho: 110,
+      celda: (f) => <span className="t-ref whitespace-nowrap font-bold">{f.traslado.numero}</span>,
     },
-    { id: 'fecha', encabezado: 'Solicitado', ordenar: (f) => f.traslado.fechas.solicitado, celda: (f) => <Fecha valor={f.traslado.fechas.solicitado} formato="fechaHora" /> },
+    {
+      id: 'fecha',
+      encabezado: 'Solicitado',
+      ancho: 160,
+      ordenar: (f) => f.traslado.fechas.solicitado,
+      celda: (f) => (
+        <span className="whitespace-nowrap">
+          <Fecha valor={f.traslado.fechas.solicitado} formato="fechaHora" />
+        </span>
+      ),
+    },
     {
       id: 'ruta',
       encabezado: 'Ruta',
       ordenar: (f) => `${f.origen}${f.destino}`,
       celda: (f) => (
-        <span className="inline-flex items-center gap-2">
+        <span className="inline-flex items-center gap-2 whitespace-nowrap">
           {f.origen}
           <ArrowRight size={14} aria-hidden className="text-ink-2" />
           {f.destino}
@@ -73,8 +84,8 @@ export default function Traslados() {
       ),
     },
     { id: 'prendas', encabezado: 'Prendas', truncar: true, celda: (f) => f.resumen },
-    { id: 'unidades', encabezado: 'Unidades', numerica: true, ordenar: (f) => f.unidades, celda: (f) => entero(f.unidades) },
-    { id: 'solicito', encabezado: 'Solicitó', ordenar: (f) => f.solicitante, celda: (f) => f.solicitante },
+    { id: 'unidades', encabezado: 'Unidades', numerica: true, ancho: 90, ordenar: (f) => f.unidades, celda: (f) => entero(f.unidades) },
+    { id: 'solicito', encabezado: 'Solicitó', ancho: 110, ordenar: (f) => f.solicitante, celda: (f) => f.solicitante },
     {
       id: 'estado',
       encabezado: 'Estado',

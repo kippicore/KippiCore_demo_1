@@ -41,7 +41,7 @@ export default function Valorizacion() {
   const inmovil = useMemo(() => ({ unidades: sinMovimiento.reduce((a, x) => a + x.unidades, 0), aCosto: sinMovimiento.reduce((a, x) => a + x.aCosto, 0) }), [sinMovimiento]);
 
   const columnasLocal: ColumnaTabla<FilaLocal>[] = [
-    { id: 'local', encabezado: 'Local', ordenar: (f) => f.nombre, celda: (f) => <span className="font-semibold">{f.nombre}</span> },
+    { id: 'local', encabezado: 'Local', ordenar: (f) => f.nombre, celda: (f) => <span className="whitespace-nowrap font-semibold">{f.nombre}</span> },
     { id: 'unidades', encabezado: 'Unidades', numerica: true, ordenar: (f) => f.unidades, celda: (f) => entero(f.unidades) },
     { id: 'costo', encabezado: 'A costo', numerica: true, ordenar: (f) => f.aCosto, celda: (f) => <Dinero valor={f.aCosto} /> },
     { id: 'precio', encabezado: 'A precio de venta', numerica: true, ordenar: (f) => f.aPrecio, celda: (f) => <Dinero valor={f.aPrecio} /> },
@@ -102,23 +102,39 @@ export default function Valorizacion() {
       />
       <p className="mt-2 t-small text-muted">El precio de venta incluye el IVA. Valores de {nombreLocal}.</p>
 
+      <section className="mt-10" aria-labelledby="t-val-locales">
+        <h2 id="t-val-locales" className="mb-3 t-h2 text-ink">
+          Por local
+        </h2>
+        <Table
+          columnas={columnasLocal}
+          filas={v.porLocal}
+          clave={(f) => f.localId}
+          porPagina={0}
+          sustantivo={['local', 'locales']}
+          etiqueta="Valorización por local"
+          totales={{ unidades: entero(v.total.unidades), costo: <Dinero valor={v.total.aCosto} />, precio: <Dinero valor={v.total.aPrecio} /> }}
+          data-testid="tabla-valorizacion-locales"
+        />
+      </section>
+
       <div className="mt-10 grid grid-cols-12 gap-6">
-        <section className="col-span-12 xl:col-span-7" aria-labelledby="t-val-locales">
-          <h2 id="t-val-locales" className="mb-3 t-h2 text-ink">
-            Por local
+        <section className="col-span-12 xl:col-span-5" aria-labelledby="t-val-cat">
+          <h2 id="t-val-cat" className="mb-3 t-h2 text-ink">
+            Por categoría
           </h2>
           <Table
-            columnas={columnasLocal}
-            filas={v.porLocal}
-            clave={(f) => f.localId}
+            columnas={columnasCategoria}
+            filas={categorias}
+            clave={(f) => f.categoria}
             porPagina={0}
-            sustantivo={['local', 'locales']}
-            etiqueta="Valorización por local"
+            sustantivo={['categoría', 'categorías']}
+            etiqueta="Valorización por categoría"
             totales={{ unidades: entero(v.total.unidades), costo: <Dinero valor={v.total.aCosto} />, precio: <Dinero valor={v.total.aPrecio} /> }}
-            data-testid="tabla-valorizacion-locales"
+            data-testid="tabla-valorizacion-categorias"
           />
         </section>
-        <Card className="col-span-12 xl:col-span-5" titulo="Valor por categoría">
+        <Card className="col-span-12 xl:col-span-7" titulo="Valor por categoría">
           <GraficoDinero
             tipo="barras"
             datos={categorias.map((c) => ({ categoria: c.nombre, costo: c.aCosto, precio: c.aPrecio }))}
@@ -127,69 +143,49 @@ export default function Valorizacion() {
               { clave: 'costo', nombre: 'A costo', color: 1 },
               { clave: 'precio', nombre: 'A precio de venta', color: 3 },
             ]}
-            alto={240}
+            alto={340}
           />
         </Card>
       </div>
-
-      <section className="mt-10" aria-labelledby="t-val-cat">
-        <h2 id="t-val-cat" className="mb-3 t-h2 text-ink">
-          Por categoría
-        </h2>
-        <Table
-          columnas={columnasCategoria}
-          filas={categorias}
-          clave={(f) => f.categoria}
-          porPagina={0}
-          sustantivo={['categoría', 'categorías']}
-          etiqueta="Valorización por categoría"
-          totales={{ unidades: entero(v.total.unidades), costo: <Dinero valor={v.total.aCosto} />, precio: <Dinero valor={v.total.aPrecio} /> }}
-          data-testid="tabla-valorizacion-categorias"
-        />
-      </section>
 
       <section className="mt-10" aria-labelledby="t-val-salud">
         <h2 id="t-val-salud" className="mb-1 t-h2 text-ink">
           Cuánto de ese valor no se mueve
         </h2>
         <p className="mb-4 max-w-[72ch] t-body text-muted">En toda la tienda: referencias con existencias y sin una sola venta en los últimos 90 días.</p>
-        <div className="grid grid-cols-12 gap-6">
-          <div className="col-span-12 xl:col-span-4">
-            <FranjaResumen
-              cifras={[
-                { etiqueta: 'Sin movimiento', valor: <Dinero valor={inmovil.aCosto} corta /> },
-                { etiqueta: 'Días de inventario', valor: numero(dias.dias, 0) },
-              ]}
-              className="md:grid-cols-2"
-            />
-            <p className="mt-3 t-small text-muted num">
-              {entero(sinMovimiento.length)} referencias y {entero(inmovil.unidades)} unidades. Los días de inventario son las existencias entre la venta diaria de los últimos 90 días.
-            </p>
-          </div>
-          <div className="col-span-12 xl:col-span-8">
-            <Table
-              columnas={[
-                {
-                  id: 'ref',
-                  encabezado: 'Referencia',
-                  celda: (f) => (
-                    <Link to={rutas.producto(f.referencia)} className="block truncate underline-offset-4 hover:underline">
-                      <span className="font-semibold text-ink">{f.nombre}</span> <span className="t-ref text-muted">{f.referencia}</span>
-                    </Link>
-                  ),
-                },
-                { id: 'unidades', encabezado: 'Unidades', numerica: true, celda: (f) => entero(f.unidades) },
-                { id: 'costo', encabezado: 'A costo', numerica: true, celda: (f) => <Dinero valor={f.aCosto} /> },
-                { id: 'ultima', encabezado: 'Última venta', celda: (f) => (f.ultimaVenta ? <Fecha valor={f.ultimaVenta} /> : <span className="text-muted">Nunca</span>) },
-              ]}
-              filas={sinMovimiento.slice(0, 10)}
-              clave={(f) => f.productoId}
-              porPagina={0}
-              sustantivo={['referencia', 'referencias']}
-              etiqueta="Referencias sin movimiento"
-              data-testid="tabla-sin-movimiento"
-            />
-          </div>
+        <FranjaResumen
+          cifras={[
+            { etiqueta: 'Valor sin movimiento', valor: <Dinero valor={inmovil.aCosto} corta /> },
+            { etiqueta: 'Referencias sin ventas', valor: entero(sinMovimiento.length) },
+            { etiqueta: 'Unidades quietas', valor: entero(inmovil.unidades) },
+            { etiqueta: 'Días de inventario', valor: numero(dias.dias, 0) },
+          ]}
+        />
+        <p className="mt-2 t-small text-muted">Los días de inventario son las existencias entre la venta diaria de los últimos 90 días.</p>
+        <div className="mt-4">
+          <Table
+            columnas={[
+              {
+                id: 'ref',
+                encabezado: 'Referencia',
+                truncar: true,
+                celda: (f) => (
+                  <Link to={rutas.producto(f.referencia)} className="underline-offset-4 hover:underline">
+                    <span className="font-semibold text-ink">{f.nombre}</span> <span className="t-ref text-muted">{f.referencia}</span>
+                  </Link>
+                ),
+              },
+              { id: 'unidades', encabezado: 'Unidades', numerica: true, celda: (f) => entero(f.unidades) },
+              { id: 'costo', encabezado: 'A costo', numerica: true, celda: (f) => <Dinero valor={f.aCosto} /> },
+              { id: 'ultima', encabezado: 'Última venta', celda: (f) => (f.ultimaVenta ? <Fecha valor={f.ultimaVenta} /> : <span className="text-muted">Nunca</span>) },
+            ]}
+            filas={sinMovimiento.slice(0, 10)}
+            clave={(f) => f.productoId}
+            porPagina={0}
+            sustantivo={['referencia', 'referencias']}
+            etiqueta="Referencias sin movimiento"
+            data-testid="tabla-sin-movimiento"
+          />
         </div>
       </section>
     </div>

@@ -116,11 +116,12 @@ export function FormularioProducto({ producto, alGuardar, alCancelar }: PropsFor
   const variantesNuevas = v.tallas.length * v.colorIds.length;
 
   const elegirCategoria = (c: Categoria) => {
+    if (!(c in TIPOS_POR_CATEGORIA)) return;
     const tipos = TIPOS_POR_CATEGORIA[c];
     const tipo = tipos.length === 1 ? (tipos[0] as TipoPrenda) : '';
     setV((x) => ({ ...x, categoria: c, tipoPrenda: tipo, curva: tipo ? CURVA_POR_TIPO[tipo] : x.curva, tallas: [] }));
   };
-  const elegirTipo = (t: TipoPrenda) => setV((x) => ({ ...x, tipoPrenda: t, curva: CURVA_POR_TIPO[t], tallas: [] }));
+  const elegirTipo = (t: TipoPrenda) => !(t in CURVA_POR_TIPO) ? undefined : setV((x) => ({ ...x, tipoPrenda: t, curva: CURVA_POR_TIPO[t], tallas: [] }));
   const alternar = (lista: string[], valor: string) => (lista.includes(valor) ? lista.filter((x) => x !== valor) : [...lista, valor]);
 
   const guardar = () => {
