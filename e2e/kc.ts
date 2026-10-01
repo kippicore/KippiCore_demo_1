@@ -15,8 +15,17 @@ export async function esperarDatos(page: Page, timeout = 30_000): Promise<void> 
   } catch (e) {
     const diagnostico = await page
       .evaluate(() => {
-        const g = globalThis as unknown as { __kcDatos?: { getState: () => { fase: string } }; location: Location };
+        const g = globalThis as unknown as {
+          __kcDatos?: { getState: () => { fase: string } };
+          __kcInstalacion?: string;
+          location: Location;
+        };
         return {
+          kc: g.__kcInstalacion ?? 'sin pedir',
+          recursos: performance
+            .getEntriesByType('resource')
+            .filter((r) => /\/(kc|generador|selectores|acciones)-/.test(r.name))
+            .map((r) => `${r.name.split('/').pop()}:${Math.round(r.duration)}ms`),
           url: g.location.href,
           listo: document.readyState,
           visible: document.visibilityState,

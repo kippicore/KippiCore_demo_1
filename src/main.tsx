@@ -20,7 +20,22 @@ function quiereKc(): boolean {
     return false;
   }
 }
-if (quiereKc()) void import('@/estado/kc').then((m) => m.instalarKc());
+/** Estado de la instalación de `window.__kc` (diagnóstico de los e2e: e2e/kc.ts lo muestra si no aparece). */
+function marcarKc(estado: string): void {
+  (globalThis as unknown as { __kcInstalacion?: string }).__kcInstalacion = estado;
+}
+if (quiereKc()) {
+  marcarKc('importando');
+  import('@/estado/kc')
+    .then((m) => {
+      m.instalarKc();
+      marcarKc('instalado');
+    })
+    .catch((e: unknown) => {
+      marcarKc(`error: ${e instanceof Error ? e.message : String(e)}`);
+      console.error('No se pudo instalar window.__kc', e);
+    });
+}
 
 function registrarServiceWorkerAlTerminar(): void {
   if (import.meta.env.DEV || !('serviceWorker' in navigator)) return;
