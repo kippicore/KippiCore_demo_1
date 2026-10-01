@@ -126,6 +126,18 @@ test('la carga inicial no trae jsPDF ni ExcelJS (solo al exportar, 5.15)', async
   expect(pesados).toEqual([]);
 });
 
+test('el arranque de /app no trae Radix, Recharts, cmdk, dnd-kit ni qrcode (presupuesto de 2,5 s, F2-C)', async ({ page, irA }) => {
+  const js: string[] = [];
+  page.on('request', (r) => {
+    if (r.url().endsWith('.js')) js.push(new URL(r.url()).pathname);
+  });
+  await irA('/app');
+  await esperarDatos(page);
+  await expect(page.getByTestId('app-hoy')).toBeVisible();
+  const pesados = js.filter((u) => /\/assets\/(radix|graficos|codigos|dnd|tabla|LayoutEscritorio)-/.test(u));
+  expect(pesados).toEqual([]);
+});
+
 test('la guarda de rol lleva al vendedor a su inicio', async ({ page, irA }) => {
   await irA('/panel/inicio');
   await esperarDatos(page);
