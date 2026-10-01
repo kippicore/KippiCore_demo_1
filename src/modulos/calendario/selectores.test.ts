@@ -17,7 +17,9 @@ describe('selAgenda', () => {
     const compartido = selEventosCalendario(e, { desde: OCTUBRE.desde, hasta: OCTUBRE.hasta });
     const ids = new Set(agenda.map((x) => x.id));
     for (const v of compartido) expect(ids.has(v.id), v.id).toBe(true);
-    expect(agenda.length).toBeGreaterThan(compartido.length);
+    // Compartidos C-D: las obligaciones ilustrativas ya vienen del selector compartido; la agenda suma las pagadas.
+    expect(compartido.some((v) => v.fuente.tipo === 'obligacion' && v.ilustrativo)).toBe(true);
+    expect(agenda.length).toBeGreaterThanOrEqual(compartido.length);
   });
 
   it('cada origen dice de dónde viene y los derivados enlazan a su módulo', () => {

@@ -64,6 +64,10 @@ export const TXT = {
     vacioTitulo: 'Sin eventos próximos',
     vacioTexto: 'No hay citas, vencimientos ni llegadas de mercancía en los próximos 60 días.',
     verTodo: 'Ver calendario',
+    ilustrativa: 'Ilustrativa',
+    ilustrativaAyuda: 'Fecha del calendario de obligaciones; todavía no tiene cuenta por pagar. Verifica con tu contador.',
+    recordatorio: (min: number) =>
+      min % 1440 === 0 ? `Aviso ${min / 1440 === 1 ? '1 día' : `${min / 1440} días`} antes` : min % 60 === 0 ? `Aviso ${min / 60 === 1 ? '1 hora' : `${min / 60} horas`} antes` : `Aviso ${min} min antes`,
   },
   hallazgo: {
     eyebrow: 'Hallazgo de la semana',

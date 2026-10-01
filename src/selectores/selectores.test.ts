@@ -651,5 +651,21 @@ describe('alertas, narrativa, catálogo, clientes, nómina y calendario', () => 
     const prox = selProximosEventos(e, { hoy: HOY, n: 5 });
     expect(prox.length).toBe(5);
     expect(prox.every((x) => x.tipo !== 'turno')).toBe(true);
+    // Compartidos C-D: el título es solo el concepto y el saldo va aparte (monto en COP o montoOrigen en US$/CN¥).
+    for (const x of ev.filter((y) => y.fuente.tipo === 'cuenta_por_pagar')) {
+      const c = e.cuentasPorPagar[x.fuente.id];
+      expect(x.titulo).toBe(c?.concepto);
+      if (c?.moneda === 'COP') expect(x.monto).toBeGreaterThan(0);
+      else expect(x.montoOrigen).toMatch(/^(US\$|CN¥)/);
+    }
+    for (const x of ev.filter((y) => y.tipo === 'importacion')) {
+      expect(x.titulo).toMatch(/^IMP-\d{4}-\d{2} · Llega a bodega$/);
+      expect(x.detalle).toMatch(/uds\.$/);
+    }
+    // N11: la PILA del mes que viene, aún sin cuenta por pagar, sale como obligación ilustrativa.
+    const diez = selProximosEventos(e, { hoy: HOY, n: 10 });
+    const pila = diez.find((x) => x.fuente.tipo === 'obligacion' && x.titulo.includes('PILA'));
+    expect(pila?.ilustrativo).toBe(true);
+    expect(pila?.movible).toBe(false);
   });
 });

@@ -6,7 +6,7 @@ import { rutas } from '@/app/rutas';
 import { useAhora, useFiltroLocal, useSel } from '@/estado';
 import { selLocalesQueVenden, selProximosEventos } from '@/selectores';
 import { DIAS_CORTOS, hora, relativaDias } from '@/lib/formato';
-import { Card, EmptyState, EnlaceVerTodo, Icono } from '@/ui';
+import { Badge, Card, Dinero, EmptyState, EnlaceVerTodo, Icono } from '@/ui';
 import { TXT } from '../textos';
 
 /**
@@ -59,7 +59,9 @@ export function ProximosEventos() {
 function FilaEvento({ evento: e, hoy, local }: { evento: EventoVista; hoy: string; local: string | null }) {
   const dia = e.inicio.slice(0, 10);
   const cuando = relativaDias(dia, hoy);
-  const detalle = [cuando, e.todoElDia ? null : hora(e.inicio), local].filter(Boolean).join(' · ');
+  const detalle = [cuando, e.todoElDia ? null : hora(e.inicio), e.detalle, local, e.recordatorioMin !== null ? TXT.eventos.recordatorio(e.recordatorioMin) : null]
+    .filter(Boolean)
+    .join(' · ');
   return (
     <li className="border-t border-line-soft first:border-t-0" data-evento={e.id} data-tipo={e.tipo}>
       <Link to={e.enlace} className="flex items-center gap-3 py-2 hover:bg-surface-2">
@@ -71,6 +73,15 @@ function FilaEvento({ evento: e, hoy, local }: { evento: EventoVista; hoy: strin
           <span className="block truncate t-nav text-ink">{e.titulo}</span>
           <span className="block truncate t-small text-muted">{detalle}</span>
         </span>
+        {e.monto !== null ? (
+          <Dinero valor={e.monto} corta className="shrink-0 t-small text-ink-2" data-testid={`inicio-evento-monto-${e.id}`} />
+        ) : e.montoOrigen ? (
+          <span className="num shrink-0 whitespace-nowrap t-small text-ink-2">{e.montoOrigen}</span>
+        ) : e.ilustrativo ? (
+          <Badge tono="outline" tamano="sm" title={TXT.eventos.ilustrativaAyuda}>
+            {TXT.eventos.ilustrativa}
+          </Badge>
+        ) : null}
         <span className="shrink-0 text-subtle" title={ROTULO[e.tipo]}>
           <Icono icono={ICONO[e.tipo]} tamano={16} />
           <span className="sr-only">{ROTULO[e.tipo]}</span>

@@ -4,11 +4,9 @@ import { ESTADOS_POR_PAGAR, TONO_ESTADO_IMPORTACION } from '@/config/estados';
 import type { CategoriaCxP, CuentaPorPagar, EventoCalendario, FechaISO, Id, TipoEvento } from '@/dominio/tipos';
 import { estadoCxP, saldoCxP } from '@/dominio/reglas/cuentas';
 import { unidadesLinea } from '@/dominio/reglas/costeo';
-import { conjuntoFestivos } from '@/dominio/reglas/festivos';
 import { unidades } from '@/lib/formato';
 import { dineroOrigen } from '@/lib/moneda';
 import { capital, crearSelector, nombreCliente, nombreEmpleado, selEventosCalendario } from '@/selectores';
-import { obligacionesIlustrativas } from './calculos';
 import type { EventoAgenda } from './tipos';
 
 /** Selectores locales del Calendario (C3): componen `selEventosCalendario` y agregan lo que la pantalla necesita. */
@@ -27,7 +25,6 @@ const CATEGORIAS_VISIBLES: readonly CategoriaCxP[] = [
   'agente_aduanas',
   'agente_carga',
 ];
-const CATEGORIAS_OBLIGACION: readonly CategoriaCxP[] = ['impuestos', 'seguridad_social', 'prestaciones'];
 
 const base = (e: Pick<EventoAgenda, 'id' | 'tipo' | 'titulo' | 'inicio' | 'fin' | 'todoElDia' | 'localId' | 'fuente' | 'movible' | 'enlace'>): Omit<EventoAgenda, 'origen' | 'fechaOrigen'> => ({
   ...e,
@@ -56,9 +53,9 @@ function montoDeCuenta(c: Pick<CuentaPorPagar, 'moneda' | 'valor' | 'abonos'>, p
 
 /**
  * Agenda del rango: los eventos de `selEventosCalendario` (guardados, turnos, llegadas de importaciones y cuentas por
- * pagar pendientes) con su detalle, más lo que el calendario compartido no trae: las cuentas pagadas de las
- * obligaciones y los pagos grandes (para ver también lo que ya se cumplió) y las obligaciones del calendario
- * ilustrativo que todavía no tienen cuenta por pagar (PILA, prima, IVA, ICA… con fecha ilustrativa).
+ * pagar pendientes, y las obligaciones del calendario ilustrativo que todavía no tienen cuenta por pagar: PILA,
+ * prima, IVA, ICA… con fecha ilustrativa) con su detalle, más lo que el calendario compartido no trae: las cuentas
+ * pagadas de las obligaciones y los pagos grandes (para ver también lo que ya se cumplió).
  */
 export const selAgenda = crearSelector<{ desde: FechaISO; hasta: FechaISO; hoy: FechaISO; tipos?: TipoEvento[]; localId?: Id | 'todos' }, EventoAgenda[]>(
   'selAgenda',
@@ -115,14 +112,23 @@ export const selAgenda = crearSelector<{ desde: FechaISO; hasta: FechaISO; hoy: 
           estadoTono: TONO_ESTADO_IMPORTACION[i.estado],
           detalle: proveedor || null,
         });
+      } else if (v.fuente.tipo === 'obligacion') {
+        // Obligación del calendario ilustrativo sin cuenta por pagar (la arma el selector compartido).
+        r.push({
+          ...base(v),
+          enlace: rutas.flujo({ semana: v.inicio.slice(0, 10) }),
+          origen: 'obligacion',
+          fechaOrigen: v.inicio.slice(0, 10),
+          ilustrativo: true,
+          estadoTexto: 'Ilustrativa',
+          estadoTono: 'outline',
+        });
       } else {
         const c = e.cuentasPorPagar[v.fuente.id];
         if (!c) continue;
         const estado = estadoCxP(c, f.hoy);
         r.push({
           ...base(v),
-          // El título que arma el selector compartido lleva el monto en pesos: aquí va aparte, para convertirlo.
-          titulo: c.concepto,
           origen: 'cuenta',
           fechaOrigen: c.programadaPara ?? c.fechaVencimiento,
           estadoTexto: ESTADOS_POR_PAGAR[estado].etiqueta,
@@ -137,10 +143,8 @@ export const selAgenda = crearSelector<{ desde: FechaISO; hasta: FechaISO; hoy: 
     if (quiere('vencimiento')) {
       // Cuentas ya pagadas de las categorías que importan, agrupadas por concepto y fecha (la PILA se paga en dos planillas).
       const pagadas = new Map<string, CuentaPorPagar[]>();
-      const cuentasObligacion: CuentaPorPagar[] = [];
       for (const c of Object.values(e.cuentasPorPagar)) {
         if (c.eliminadoEn) continue;
-        if (CATEGORIAS_OBLIGACION.includes(c.categoria)) cuentasObligacion.push(c);
         if (saldoCxP(c) > 0 || !CATEGORIAS_VISIBLES.includes(c.categoria) || !local(c.localId)) continue;
         if (c.fechaVencimiento < f.desde || c.fechaVencimiento > f.hasta) continue;
         const clave = `${c.concepto}|${c.fechaVencimiento}|${c.localId ?? ''}`;
@@ -173,33 +177,6 @@ export const selAgenda = crearSelector<{ desde: FechaISO; hasta: FechaISO; hoy: 
         });
       }
 
-      // Calendario ilustrativo de obligaciones: solo las que aún no tienen su cuenta por pagar.
-      const anios = new Set<number>();
-      for (let a = Number(f.desde.slice(0, 4)) - 1; a <= Number(f.hasta.slice(0, 4)) + 1; a++) anios.add(a);
-      const festivos = conjuntoFestivos([...anios]);
-      for (const o of obligacionesIlustrativas(f.desde, f.hasta, e.parametros.obligaciones, festivos)) {
-        const existe = cuentasObligacion.some((c) => c.concepto.startsWith(o.nombre) && c.fechaVencimiento.slice(0, 7) === o.fecha.slice(0, 7));
-        if (existe) continue;
-        r.push({
-          ...base({
-            id: `obl:${o.clave}:${o.fecha}`,
-            tipo: 'vencimiento',
-            titulo: o.nombre,
-            inicio: `${o.fecha}T00:00:00`,
-            fin: null,
-            todoElDia: true,
-            localId: null,
-            fuente: { tipo: 'cuenta_por_pagar', id: `obl-${o.clave}-${o.fecha}` },
-            movible: false,
-            enlace: rutas.flujo({ semana: o.fecha }),
-          }),
-          origen: 'obligacion',
-          fechaOrigen: o.fecha,
-          ilustrativo: true,
-          estadoTexto: 'Ilustrativa',
-          estadoTono: 'outline',
-        });
-      }
     }
     return r.sort((a, b) => (a.inicio < b.inicio ? -1 : a.inicio > b.inicio ? 1 : a.id < b.id ? -1 : 1));
   },
