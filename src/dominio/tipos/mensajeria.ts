@@ -90,4 +90,6 @@ export interface Alerta {
   nueva: boolean;
   /** Orden en "Requiere tu atención" (2.3.3). */
   prioridad: number;
+  /** Solicitud que se puede aprobar o rechazar desde la misma alerta en el escritorio (compartidos C-D). */
+  aprobacion?: { solicitudId: Id };
 }

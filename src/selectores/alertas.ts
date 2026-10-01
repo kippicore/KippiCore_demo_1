@@ -1,4 +1,4 @@
-import type { Alerta, Categoria, FechaHoraISO, Id, Notificacion, SolicitudAprobacion } from '@/dominio/tipos';
+import type { Alerta, Categoria, EstadoDominio, FechaHoraISO, Id, Notificacion, SolicitudAprobacion } from '@/dominio/tipos';
 import { asistenciaDia } from '@/dominio/reglas/asistencia';
 import { saldoCxP } from '@/dominio/reglas/cuentas';
 import { diferenciaDias, lunesDe, minutosDeHora, sumarDias } from '@/dominio/reglas/fechas';
@@ -6,6 +6,7 @@ import { esDominicalOFestivo } from '@/dominio/reglas/festivos';
 import { retrasoDias } from '@/dominio/reglas/importaciones';
 import { NOMBRES_CATEGORIA } from '@/seed/catalogo';
 import { rutas } from '@/app/rutas';
+import { idHijo } from '@/dominio/motor/ids';
 import { crearSelector } from './memo';
 import { nombreCliente, nombreEmpleado, selTasaVigente } from './base';
 import { existencia, selDiasInventario, selEnCaminoPorVariante } from './inventario';
@@ -347,14 +348,18 @@ export const selAlertas = crearSelector<{ localId: Id | 'todos'; ahora: FechaHor
         prioridad: 10,
       });
 
-    // Notificaciones nuevas (no leídas) arriba, marcadas "Nuevo".
+    // Notificaciones nuevas (no leídas), marcadas "Nuevo". Solo las MAX_NUEVAS_ARRIBA más recientes van arriba; el
+    // resto entra después de la importación (W3), para que el stock bajo (W2), el faltante de caja (W11) y la
+    // importación sigan entre las cinco primeras (compartidos C-D).
+    const solicitudPorNotificacion = new Map<string, SolicitudAprobacion>();
+    for (const s of Object.values(e.solicitudes)) solicitudPorNotificacion.set(idHijo(s.id, 'n'), s);
     const nuevas = selNotificaciones(e, { leidas })
       .filter((x) => !x.leida && x.notificacion.tipo !== 'sistema' && diferenciaDias(x.notificacion.ts.slice(0, 10), hoy) <= 2)
-      .map(
-        ({ notificacion: x }): Alerta => ({
+      .map(({ notificacion: x }, i): Alerta => {
+        const base: Alerta = {
           id: `notificacion:${x.id}`,
           tipo: x.tipo === 'aprobacion_solicitada' ? 'aprobacion_pendiente' : 'importacion_estado',
-          modulo: x.tipo === 'venta_web' ? 'ventas' : x.tipo === 'cliente_instagram' ? 'clientes' : 'importaciones',
+          modulo: x.tipo === 'venta_web' || x.tipo === 'aprobacion_solicitada' ? 'ventas' : x.tipo === 'cliente_instagram' ? 'clientes' : 'importaciones',
           severidad: x.severidad,
           titulo: x.titulo,
           contexto: x.detalle,
@@ -362,15 +367,51 @@ export const selAlertas = crearSelector<{ localId: Id | 'todos'; ahora: FechaHor
           ts: x.ts,
           localId: null,
           nueva: true,
-          prioridad: 0,
-        }),
-      );
+          prioridad: i < MAX_NUEVAS_ARRIBA ? 0 : 3.5,
+        };
+        const sol = x.tipo === 'aprobacion_solicitada' ? solicitudPorNotificacion.get(x.id) : undefined;
+        return sol ? { ...base, ...accionAprobacion(e, sol) } : base;
+      });
     const fuera = new Set(descartadas);
-    return [...nuevas.sort((a, b) => (a.ts < b.ts ? 1 : -1)), ...r]
+    return [...nuevas, ...r]
       .filter((a) => !fuera.has(a.id) && enLocal(a.localId))
       .sort((a, b) => a.prioridad - b.prioridad || (a.ts < b.ts ? 1 : -1));
   },
 );
+
+/** Cuántas notificaciones nuevas van arriba de las alertas del guion. */
+export const MAX_NUEVAS_ARRIBA = 2;
+
+/**
+ * Acción de escritorio de una solicitud de aprobación (compartidos C-D): la notificación del dominio enlaza a la
+ * app del celular (`/app/mas/aprobar`), que desde el panel saca al dueño del escritorio. La anulación se aprueba en
+ * el detalle de la venta (con su confirmación); el descuento no tiene pantalla de escritorio (nace en el POS del
+ * vendedor), así que se aprueba en la misma alerta (`aprobacion`) y el enlace lleva a la prenda. La app (E1) arma
+ * su propia ruta por tipo.
+ */
+function accionAprobacion(e: EstadoDominio, s: SolicitudAprobacion): Pick<Alerta, 'accion' | 'aprobacion' | 'localId'> {
+  const pendiente = s.estado === 'pendiente';
+  if (s.datos.tipo === 'anulacion')
+    return {
+      accion: { texto: pendiente ? 'Revisar y aprobar' : 'Ver la venta', ruta: rutas.venta(s.datos.ventaId) },
+      aprobacion: undefined,
+      localId: e.ventas[s.datos.ventaId]?.localId ?? null,
+    };
+  if (s.datos.tipo === 'descuento') {
+    const v = e.variantes[s.datos.varianteIds[0] ?? ''];
+    const p = v ? e.productos[v.productoId] : undefined;
+    return {
+      accion: p ? { texto: 'Ver la prenda', ruta: rutas.producto(p.referencia) } : { texto: 'Ver ventas', ruta: rutas.ventas() },
+      aprobacion: pendiente ? { solicitudId: s.id } : undefined,
+      localId: s.datos.localId,
+    };
+  }
+  return {
+    accion: { texto: 'Ver el traslado', ruta: rutas.traslado(s.datos.trasladoId) },
+    aprobacion: undefined,
+    localId: null,
+  };
+}
 
 export interface NotificacionVista {
   notificacion: Notificacion;

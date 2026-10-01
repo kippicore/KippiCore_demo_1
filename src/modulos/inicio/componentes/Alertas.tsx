@@ -16,9 +16,9 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import type { Alerta, TipoAlerta } from '@/dominio/tipos';
-import { useAhora, useFiltroLocal, useSel, useSesion } from '@/estado';
-import { selAlertas } from '@/selectores';
-import { Badge, BotonIcono, Button, Card, cn, EmptyState, EnlaceVerTodo, Icono, Pista } from '@/ui';
+import { useAcciones, useAhora, useFiltroLocal, usePuede, useSel, useSesion } from '@/estado';
+import { selAlertas, selSolicitudesPendientes } from '@/selectores';
+import { avisar, Badge, BotonIcono, Button, Card, cn, EmptyState, EnlaceVerTodo, Icono, Pista } from '@/ui';
 import { alertasVisibles } from '../calculos';
 import { TXT } from '../textos';
 
@@ -119,7 +119,8 @@ function FilaAlerta({ alerta: a, primera }: { alerta: Alerta; primera: boolean }
           {a.titulo}
         </p>
         <p className="mt-0.5 t-small text-muted">{a.contexto}</p>
-        <div className="mt-1.5" onClickCapture={marcarLeida}>
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-2" onClickCapture={marcarLeida}>
+          {a.aprobacion && <BotonesAprobacion solicitudId={a.aprobacion.solicitudId} />}
           <EnlaceVerTodo a={a.accion.ruta}>{a.accion.texto}</EnlaceVerTodo>
         </div>
       </div>
@@ -134,5 +135,34 @@ function FilaAlerta({ alerta: a, primera }: { alerta: Alerta; primera: boolean }
         }}
       />
     </li>
+  );
+}
+
+/**
+ * Aprobar o rechazar una solicitud de descuento sin salir del escritorio (compartidos C-D): el descuento nace en el
+ * POS del vendedor y no tiene otra pantalla de escritorio; la app del celular sigue teniendo "Para aprobar".
+ */
+function BotonesAprobacion({ solicitudId }: { solicitudId: string }) {
+  const acciones = useAcciones();
+  const puede = usePuede();
+  const pendiente = useSel(selSolicitudesPendientes).some((s) => s.id === solicitudId);
+  if (!pendiente || !puede('aprobacion.resolver')) return null;
+  const resolver = (decision: 'aprobada' | 'rechazada') => {
+    const r = acciones.resolverAprobacion({ solicitudId, decision, nota: null });
+    if (!r.ok) {
+      avisar({ tipo: 'error', texto: r.error.mensaje });
+      return;
+    }
+    avisar({ tipo: 'exito', texto: decision === 'aprobada' ? TXT.alertas.aprobada : TXT.alertas.rechazada });
+  };
+  return (
+    <span className="flex gap-2">
+      <Button tamano="sm" onClick={() => resolver('aprobada')} data-testid={`alerta-aprobar-${solicitudId}`}>
+        {TXT.alertas.aprobar}
+      </Button>
+      <Button tamano="sm" variante="secondary" onClick={() => resolver('rechazada')} data-testid={`alerta-rechazar-${solicitudId}`}>
+        {TXT.alertas.rechazar}
+      </Button>
+    </span>
   );
 }

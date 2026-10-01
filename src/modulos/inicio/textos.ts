@@ -29,6 +29,10 @@ export const TXT = {
     vacioTexto: 'No hay nada pendiente: ni stock bajo, ni pagos por vencer, ni cierres con diferencia.',
     descartadas: (n: number) => (n === 1 ? 'Descartaste 1 alerta' : `Descartaste ${n} alertas`),
     restaurar: 'Volver a mostrarlas',
+    aprobar: 'Aprobar',
+    rechazar: 'Rechazar',
+    aprobada: 'Aprobaste el descuento: el vendedor ya puede cobrar.',
+    rechazada: 'Rechazaste el descuento. El vendedor lo ve en su punto de venta.',
   },
   locales: {
     titulo: 'Tus tres locales',

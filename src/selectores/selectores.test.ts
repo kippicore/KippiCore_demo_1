@@ -580,6 +580,14 @@ describe('alertas, narrativa, catálogo, clientes, nómina y calendario', () => 
     for (const t of ['stock_bajo', 'caja_con_diferencia', 'importacion_estado', 'pago_por_vencer', 'separado_por_vencer', 'importacion_retrasada', 'cumpleanos_vip', 'mercancia_dormida', 'riesgo_contrato_realidad'])
       expect(tipos, t).toContain(t);
     expect(a.some((x) => x.tipo === 'llegada_tarde' || x.tipo === 'inasistencia')).toBe(true);
+    // Compartidos C-D: a lo sumo dos "Nuevo" arriba; W2, W11 y W3 entre las cinco primeras; nada lleva a /app.
+    const cinco = a.slice(0, 5);
+    expect(cinco.filter((x) => x.nueva).length).toBeLessThanOrEqual(2);
+    for (const t of ['stock_bajo', 'caja_con_diferencia', 'importacion_estado']) expect(cinco.map((x) => x.tipo), t).toContain(t);
+    expect(a.filter((x) => x.accion.ruta.startsWith('/app'))).toEqual([]);
+    const aprob = a.filter((x) => x.tipo === 'aprobacion_pendiente');
+    expect(aprob.find((x) => x.aprobacion)?.accion.ruta).toMatch(/^\/panel\/inventario\//);
+    expect(aprob.find((x) => !x.aprobacion)?.accion.ruta).toMatch(/^\/panel\/ventas\/vt_/);
     const stock = a.find((x) => x.tipo === 'stock_bajo');
     expect(stock?.accion.ruta).toMatch(/^\/panel\/inventario\/HL-CAM-0142\?trasladar=/);
     expect(a.find((x) => x.tipo === 'caja_con_diferencia')?.contexto).toContain('40.000');

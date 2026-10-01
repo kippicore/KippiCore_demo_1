@@ -90,9 +90,15 @@ test.describe('Inicio (D1)', () => {
       await expect(fila).toBeVisible();
       await expect(fila.getByRole('link', { name: a.accion.texto })).toHaveAttribute('href', a.accion.ruta);
     }
-    // Las nuevas (de una acción o notificación) van arriba con su marca.
-    const nuevas = alertas.filter((a) => a.nueva).length;
-    await expect(lista.locator('[data-nueva="si"]')).toHaveCount(Math.min(nuevas, 5));
+    // Las nuevas (de una acción o notificación) llevan su marca; solo las dos más recientes van arriba, y el stock
+    // bajo (W2), el faltante de caja (W11) y la importación (W3) quedan entre las cinco primeras.
+    const nuevas = alertas.slice(0, 5).filter((a) => a.nueva).length;
+    expect(nuevas).toBeLessThanOrEqual(2);
+    await expect(lista.locator('[data-nueva="si"]')).toHaveCount(nuevas);
+    for (const tipo of ['stock_bajo', 'caja_con_diferencia', 'importacion_estado'])
+      expect(alertas.slice(0, 5).map((a) => a.tipo)).toContain(tipo);
+    // Ninguna alerta saca al dueño del escritorio.
+    expect(alertas.every((a) => !a.accion.ruta.startsWith('/app'))).toBe(true);
     await expect(page.locator('[data-pista="inicio.alertas"]')).toHaveCount(1);
     // Ver todas.
     await lista.getByTestId('inicio-alertas-ver-todas').click();
@@ -107,6 +113,32 @@ test.describe('Inicio (D1)', () => {
     await expect(page.getByTestId('inicio-alertas-total')).toHaveText(String(alertas.length - 1));
     const dominio = await conKc(page, (kc) => kc.eventosDominio().length);
     expect(dominio).toBe(0);
+  });
+
+  test('el descuento que pide un vendedor se aprueba desde la misma alerta, sin salir del escritorio', async ({ page, irA }) => {
+    await entrar(page, irA);
+    const alertas = await sel<(AlertaDatos & { aprobacion?: { solicitudId: string } })[]>(page, 'selAlertas', {
+      localId: 'todos',
+      ahora: AHORA,
+      descartadas: [],
+      leidas: [],
+    });
+    const descuento = alertas.find((a) => a.aprobacion);
+    expect(descuento).toBeTruthy();
+    const id = descuento!.aprobacion!.solicitudId;
+    const fila = page.getByTestId('inicio-alertas').locator(`[data-alerta="${descuento!.id}"]`);
+    await fila.getByTestId(`alerta-aprobar-${id}`).click();
+    await expect(page.getByText('Aprobaste el descuento')).toBeVisible();
+    const estado = await page.evaluate(
+      (sid) =>
+        (
+          globalThis as unknown as { __kc: { estado: () => { solicitudes: Record<string, { estado: string }> } } }
+        ).__kc.estado().solicitudes[sid]?.estado,
+      id,
+    );
+    expect(estado).toBe('aprobada');
+    await expect(fila.getByTestId(`alerta-aprobar-${id}`)).toHaveCount(0);
+    expect(page.url()).toContain('/panel/inicio');
   });
 
   test('las alertas sembradas del guion están, con sus enlaces profundos', async ({ page, irA }) => {
