@@ -5224,6 +5224,20 @@ Decisiones tomadas al implementar el generador; cada una tiene su línea en `DEC
 | Semilla | Mezcla por local, curva de pedido por talla, peso de asignación de la vendedora estrella (1,5) y compras de los "frecuentes" (4–7) ajustados; azul de las camisas con peso 0,2 salvo la Oxford azul cielo (1,2) | 4.7, 7.6, P1, P2, P3, P11, P12 |
 | Patrones | 61–63 de 74 mediciones dentro de tolerancia en las 4 fechas; lo pendiente queda en `generador/auditoria/calibracion.ts` (it.todo con la desviación) para la pista de calibración. P11 "70 % de ventas con cliente a recurrentes" es inalcanzable con 15 % identificado y 450 clientes (≈ 97 %) | 4.7, 7.12 |
 
+### 11.7 Ajustes de F2-B (estado, selectores, reportes, rutas y contratos, 01/10/2026)
+
+Decisiones tomadas al implementar F2-B; cada una tiene su línea en `DECISIONES.md`. Informe: `docs/informes/F2-B.md`. Contratos para los constructores: `docs/CONTRATOS.md`.
+
+| Tema | Ajuste | Dónde |
+|---|---|---|
+| Motor | La construcción va por defecto en el hilo principal por tramos (≈ 30 ms, cediendo con `scheduler.yield`); el worker queda como alternativa medible (`?motor=`) y respaldo. Con CPU ×4 el worker pagaba ≈ 750 ms de clonación con una tarea larga de ≈ 700 ms | 5.6.12 |
+| Presupuesto | `escala` = 1: primer render útil de `/app` con CPU ×4 ≈ 2,26–2,48 s (criterio < 2,5 s, margen estrecho); `/panel/inicio` ≈ 2,4–2,55 s (< 4,5 s). Palancas en el informe | 5.6.12, 7.1 |
+| QA | Con `?hoy=` el registro sigue en `localStorage` con claves `kc:halden:v1:qa:*` (no se fuerza el modo memoria) | 5.9 |
+| Bundle | `codeSplitting.groups` de rolldown con un grupo `precarga` (con `manualChunks` jsPDF entraba en la carga inicial de toda ruta) | 5.15 |
+| Exportes | `<BotonDocumentoPdf documento>` para las plantillas PDF (desprendible, factura, POS, nota crédito, etiquetas) junto a `<BotonExportar reporte>` | 5.12, 9.4 C1, A1, A2, D3 |
+| Pruebas | `window.__kc.eventosUI()` y `eventosDominio()`; Playwright con `vite build` + `vite preview` sin `tsc`, puertos por paquete y proyecto `rendimiento` al final | 5.16, 9.1.9 |
+| QR | Formato compacto (tipo en una letra, claves abreviadas, sin nulos, `deflate-raw` + base64url) para que una venta quepa en 300 caracteres | 5.6.8 |
+
 ### 11.4 Lo descartado y su porqué
 
 | Propuesta | Origen | Por qué no |

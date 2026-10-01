@@ -16,8 +16,10 @@ export default defineConfig({
     timezoneId: 'America/Bogota',
     trace: 'retain-on-failure',
   },
+  // `vite build` + `vite preview` en un puerto fijo; Playwright lo levanta y lo cierra solo. `reuseExistingServer`
+  // reutiliza un servidor que ya escuche en ese puerto: por eso cada paquete usa su PORT (docs/CONTRATOS.md).
   webServer: {
-    command: `npm run build && npx vite preview --port ${PORT} --strictPort`,
+    command: `npx vite build && npx vite preview --port ${PORT} --strictPort`,
     url: baseURL,
     reuseExistingServer: true,
     timeout: 180_000,
