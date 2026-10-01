@@ -142,6 +142,12 @@ export default tseslint.config(
   capa(['src/layouts/**', 'src/app/**'], [GENERADOR, INTERNOS_MODULO]),
   capa(['src/modulos/**', 'src/movil/**', 'src/tienda/**', 'src/seguimiento/**'], [GENERADOR, LAYOUTS_SALVO_CONTRATOS, INTERNOS_MODULO]),
 
+  // Pruebas de selectores, reportes y estado: construyen el estado con el generador (solo en pruebas).
+  capa(
+    ['src/selectores/**/*.test.ts', 'src/selectores/pruebas/**', 'src/reportes/**/*.test.ts', 'src/estado/**/*.test.ts', 'src/estado/**/*.test.tsx'],
+    [UI, LAYOUTS_SALVO_RUTAS, MODULOS],
+  ),
+
   // ---------- APIs del navegador fuera de las capas puras ----------
   {
     files: ['src/config/**', 'src/seed/**', 'src/dominio/**', 'src/generador/**', 'src/selectores/**', 'src/reportes/**'],

@@ -29,5 +29,5 @@ describe('patrones descubribles P1–P22 (4.7)', () => {
 
   for (const [id, desviacion] of Object.entries(PENDIENTES_CALIBRACION))
     it.todo(`${id} pendiente para la pista de calibración: ${desviacion}`);
-  it.todo('selHallazgos produce al menos 4 frases en cada fecha (F2-B: selectores/hallazgos.ts)');
+  // Resuelto en F2-B: "selHallazgos produce al menos 4 frases en cada fecha" en src/selectores/fechas.test.ts.
 });

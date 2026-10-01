@@ -1,6 +1,6 @@
 import type { COP, Moneda } from '@/dominio/tipos';
 import { MONEDAS, TASA_EJEMPLO } from '@/config/monedas';
-import { dinero, cifraCorta } from './formato';
+import { dinero, cifraCorta, ESPACIO_DURO } from './formato';
 
 /**
  * Conversión para mostrar (PLAN 6.20.11): todo se convierte de COP a la moneda activa con la tasa VIGENTE.
@@ -30,5 +30,5 @@ export function dineroOrigen(centavos: number, moneda: Exclude<Moneda, 'COP'>): 
 
 /** "Tasa de ejemplo: US$ 1 = $ 3.950 · CN¥ 1 = $ 548" (8.11.5). */
 export function textoTasas(tasas: { USD: number; CNY: number } = TASA_EJEMPLO.valores): string {
-  return `${TASA_EJEMPLO.etiqueta}: ${MONEDAS.USD.simbolo} 1 = ${dinero(tasas.USD)} · ${MONEDAS.CNY.simbolo} 1 = ${dinero(tasas.CNY)}`;
+  return `${TASA_EJEMPLO.etiqueta}: ${MONEDAS.USD.simbolo}${ESPACIO_DURO}1 = ${dinero(tasas.USD)} · ${MONEDAS.CNY.simbolo}${ESPACIO_DURO}1 = ${dinero(tasas.CNY)}`;
 }

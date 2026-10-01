@@ -20,5 +20,6 @@ describe('restaurar', () => {
     expect(huella(generarEstado({ ancla: A, ahora: AHORA, registro: [] }))).toBe(huella(limpia));
   });
 
-  it.todo('useDatos.restaurar() borra el registro y el ancla y reconstruye con ancla = hoy (F2-B: estado/restaurar)');
+  // Resuelto en F2-B: useDatos.restaurar() en src/estado/datos.test.ts (registro y ancla borrados, ancla = hoy,
+  // estado idéntico a una construcción limpia) y en el navegador en e2e/paquetes/fundaciones.spec.ts.
 });

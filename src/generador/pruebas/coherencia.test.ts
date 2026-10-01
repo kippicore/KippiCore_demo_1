@@ -25,6 +25,6 @@ describe('coherencia del estado generado (6.19)', () => {
     olvidar();
   });
 
-  it.todo('comisiones del selector = recálculo ingenuo (F2-B: selComisiones)');
-  it.todo('KPI de Inicio = suma directa de ventas (F2-B: selKpisInicio)');
+  // Resuelto en F2-B: "comisiones del selector = recálculo" y "KPI de Inicio = suma directa de ventas" viven en
+  // src/selectores/selectores.test.ts (el generador no importa selectores, 5.3).
 });

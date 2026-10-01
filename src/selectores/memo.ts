@@ -27,6 +27,29 @@ export type ResultadoDe<S> = S extends Selector<never, infer R> ? R : never;
 
 const MAX_CLAVES = 24;
 
+let verificarTablas = false;
+/**
+ * Pruebas y desarrollo: ejecuta cada selector sobre un Proxy del estado y falla si lee una clave que no declaró
+ * en `tablas` (el caché quedaría viejo). Los selectores locales de los paquetes deben pasar esta verificación.
+ */
+export function activarVerificacionDeTablas(activo: boolean): void {
+  verificarTablas = activo;
+}
+
+function conVerificacion<P, R>(nombre: string, tablas: readonly ClaveEstado[], fn: (e: EstadoDominio, p: P) => R) {
+  return (estado: EstadoDominio, params: P): R => {
+    const permitidas = new Set<string>(tablas);
+    const proxy = new Proxy(estado, {
+      get(obj, clave, receptor) {
+        if (typeof clave === 'string' && !permitidas.has(clave))
+          throw new Error(`El selector ${nombre} lee estado.${clave} sin declararlo en sus tablas.`);
+        return Reflect.get(obj, clave, receptor);
+      },
+    });
+    return fn(proxy, params);
+  };
+}
+
 /** Serialización estable (claves ordenadas, sin `undefined`). */
 export function claveParams(p: unknown): string {
   if (p === undefined) return '';
@@ -83,7 +106,7 @@ export function crearSelector<P = void, R = unknown>(
       return v;
     }
     n++;
-    const v = fn(estado, params);
+    const v = verificarTablas ? conVerificacion(nombre, tablas, fn)(estado, params) : fn(estado, params);
     hoja.set(k, v);
     if (hoja.size > MAX_CLAVES) {
       const primera = hoja.keys().next().value;

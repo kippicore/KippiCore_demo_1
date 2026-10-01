@@ -17,5 +17,6 @@ describe('rendimiento del generador', () => {
     expect(ms).toBeLessThan(3_000);
   });
 
-  it.todo('construcción + clonación + primer render de /app < 2,5 s con CPU ×4 en Chromium (F2-B/F2-C, e2e)');
+  // Resuelto en F2-B: "primer render útil de /app < 2,5 s con CPU ×4 en Chromium" en
+  // e2e/rendimiento/arranque.spec.ts (y la comparación de estrategias en scripts/medir-arranque.mjs).
 });

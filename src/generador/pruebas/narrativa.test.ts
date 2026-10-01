@@ -40,5 +40,5 @@ describe('narrativa N1–N16 al ancla (7.11)', () => {
     olvidar();
   });
 
-  it.todo('selNarrativa(hoy) devuelve entidades equivalentes a ancla + 3 y + 10 (F2-B: selectores/narrativa.ts)');
+  // Resuelto en F2-B: selNarrativa a ancla + 3 y + 10 en src/selectores/fechas.test.ts.
 });
