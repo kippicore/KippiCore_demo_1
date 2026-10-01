@@ -31,3 +31,10 @@ Ramas a fusionar: ver cada informe.
 4. Selector compartido de mensajes por origen (evita duplicar `selMensajesImportacion` en A4 y D5).
 5. Cifras W4/W12 fuera de guion → enviado a calibración (Oxford: costo $78.647, margen 57 %, sugerido $255.900; W12 sugiere 5 unidades con cobertura 90 días).
 6. Cobertura "hasta la siguiente llegada + 30 días" no existe como parámetro de `selSugerenciaPedido`.
+
+## A3 (rama worktree-agent-a3bcdd0f3ea03510c, 88e37d6)
+1. `src/reportes/tipos.ts` + `definiciones.ts` (`ventas`) + `BotonExportar`: `FiltrosReporte` con `clienteId | 'consumidor_final'`, `vendedorId` (también dueño), `medio`, `canal`, `estado`, `productoId`; pasarlos a `selVentas`. Prueba: exportar con `?medio=nequi` y comparar total.
+2. `rutas.ts` `pos`: parámetro `cliente` (+ resaltar) para abrir el POS con el saldo a favor cargado; A3 pasará `rutas.pos({ cliente })`, A1 debe precargarlo.
+3. `rutas.ts` `ventas`: agregar `texto` al query.
+4. (= B4.2) `InputNumero`: seleccionar todo al enfocar.
+5. `npm run dev` con node_modules enlazado da 403 en la fuente por `@fs` (solo dev con worktree).
