@@ -228,8 +228,9 @@ test.describe('Para aprobar (W10 y W11)', () => {
     await page.getByTestId('app-confirmar-decision').click();
     await expect(anulacion).toHaveCount(0);
     const v = await conKc(page, (kc) => {
-      const e = kc.estado() as unknown as { ventas: Record<string, { anulacion: unknown }>; solicitudes: Record<string, { estado: string }> };
-      return { anulada: !!e.ventas['vt_g_20260929_zr_012']?.anulacion, estado: e.solicitudes['so_g_anulacion_20260930']?.estado };
+      const e = kc.estado() as unknown as { ventas: Record<string, { anulacion: unknown }>; solicitudes: Record<string, { estado: string; datos: { ventaId: string } }> };
+      const s = e.solicitudes['so_g_anulacion_20260930'];
+      return { anulada: !!e.ventas[s?.datos.ventaId ?? '']?.anulacion, estado: s?.estado };
     });
     expect(v).toEqual({ anulada: true, estado: 'aprobada' });
   });
@@ -397,7 +398,7 @@ test.describe('Agenda y Más', () => {
     );
     await expect(page.getByTestId('app-evento')).toHaveCount(esperados);
     await expect(page.getByTestId('app-agenda-dia').first()).toContainText(/Sábado 3 de octubre|Hoy|Mañana/);
-    await page.getByTestId('app-evento').filter({ hasText: 'Llega a bodega IMP-2026-06' }).click();
+    await page.getByTestId('app-evento').filter({ hasText: 'IMP-2026-06 · Llega a bodega' }).click();
     await expect(page.getByTestId('app-importacion-pagina')).toContainText('IMP-2026-06');
   });
 

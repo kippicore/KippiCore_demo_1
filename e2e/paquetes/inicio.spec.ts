@@ -22,6 +22,10 @@ async function entrar(page: Page, irA: (r: string) => Promise<void>) {
   await esperarDatos(page);
   await expect(page.getByTestId('inicio')).toBeVisible();
   await expect(page.getByTestId('kpis-inicio')).toBeVisible();
+  // Fase 4: en la primera llegada a Inicio el panel "Prueba esto" (E2) se despliega a los 1,2 s sobre la columna
+  // derecha (tapa "Descartar" de las alertas); como haría la persona, se minimiza antes de usar esa columna.
+  await page.getByTestId('guia-minimizar').click();
+  await expect(page.getByTestId('guia-pildora')).toBeVisible();
 }
 
 const sel = <T>(page: Page, nombre: string, params?: unknown): Promise<T> =>
